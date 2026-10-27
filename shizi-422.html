@@ -112,7 +112,15 @@
     body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 360px)); gap: 26px; justify-content: center; padding: 0; }
     body.grid .card-svg { width: 100%; max-width: 360px; filter: none; }
     body.grid .bar, body.grid .tips { display: none; }
-  </style>
+  
+    /* 微信内引导条（仅 MicroMessenger UA 显示） */
+    .wx-tip { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
+              background: var(--button, #dff4f1); color: var(--ink, #4a3226); border-radius: 14px; padding: 10px 14px;
+              font-size: 14px; display: none; align-items: center; gap: 10px;
+              box-shadow: 0 4px 16px rgba(74,50,38,.18); z-index: 999; }
+    .wx-tip.show { display: flex; }
+    .wx-tip .wx-x { margin-left: auto; color: var(--muted, #8d7d73); padding: 2px 6px; cursor: pointer; }
+</style>
 </head>
 <body>
   <main class="gallery" aria-label="识字卡片">
@@ -418,5 +426,22 @@
       render();
     }
   </script>
+
+  <script>
+  (function () {
+    if (!/MicroMessenger/i.test(navigator.userAgent)) return;
+    if (sessionStorage.getItem('wxTipDone')) return;
+    var bar = document.createElement('div');
+    bar.className = 'wx-tip';
+    bar.innerHTML = '微信里用：点右上角「···」可<span style="color:var(--accent,#3e9486);font-weight:600">收藏</span>或加<span style="color:var(--accent,#3e9486);font-weight:600">浮窗</span>，下次秒开<span class="wx-x">✕</span>';
+    bar.querySelector('.wx-x').addEventListener('click', function () {
+      sessionStorage.setItem('wxTipDone', '1');
+      bar.remove();
+    });
+    document.body.appendChild(bar);
+    requestAnimationFrame(function () { bar.classList.add('show'); });
+  })();
+  </script>
+
 </body>
 </html>
