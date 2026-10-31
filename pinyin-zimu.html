@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a90c9'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fdf8ec' font-family='serif'%3E拼%3C/text%3E%3C/svg%3E">
   <meta name="theme-color" content="#fdf8ec">
   <title>拼音字母卡</title>
   <style>
@@ -112,7 +113,10 @@
     .tone-grid { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; gap: 16px;
                   align-items: center; justify-content: center; }
     .tone-road { width: min(100%, 46vh); }
-    .word-tiles { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; width: 100%; align-items: stretch; }
+    .word-tiles { flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; width: 100%; align-items: stretch; }
+    .word-tile .wsy { font-size: 30px; }
+    .pop > div:first-child svg { height: 170px; width: auto; }
+    .word-tile .wart { min-height: 110px; }
     .word-tile { background: #fbf3e2; border-radius: 18px; padding: 16px 10px 12px; text-align: center; cursor: pointer;
                  display: flex; flex-direction: column; justify-content: space-between; transition: transform .15s ease, background .2s ease; }
     .word-tile:hover { transform: translateY(-3px); }
@@ -124,6 +128,7 @@
     .word-tile.on { outline: 3px solid var(--accent); background: #fff; }
     .trow .hl { opacity: 0; transition: opacity .3s ease; }
     .trow.on .hl { opacity: 1; }
+    .trow { cursor: pointer; }
     .word-tile .wsay { font-size: 11px; color: var(--muted); }
     .match-flip { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .match-face { width: min(100%, 46vh); aspect-ratio: 760/480; }
@@ -898,7 +903,7 @@
           <div class="desk-pill">${esc(c.jue)}</div>`;
       } else if (c.type === "tone") {
         dEl("deskLeft").innerHTML = `<div class="art-area">${toneRoadsSVG(c)}</div>
-          <div class="desk-pill q">一声平 · 二声扬 · 三声拐弯 · 四声降</div>`;
+          <div class="desk-pill q">点坡道选声调 · 一声平 二声扬 三声拐弯 四声降</div>`;
         c._sel = Math.min(c._sel || 0, 3);
       } else if (c.type === "match") {
         dEl("deskLeft").innerHTML = state.revealed
@@ -939,28 +944,26 @@
       } else if (c.type === "tone") {
         const selW = c.words[c._sel || 0];
         dEl("deskCenter").innerHTML = `<div class="tone-grid">
-          <div style="width:min(100%,52vh)">${toneBigRoadSVG(toneNumOf(selW.sy))}</div>
-          <div class="pop" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:8px 16px">
-            <div style="width:150px">${syllableSVG(selW.sy, { grid: true })}</div>
-            <div style="font-size:36px;font-weight:800">${esc(selW.zi)}</div>
-            <div style="width:150px;height:95px">${artAreaSVG(selW.art || "")}</div>
+          <div class="pop" style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:34px;background:#fff;border-radius:22px;padding:12px 18px;overflow:hidden">
+            <div style="height:min(46%,210px)">${syllableSVG(selW.sy, { grid: true })}</div>
+            <div style="font-size:min(72px,10vh);font-weight:800;color:${ACCENT}">${esc(selW.zi)}</div>
           </div>
-          <div class="word-tiles">${c.words.map((w, i) =>
+          <div class="word-tiles" style="flex:0 0 auto">${c.words.map((w, i) =>
             `<div class="word-tile${i === (c._sel || 0) ? " on" : ""}" data-i="${i}"><div class="wsy">${esc(w.sy)}</div>
              <div class="wart">${artAreaSVG(w.art || "")}</div>
              <div class="wzi">${esc(w.zi)}</div><div class="wsay">${esc(w.say)}</div></div>`).join("")}</div>
-          <div class="desk-hint">点一个词，小汽车就开到那个声调的路上</div></div>`;
+          <div class="desk-hint">点左边坡道或下面的词，跟着读</div></div>`;
+        const selectTone = (i) => {
+          c._sel = i;
+          renderDesk();
+          const w = c.words[i];
+          playAudio("T_" + c.fam + "_" + i);
+        };
         dEl("deskCenter").querySelectorAll(".word-tile").forEach((el) => {
-          el.addEventListener("click", () => {
-            dEl("deskCenter").querySelectorAll(".word-tile").forEach((x) => x.classList.remove("on"));
-            el.classList.add("on");
-            const i = Number(el.dataset.i);
-            c._sel = i;
-            renderDesk();
-            document.querySelectorAll("#deskLeft .trow").forEach((r, k) => r.classList.toggle("on", k === i));
-            const w = c.words[i];
-            playAudio("T_" + c.fam + "_" + i);
-          });
+          el.addEventListener("click", () => selectTone(Number(el.dataset.i)));
+        });
+        document.querySelectorAll("#deskLeft .trow").forEach((r, k) => {
+          r.addEventListener("click", () => selectTone(k));
         });
       } else if (c.type === "match") {
         dEl("deskCenter").innerHTML = `<div class="match-flip" id="dzFlip">
