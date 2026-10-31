@@ -366,8 +366,22 @@
       if (!["letter","sound"].includes(current().type)) state.mode = "learn";
       render(speak);
     }
-    function move(delta) { selectIndex(state.i + delta,true); }
-    function jumpGroup(g) { const at=CARDS.findIndex((c)=>c.g===g); if(at>=0) selectIndex(at,true); }
+    /* 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。停留 1.5s 才写入。 */
+    const DECK_META = { id: "pinyin-zimu", url: "pinyin-zimu.html", name: "拼音字母卡" };
+    let posSkipFirst = new URLSearchParams(location.search).get("from") !== "hub";
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {
+        try {
+          const c = current();
+          localStorage.setItem("hz.last", JSON.stringify({ id: "pinyin-zimu", url: "pinyin-zimu.html", name: "拼音字母卡", label: labelOf(c), pos: groupPos() + "/" + groupCards(c.g).length, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+    function move(delta) { selectIndex(state.i + delta,true); saveLastPos(); }
+    function jumpGroup(g) { const at=CARDS.findIndex((c)=>c.g===g); if(at>=0) selectIndex(at,true); saveLastPos(); }
     function openSheet() { $("sheet").hidden=false; const a=$("sheetGrid").querySelector(".active"); if(a) requestAnimationFrame(()=>a.scrollIntoView({block:"center"})); }
     function closeSheet() { $("sheet").hidden=true; }
 
