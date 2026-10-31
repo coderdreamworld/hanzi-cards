@@ -652,7 +652,7 @@
           c._pick = Number(el.dataset.i);
           const ch = c.chips[c._pick];
           celebrate();
-          speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，${ch.sy}，${ch.zi}`);
+          speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，猛一碰——${ch.zi}！`);
           render();
         });
       });
@@ -966,7 +966,7 @@
             renderDesk();
             document.querySelectorAll("#deskLeft .trow").forEach((r, k) => r.classList.toggle("on", k === i));
             const w = c.words[i];
-            speak(w.sy + "," + w.zi + "," + w.say);
+            speak(w.zi + "，" + w.say);
           });
         });
       } else if (c.type === "match") {
@@ -994,7 +994,7 @@
               <div style="width:150px">${syllableSVG(ch.sy, { grid: true })}</div>
               <div class="rart">${artAreaSVG(ch.art || "")}</div></div>
               <div class="desk-hint">${esc(ch.ini)} 和 ${esc(c.final)} 猛一碰 → ${esc(ch.sy)}！</div>`;
-            speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，${ch.sy}，${ch.zi}`);
+            speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，猛一碰——${ch.zi}！`);
           });
         });
       }
