@@ -401,6 +401,15 @@
         ${carSVG(cp[0], cp[1], cp[2])}</svg>`;
     }
 
+    /* ---------- 字母呼读音：TTS 念字母名（q→"扣"）不对，改念拼音呼读音 ---------- */
+    const LETTER_SOUND = {
+      b: "玻", p: "坡", m: "摸", f: "佛", d: "得", t: "特", n: "讷", l: "勒",
+      g: "哥", k: "科", h: "喝", j: "鸡", q: "欺", x: "希",
+      zh: "知", ch: "吃", sh: "诗", r: "日", z: "资", c: "次", s: "思", y: "衣", w: "乌",
+      a: "啊", o: "喔", e: "鹅", i: "衣", u: "乌", ü: "迂",
+    };
+    function speakLetter(L) { speak(LETTER_SOUND[L] || L); }
+
     /* ---------- 语音（桌面浏览器；微信内自动隐藏） ---------- */
     const canSpeak = typeof speechSynthesis !== "undefined" && !/MicroMessenger/i.test(navigator.userAgent);
     function speak(text) {
@@ -580,8 +589,8 @@
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
-      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speak(c.letter);
-      if (c.type === "match" && state.revealed) speak(c.letter);
+      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speakLetter(c.letter);
+      if (c.type === "match" && state.revealed) speakLetter(c.letter);
     }
 
     function animateLetterGlyphs(root, letters) {
@@ -643,7 +652,7 @@
           c._pick = Number(el.dataset.i);
           const ch = c.chips[c._pick];
           celebrate();
-          speak(ch.ini + "," + c.final + "," + ch.sy + "," + ch.zi);
+          speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，${ch.sy}，${ch.zi}`);
           render();
         });
       });
@@ -985,7 +994,7 @@
               <div style="width:150px">${syllableSVG(ch.sy, { grid: true })}</div>
               <div class="rart">${artAreaSVG(ch.art || "")}</div></div>
               <div class="desk-hint">${esc(ch.ini)} 和 ${esc(c.final)} 猛一碰 → ${esc(ch.sy)}！</div>`;
-            speak(ch.ini + "," + c.final + "," + ch.sy + "," + ch.zi);
+            speak(`${LETTER_SOUND[ch.ini] || ch.ini}、${LETTER_SOUND[c.final] || c.final}，${ch.sy}，${ch.zi}`);
           });
         });
       }
@@ -1009,8 +1018,8 @@
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
       /* 自动念：字母卡（猜一猜未答时不念，避免泄底）；配对卡翻开时 */
-      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speak(c.letter);
-      if (c.type === "match" && state.revealed) speak(c.letter);
+      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speakLetter(c.letter);
+      if (c.type === "match" && state.revealed) speakLetter(c.letter);
     }
 
     if (mode === "deck") {
