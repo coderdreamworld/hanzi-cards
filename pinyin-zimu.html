@@ -153,15 +153,6 @@
 </style>
 </head>
 <body>
-  <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
-    <div class="gate-panel">
-      <div class="gate-icon">🔊</div>
-      <h2 id="gateTitle">准备好就开始</h2>
-      <p>点一次开启声音。之后每翻到一张新卡，都会自动读出来；随时可以静音或重播。</p>
-      <button class="start-btn" id="startBtn">开始学习</button>
-    </div>
-  </div>
-
   <div class="app">
     <header class="topbar">
       <div class="brand"><h1>拼音字母卡</h1><p>逐卡认读 · 自动发音 · 易混对照</p></div>
@@ -193,7 +184,7 @@
     const GROUPS = [{"id":"initial","name":"声母 21"},{"id":"spelling","name":"y / w 2"},{"id":"final","name":"韵母 24"},{"id":"whole","name":"整体认读 16"},{"id":"full","name":"完整拼音表 63"},{"id":"tone","name":"声调五类"},{"id":"contrast","name":"易混对照"}];
     const STROKES = {"a":[{"d":"M 70 58 Q 62 46 47 50 Q 30 57 31 70 Q 33 87 52 90 Q 63 92 70 84","n":"左半圆"},{"d":"M 70 48 L 70 90","n":"竖右弯"}],"o":[{"d":"M 50 50 Q 31 52 31 70 Q 31 88 50 90 Q 69 88 69 70 Q 69 52 50 50","n":"圆（左上起笔绕一圈）"}],"e":[{"d":"M 32 70 L 68 70","n":"横"},{"d":"M 68 70 Q 66 50 50 50 Q 31 52 31 70 Q 31 88 52 90 Q 62 91 68 85","n":"左半圆"}],"i":[{"d":"M 50 50 L 50 90","n":"竖"},{"d":"M 49 26 L 51 26","n":"点（上格）"}],"u":[{"d":"M 32 50 L 32 78 Q 32 91 46 91 Q 52 91 52 84","n":"竖右弯"},{"d":"M 68 50 L 68 90","n":"竖"}],"ü":[{"d":"M 32 50 L 32 78 Q 32 91 46 91 Q 52 91 52 84","n":"竖右弯"},{"d":"M 68 50 L 68 90","n":"竖"},{"d":"M 38 26 L 40 26","n":"点（左上）"},{"d":"M 60 26 L 62 26","n":"点（右上）"}],"b":[{"d":"M 30 18 L 30 90","n":"竖（上格到中格）"},{"d":"M 30 52 Q 66 54 66 70 Q 66 88 30 86","n":"右半圆"}],"p":[{"d":"M 30 50 L 30 126","n":"竖（中格到下格）"},{"d":"M 30 52 Q 66 54 66 70 Q 66 88 30 86","n":"右半圆"}],"m":[{"d":"M 30 50 L 30 90","n":"竖"},{"d":"M 30 56 Q 36 50 46 50 Q 58 50 58 66 L 58 90","n":"右弯竖"},{"d":"M 58 56 Q 64 50 74 50 Q 86 50 86 66 L 86 90","n":"右弯竖"}],"f":[{"d":"M 60 14 Q 42 18 42 38 L 42 90","n":"左弯竖"},{"d":"M 26 46 L 64 46","n":"横"}],"d":[{"d":"M 68 52 Q 32 54 32 70 Q 32 88 68 86","n":"左半圆"},{"d":"M 68 18 L 68 90","n":"竖（上格到中格，在右）"}],"t":[{"d":"M 52 43 Q 45 44 45 52 L 45 90","n":"竖右弯（顶部略出第二线）"},{"d":"M 27 50 L 67 50","n":"横（压在第二线上）"}],"n":[{"d":"M 30 50 L 30 90","n":"竖"},{"d":"M 30 56 Q 36 50 46 50 Q 58 50 58 66 L 58 90","n":"右弯竖"}],"l":[{"d":"M 50 12 L 50 90","n":"竖（上格到中格）"}],"g":[{"d":"M 68 52 Q 32 54 32 70 Q 32 88 68 86","n":"左半圆"},{"d":"M 68 50 L 68 104 Q 68 122 50 117","n":"竖左弯（到下格）"}],"k":[{"d":"M 30 18 L 30 90","n":"竖"},{"d":"M 66 54 L 40 70 L 68 88","n":"左斜右斜"}],"h":[{"d":"M 30 18 L 30 90","n":"竖"},{"d":"M 30 56 Q 36 50 46 50 Q 58 50 58 66 L 58 90","n":"右弯竖"}],"j":[{"d":"M 60 26 L 60 102 Q 60 121 44 117","n":"竖左弯（上格到下格）"},{"d":"M 59 12 L 61 12","n":"点（上格）"}],"q":[{"d":"M 68 52 Q 32 54 32 70 Q 32 88 68 86","n":"左半圆"},{"d":"M 68 50 L 68 126","n":"竖（中格到下格）"}],"x":[{"d":"M 32 52 L 70 90","n":"右斜"},{"d":"M 70 52 L 32 90","n":"左斜"}],"z":[{"d":"M 32 52 L 70 52 L 32 90 L 70 90","n":"横左斜横"}],"c":[{"d":"M 70 55 Q 60 47 48 51 Q 31 57 31 70 Q 31 83 48 89 Q 60 93 70 85","n":"左半圆"}],"s":[{"d":"M 67 55 Q 58 47 47 52 Q 35 58 46 67 Q 64 73 53 83 Q 44 91 33 85","n":"一笔写成"}],"r":[{"d":"M 30 50 L 30 90","n":"竖"},{"d":"M 30 58 Q 38 48 52 51 Q 59 53 62 57","n":"右上弯"}],"y":[{"d":"M 30 50 L 54 92","n":"右斜"},{"d":"M 70 50 L 46 114 Q 43 122 34 119","n":"左斜（到下格）"}],"w":[{"d":"M 24 52 L 39 90 L 53 54","n":"斜下斜上"},{"d":"M 53 54 L 67 90 L 81 52","n":"斜下斜上"}],"h_":null};
     const ACCENT = "#3e9486";
-    const state = { i: 0, mode: "learn", revealed: false, sound: true, started: false };
+    const state = { i: 0, mode: "learn", revealed: false, sound: true, started: true };
     const audioCache = new Map();
     let playing = null;
 
@@ -407,7 +398,7 @@
     $("closeSheet").addEventListener("click",closeSheet);
     $("sheet").addEventListener("click",(e)=>{if(e.target===$("sheet")) closeSheet();});
     $("soundBtn").addEventListener("click",()=>{state.sound=!state.sound; if(!state.sound&&playing) playing.pause(); render(false); if(state.sound) playCurrent();});
-    $("startBtn").addEventListener("click",()=>{state.started=true; state.sound=true; $("gate").hidden=true; render(false); playCurrent();});
+
     document.addEventListener("keydown",(e)=>{if(e.key==="ArrowLeft")move(-1); if(e.key==="ArrowRight")move(1); if(e.key==="Escape")closeSheet();});
 
     let px=null,py=null;
