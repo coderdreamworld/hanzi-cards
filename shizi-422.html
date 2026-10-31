@@ -147,6 +147,10 @@
       body.desk-art-off .desk-main { grid-template-columns: 1fr minmax(300px, 24vw); }
       body.desk-tips-off .desk-main { grid-template-columns: minmax(430px, 35vw) 1fr; }
     }
+    /* 880–959 的鼠标桌面（如页面被缩放/应用小窗）：三栏压缩版 */
+    @media (hover: hover) and (pointer: fine) and (min-width: 880px) and (max-width: 959.98px) {
+      .desk-main { grid-template-columns: minmax(300px, 30vw) minmax(240px, 1fr) minmax(240px, 22vw); gap: 12px; padding: 10px 12px; }
+    }
     body.desk-art-off .desk-main > .zone:nth-child(1) { display: none; }
     body.desk-tips-off .desk-main > .zone:nth-child(3) { display: none; }
     .desk-main .zone { min-height: 0; }
@@ -181,6 +185,15 @@
     .mini.active { border-color: var(--daccent); background: #fff; font-weight: 700; }
     .mini.pair { font-size: 16px; letter-spacing: -1px; }
     #desk .counter { font-size: 14px; white-space: nowrap; }
+    /* 鼠标桌面窗口过窄（如缩放过大）：提示如何展开三栏 */
+    .narrow-hint { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                   z-index: 60; background: #fbeecb; color: #6b5a4e; border: 1.5px solid #ead9ac;
+                   border-radius: 999px; padding: 7px 14px; font-size: 13px; gap: 10px;
+                   align-items: center; max-width: 92vw; }
+    .narrow-hint .nh-x { cursor: pointer; color: #8d7d73; padding: 0 2px; }
+    @media (hover: hover) and (pointer: fine) and (min-width: 700px) and (max-width: 879.98px) {
+      body:not(.desk-on) .narrow-hint { display: flex; }
+    }
   
     /* 微信内引导条（仅 MicroMessenger UA 显示） */
     .wx-tip { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
@@ -233,6 +246,7 @@
         <button class="nav-btn" id="deskNext" aria-label="下一张">→</button>
       </footer>
     </div>
+      <div class="narrow-hint" id="narrowHint"><span>窗口有点窄～拉宽窗口，或按 ⌘0 恢复缩放，可展开完整三栏视图</span><span class="nh-x" onclick="this.parentNode.remove()">✕</span></div>
   </main>
 
   <script>
@@ -531,7 +545,7 @@
     }
 
     // ════════ 电脑版三栏字卡台（≥1024px；CSS 类 body.desk-on 由 matchMedia 驱动，手机端逻辑零改动） ════════
-    const deskMQ = window.matchMedia("(min-width: 960px)");
+    const deskMQ = window.matchMedia("(min-width: 960px), (min-width: 880px) and (hover: hover) and (pointer: fine)");
     let deskActive = false;
     const deskState = { loop: true };
     let deskGen = 0;
