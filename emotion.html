@@ -212,10 +212,14 @@
       if (event.key === 'ArrowLeft') render(index - 1);
       if (event.key === 'ArrowRight' || event.key === ' ') render(index + 1);
     });
+    var edgeSwipe = function (x) { return x < 28 || x > innerWidth - 28; };  // 屏幕左右边缘是系统返回手势区，不当翻页
     document.addEventListener('touchstart', (event) => {
+      var t0 = event.changedTouches[0] || event.touches[0];
+      if (!t0 || edgeSwipe(t0.clientX)) { touchStartX = null; return; }
       touchStartX = event.changedTouches[0].screenX;
     }, { passive: true });
     document.addEventListener('touchend', (event) => {
+      if (touchStartX === null) return;
       const delta = event.changedTouches[0].screenX - touchStartX;
       if (Math.abs(delta) < 45) return;
       render(index + (delta < 0 ? 1 : -1));

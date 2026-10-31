@@ -519,8 +519,10 @@
       setTimeout(() => groupBtn.classList.remove("flash"), 240);
     }
     let barTouch = null;
+    const edgeSwipe = (x) => x < 28 || x > innerWidth - 28;   // 屏幕左右边缘是系统返回手势区，不当翻页
     bar.addEventListener("touchstart", (e) => {
       const t = e.changedTouches[0];
+      if (edgeSwipe(t.clientX)) { barTouch = null; return; }
       barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
     }, { passive: true });
     bar.addEventListener("touchend", (e) => {
@@ -548,6 +550,7 @@
     let touchX = null, touchY = null;
     document.addEventListener("touchstart", (e) => {
       if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      if (edgeSwipe(e.touches[0].clientX)) { touchX = null; return; }   // 边缘滑动多为系统返回/退出，不翻页
       touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
     }, { passive: true });
     document.addEventListener("touchend", (e) => {
