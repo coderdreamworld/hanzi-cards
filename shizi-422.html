@@ -356,6 +356,14 @@
         return pts;
       });
     }
+    // 笔顺坐标拟合：422 字中线实测包络 x 32..1000 / y −80..864（名义域 0..1024 并不占满，y 还会越界），
+    // 加半笔宽(83/2)后按 x −9.5..1041.5 / y −121.5..905.5 等比缩放 97% 填充并居中到格子。
+    // 若调整笔画宽度，需按新包络重算 s/cx/cy。
+    const STROKE_FIT = { s: 0.97 / 1051, cx: 516, cy: 392 };
+    function inkHolder(x, y, size) {
+      const s = STROKE_FIT.s * size;
+      return `translate(${(x + size / 2 - s * STROKE_FIT.cx).toFixed(1)} ${(y + size / 2 + s * STROKE_FIT.cy).toFixed(1)}) scale(${s.toFixed(4)} ${-s})`;
+    }
     function startStrokes(card) {
       const gen = ++animGen;
       const layer = document.querySelector(".card-svg .strokes-layer");
@@ -379,12 +387,9 @@
       }
       function play() {
         if (gen !== animGen) return;
-        layer.innerHTML = chars.map((ch, i) => {
-          const s = multi ? 0.34 : 0.46, w = 1024 * s;
-          const tx = multi ? (i === 0 ? 220 : 540) - w / 2 : (760 - w) / 2;
-          // 笔顺数据 Y 轴朝上（原点左下），这里翻转 Y：y -> ty+w-s*y
-          return `<g transform="translate(${tx} ${(500 - w) / 2 + w}) scale(${s} ${-s})"></g>`;
-        }).join("");
+        layer.innerHTML = multi
+          ? `<g transform="${inkHolder(30, 85, 330)}"></g><g transform="${inkHolder(400, 85, 330)}"></g>`
+          : `<g transform="${inkHolder(138, 8, 484)}"></g>`;
         setTimeout(() => step(0, 0), 350);                 // 落笔前稍作停顿
       }
       function step(ci, si) {
@@ -523,14 +528,13 @@
       cells.forEach((cell, ci) => {
         const { x, y, size } = cell;
         const cxm = x + size / 2, cym = y + size / 2, e = 10;
-        const sc = size / 1024;
         s += `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fffef9" stroke="#cbb37f" stroke-width="5"/>`
           + `<g stroke="#dcc690" stroke-width="2.5" stroke-dasharray="12 10" fill="none">`
           + `<line x1="${x + e}" y1="${cym}" x2="${x + size - e}" y2="${cym}"/>`
           + `<line x1="${cxm}" y1="${y + e}" x2="${cxm}" y2="${y + size - e}"/>`
           + `<line x1="${x + e}" y1="${y + e}" x2="${x + size - e}" y2="${y + size - e}"/>`
           + `<line x1="${x + e}" y1="${y + size - e}" x2="${x + size - e}" y2="${y + e}"/></g>`
-          + `<g class="desk-ink" transform="translate(${x} ${y + size}) scale(${sc} ${-sc})"></g>`;
+          + `<g class="desk-ink" transform="${inkHolder(x, y, size)}"></g>`;
       });
       return s;
     }
