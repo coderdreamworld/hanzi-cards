@@ -9,7 +9,7 @@
   "theme_color": "#fdf8ec",
   "icons": [
     {
-      "src": "touch-icon-v2.png",
+      "src": "touch-icon-v3.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
