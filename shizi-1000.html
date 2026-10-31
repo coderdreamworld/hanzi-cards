@@ -296,6 +296,24 @@
     const bar = document.getElementById("bar");
     const groupBtn = document.getElementById("groupBtn");
 
+    /* 记住上次看到的位置：任何入口都记录；停留 1.5s 才写入（误触滑走不覆盖）。 */
+    const DECK_META = { id: "shizi-1000", url: "shizi-1000.html", name: "识字卡片 · 1000 字全集" };
+    let posSkipFirst = true;
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {
+        try {
+          const { c, i } = deck[state.i];
+          const inGroup = CARDS.filter((x) => x.g === c.g).length;
+          const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+          const label = c.pair ? c.pair.join("") : c.char;
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: GROUPS[c.g].name + " · " + label, pos: pos + "/" + inGroup, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+
     function render() {
       if (mode === "deck" && deskActive) return renderDesk();
       const { c, i } = deck[state.i];
@@ -322,6 +340,7 @@
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
+      saveLastPos();
     }
 
     function go(delta) {
@@ -583,6 +602,7 @@
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
       deskWrite(c);
+      saveLastPos();
     }
     if (mode === "deck") {
       document.getElementById("deskPrev").addEventListener("click", () => go(-1));

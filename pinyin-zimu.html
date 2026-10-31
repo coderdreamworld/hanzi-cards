@@ -360,7 +360,7 @@
     function selectIndex(i, speak=true) {
       state.i = (i + CARDS.length) % CARDS.length; state.revealed = false;
       if (!["letter","sound"].includes(current().type)) state.mode = "learn";
-      render(speak);
+      render(speak); saveLastPos();
     }
     /* 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。停留 1.5s 才写入。 */
     const DECK_META = { id: "pinyin-zimu", url: "pinyin-zimu.html", name: "拼音字母卡" };
