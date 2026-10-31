@@ -260,8 +260,16 @@
       var act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
     }
+    var posSkipFirst = new URLSearchParams(location.search).get("from") !== "hub";
+    function savePos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      try {
+        localStorage.setItem("hz.deck.emotion", JSON.stringify({ i: index, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: "emotion", url: "emotion.html", name: "情绪小怪兽", label: cards[index].title, pos: (index + 1) + "/" + cards.length, ts: Date.now() }));
+      } catch (e) {}
+    }
     var orig = window.render;
-    window.render = function (n) { orig(n); if (!desk.hidden) sync(); };
+    window.render = function (n) { orig(n); if (!desk.hidden) sync(); savePos(); };
     document.getElementById("deskPrev").addEventListener("click", function () { render(index - 1); });
     document.getElementById("deskNext").addEventListener("click", function () { render(index + 1); });
     document.getElementById("deskFilm").addEventListener("click", function (e) {
@@ -272,6 +280,12 @@
       desk.hidden = !want;
       document.body.classList.toggle("desk-on", want);
       if (want) sync();
+    }
+    if (new URLSearchParams(location.search).get("from") === "hub") {
+      try {
+        var s0 = JSON.parse(localStorage.getItem("hz.deck.emotion") || "null");
+        if (s0 && s0.i >= 0 && s0.i < cards.length) render(s0.i);
+      } catch (e) {}
     }
     mq.addEventListener("change", apply);
     apply();

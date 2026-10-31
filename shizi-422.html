@@ -322,6 +322,7 @@
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
+      if (mode === "deck") saveLastPos();
     }
 
     function go(delta) {
@@ -499,6 +500,23 @@
       touchX = null;
     }, { passive: true });
 
+    // ════════     // 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。
+    // 存于 localStorage（微信关闭后保留，清理缓存会丢→自动降级为从头开始）。
+    const DECK_META = { id: "shizi-422", url: "shizi-422.html", name: "识字卡片 · 422 字" };
+    let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录，翻动后才更新
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      if (deck.length !== CARDS.length) return;
+      const { c } = deck[state.i];
+      const label = c.pair ? c.pair.join("") : c.char;
+      const st = groupStats();
+      const pos = st.pos + "/" + st.inGroup;
+      try {
+        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+      } catch (e) {}
+    }
+
     // ════════ 电脑版三栏字卡台（≥1024px；CSS 类 body.desk-on 由 matchMedia 驱动，手机端逻辑零改动） ════════
     const deskMQ = window.matchMedia("(min-width: 960px)");
     let deskActive = false;
@@ -583,6 +601,7 @@
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
       deskWrite(c);
+      saveLastPos();
     }
     if (mode === "deck") {
       document.getElementById("deskPrev").addEventListener("click", () => go(-1));
@@ -623,6 +642,12 @@
       if (groupParam) {
         const gi = GROUPS.findIndex((g) => g.id === groupParam);
         if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub") {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && deck.length === CARDS.length && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
       }
       const nParam = parseInt(qs.get("n"), 10);
       if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;

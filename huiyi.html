@@ -449,6 +449,7 @@
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
+      if (mode === "deck") saveLastPos();
     }
 
     function go(delta) {
@@ -559,6 +560,26 @@
 
     document.getElementById("head").innerHTML =
       `<span class="t">${esc(TITLE)}</span><span class="s">${esc(SUB)}</span>`;
+
+    // ════════     // 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。
+    const DECK_META = (() => {
+      const m = { pic: ["xiangxing", "象形字 · 看图猜字"], magic: ["huiyi", "会意字 · 拼字魔法"],
+                  family: ["bushou", "部首家族 · 找朋友"], shengyin: ["yunyu", "韵语与声音游戏"] }[KIND];
+      return m ? { id: m[0], url: m[0] + ".html", name: m[1] } : null;
+    })();
+    let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      if (!DECK_META || deck.length !== CARDS.length) return;
+      const { c, i } = deck[state.i];
+      const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
+      try {
+        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+      } catch (e) {}
+    }
 
     // ════════ 宽屏三栏版（≥960px；手机竖屏/窄竖屏走原布局，零改动） ════════
     const deskMQ = window.matchMedia("(min-width: 960px)");
@@ -695,6 +716,7 @@
       dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      saveLastPos();
     }
 
     if (mode === "deck") {
@@ -719,6 +741,12 @@
       if (groupParam) {
         const gi = GROUPS.findIndex((g) => g.id === groupParam);
         if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub" && DECK_META) {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && deck.length === CARDS.length && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
       }
       const nParam = parseInt(qs.get("n"), 10);
       if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;

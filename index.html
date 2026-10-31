@@ -19,6 +19,10 @@
     a.card b { display:block; font-size:18px; color:#3e9486; margin-bottom:3px;}
     a.card.warm { background:#fbe3dc; color:#a05a48; }
     a.card.warm b { color:#e8836f; }
+    a.card.continue { background:#3e9486; color:#d8f6f1; }
+    a.card.continue b { color:#fff; }
+    .lastbadge { display:inline-block; font-style:normal; font-size:11px; background:#fff; color:#3e9486;
+                 border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:2px; font-weight:700; }
     footer { font-size:12px; color:#b0a49a; margin-top:10px; text-align:center;}
   </style>
 </head>
@@ -27,17 +31,38 @@
   <p class="sub">点开即用 · 微信里直接打开 · 建议点右上角「···」收藏</p>
 
   <h2>识字主卡</h2>
-  <a class="card" href="./shizi-422.html"><b>识字卡片 · 422 字全量</b>21 组 · 402 张卡（382 单字 + 20 对反义词）· 笔顺演示</a>
+  <a class="card" href="./shizi-422.html?from=hub"><b>识字卡片 · 422 字全量</b>21 组 · 402 张卡（382 单字 + 20 对反义词）· 笔顺演示</a>
 
   <h2>汉语启蒙（第二阶段）</h2>
-  <a class="card" href="./xiangxing.html"><b>象形字 · 看图猜字</b>20 卡，先猜后翻</a>
-  <a class="card" href="./huiyi.html"><b>会意字 · 拼字魔法</b>14 卡，部件相加猜新字</a>
-  <a class="card" href="./bushou.html"><b>部首家族 · 找朋友</b>10 个部首家族</a>
-  <a class="card" href="./yunyu.html"><b>韵语与声音游戏</b>8 韵语 + 6 声音游戏，拼音耳朵准备</a>
+  <a class="card" href="./xiangxing.html?from=hub"><b>象形字 · 看图猜字</b>20 卡，先猜后翻</a>
+  <a class="card" href="./huiyi.html?from=hub"><b>会意字 · 拼字魔法</b>14 卡，部件相加猜新字</a>
+  <a class="card" href="./bushou.html?from=hub"><b>部首家族 · 找朋友</b>10 个部首家族</a>
+  <a class="card" href="./yunyu.html?from=hub"><b>韵语与声音游戏</b>8 韵语 + 6 声音游戏，拼音耳朵准备</a>
 
   <h2>情绪认知</h2>
-  <a class="card warm" href="./emotion.html"><b>情绪小怪兽 · 30 卡</b>认识情绪，翻阅内嵌插画</a>
+  <a class="card warm" href="./emotion.html?from=hub"><b>情绪小怪兽 · 30 卡</b>认识情绪，翻阅内嵌插画</a>
 
   <footer>家庭教育自用材料 · 手机竖屏体验最佳</footer>
+
+<script>
+/* 继续上次：读取各卡组写入的 hz.last（同域 localStorage），生成一键续看入口 */
+(function () {
+  try {
+    var last = JSON.parse(localStorage.getItem("hz.last") || "null");
+    if (!last || !last.url || !/^[\w.-]+\.html$/.test(last.url)) return;
+    if (Date.now() - (last.ts || 0) > 1000 * 60 * 60 * 24 * 180) return;
+    var esc = function (s) { var d = document.createElement("i"); d.textContent = s || ""; return d.innerHTML; };
+    var a = document.createElement("a");
+    a.className = "card continue";
+    a.href = "./" + last.url + "?from=hub";
+    a.innerHTML = "<b>▶ 继续上次 · " + esc(last.name) + "</b>第 " + esc(last.pos) +
+      " 张" + (last.label ? "「" + esc(last.label) + "」" : "") + "，点这里接着看";
+    var sub = document.querySelector("p.sub");
+    sub.parentNode.insertBefore(a, sub.nextSibling);
+    var entry = document.querySelector('a.card[href="./' + last.url + '?from=hub"]');
+    if (entry) entry.querySelector("b").insertAdjacentHTML("beforeend", ' <i class="lastbadge">上次</i>');
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
