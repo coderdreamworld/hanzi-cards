@@ -55,8 +55,10 @@
 
   <script>
 /* 继续上次：读取各卡组写入的 hz.last（同域 localStorage），生成一键续看入口 */
-(function () {
+function refreshResume() {
   try {
+    var stale = document.querySelector("a.card.continue");
+    if (stale) stale.remove();
     var last = JSON.parse(localStorage.getItem("hz.last") || "null");
     if (!last || !last.url || !/^[\w.-]+\.html$/.test(last.url)) return;
     if (Date.now() - (last.ts || 0) > 1000 * 60 * 60 * 24 * 180) return;
@@ -72,7 +74,11 @@
     var entry = document.querySelector('a.card[href="./' + last.url + '?from=hub"]');
     if (entry) entry.querySelector("b").insertAdjacentHTML("beforeend", ' <i class="lastbadge">上次</i>');
   } catch (e) {}
-})();
+}
+refreshResume();
+/* 浏览器返回键会从往返缓存(bfcache)原样恢复页面、不重跑脚本——
+   pageshow 时强制刷新续看入口，进度徽标才跟得上最新位置 */
+window.addEventListener("pageshow", function () { refreshResume(); });
 </script>
 </body>
 </html>
