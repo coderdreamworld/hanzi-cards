@@ -1,6 +1,6 @@
 {
-  "name": "孩子识字卡",
-  "short_name": "孩子识字卡",
+  "name": "识字卡",
+  "short_name": "识字卡",
   "description": "识字卡片 · 汉语启蒙 · 情绪认知，共六套亲子卡片",
   "start_url": "./index.html",
   "scope": "./",
