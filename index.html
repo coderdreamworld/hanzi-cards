@@ -35,42 +35,22 @@
 <body>
   <h1>识字卡 🎴</h1>
 
-  <h2>识字主卡</h2>
-  <a class="card" href="./shizi-422.html?from=hub"><b>识字卡片 · 422 字全量</b>21 组 · 402 张卡（382 单字 + 20 对反义词）· 笔顺演示</a>
+  <h2>第一步 · 拼音</h2>
+  <a class="card" href="./pinyin-zimu.html"><b>拼音字母卡</b>声母 · 单韵母 · 四声，跟读与猜字母小游戏</a>
 
-  <h2>汉语启蒙（第二阶段）</h2>
-  <a class="card" href="./xiangxing.html?from=hub"><b>象形字 · 看图猜字</b>20 卡，先猜后翻</a>
-  <a class="card" href="./huiyi.html?from=hub"><b>会意字 · 拼字魔法</b>14 卡，部件相加猜新字</a>
-  <a class="card" href="./bushou.html?from=hub"><b>部首家族 · 找朋友</b>10 个部首家族</a>
-  <a class="card" href="./yunyu.html?from=hub"><b>韵语与声音游戏</b>8 韵语 + 6 声音游戏，拼音耳朵准备</a>
+  <h2>第二步 · 看图识字母</h2>
+  <a class="card" href="./xiangxing.html"><b>象形字 · 看图猜字</b>字是从图画变来的——先猜后翻</a>
 
-  <h2>拼音启蒙（4 岁前技能）</h2>
-  <a class="card" href="./pinyin-zimu.html"><b>拼音字母卡</b>形状联想 · 笔顺 · 认找说三种玩法</a>
+  <h2>第三步 · 识字卡</h2>
+  <a class="card" href="./shizi-422.html"><b>识字卡片 · 422 字全量</b>21 组 402 卡，含笔顺演示</a>
+
+  <h2>进阶 · 汉语启蒙</h2>
+  <a class="card" href="./huiyi.html"><b>会意字 · 拼字魔法</b>部件相加猜新字</a>
+  <a class="card" href="./bushou.html"><b>部首家族 · 找朋友</b>10 个部首家族</a>
+  <a class="card" href="./yunyu.html"><b>韵语与声音游戏</b>8 韵语 + 6 声音游戏，拼音耳朵准备</a>
 
   <h2>情绪认知</h2>
-  <a class="card warm" href="./emotion.html?from=hub"><b>情绪小怪兽 · 30 卡</b>认识情绪，翻阅内嵌插画</a>
+  <a class="card warm" href="./emotion.html"><b>情绪小怪兽 · 30 卡</b>认识情绪，翻阅内嵌插画</a>
 
-  <footer>家庭教育自用材料 · 手机竖屏体验最佳</footer>
-
-<script>
-/* 继续上次：读取各卡组写入的 hz.last（同域 localStorage），生成一键续看入口 */
-(function () {
-  try {
-    var last = JSON.parse(localStorage.getItem("hz.last") || "null");
-    if (!last || !last.url || !/^[\w.-]+\.html$/.test(last.url)) return;
-    if (Date.now() - (last.ts || 0) > 1000 * 60 * 60 * 24 * 180) return;
-    var esc = function (s) { var d = document.createElement("i"); d.textContent = s || ""; return d.innerHTML; };
-    var a = document.createElement("a");
-    a.className = "card continue";
-    a.href = "./" + last.url + "?from=hub";
-    a.innerHTML = "<b>▶ 继续上次 · " + esc(last.name) + "</b>第 " + esc(last.pos) +
-      " 张" + (last.label ? "「" + esc(last.label) + "」" : "") + "，点这里接着看";
-    var sub = document.querySelector("p.sub");
-    sub.parentNode.insertBefore(a, sub.nextSibling);
-    var entry = document.querySelector('a.card[href="./' + last.url + '?from=hub"]');
-    if (entry) entry.querySelector("b").insertAdjacentHTML("beforeend", ' <i class="lastbadge">上次</i>');
-  } catch (e) {}
-})();
-</script>
-</body>
+  </body>
 </html>
