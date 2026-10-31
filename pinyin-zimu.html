@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a90c9'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fdf8ec' font-family='serif'%3E字%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a90c9'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fdf8ec' font-family='serif'%3E拼%3C/text%3E%3C/svg%3E">
   <meta name="theme-color" content="#fdf8ec">
   <title>拼音字母卡</title>
   <style>
@@ -188,9 +188,8 @@
         <h1 id="deskTitle"></h1>
         <nav class="desk-chips" id="deskChips" hidden></nav>
         <div class="desk-modes" id="deskModes">
-          <button class="pill" data-mode="ren" aria-pressed="true">认</button>
-          <button class="pill" data-mode="zhao" aria-pressed="false">找</button>
-          <button class="pill" data-mode="shuo" aria-pressed="false">说</button>
+          <button class="pill" data-mode="ren" aria-pressed="true">一起读</button>
+          <button class="pill" data-mode="zhao" aria-pressed="false">猜一猜</button>
         </div>
       </header>
       <section class="desk-main">
@@ -246,6 +245,7 @@
       sts.forEach((st, i) => {
         if (opt && opt.upTo != null && i >= opt.upTo) return;
         if (opt && opt.ghost) s += `<path d="${st.d}" fill="none" stroke="${INK}" stroke-opacity="0.13" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        else if (opt && opt.live) s += `<path d="${st.d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" pathLength="1" style="stroke-dasharray:1 1.06;stroke-dashoffset:1" data-live="1"/>`;
         else s += `<path d="${st.d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" data-si="${i}"/>`;
       });
       return s;
@@ -339,8 +339,11 @@
       } else {
         const gw = letters.length * 210;
         const gy = letters.length > 1 ? 406 : 406;
-        mid = letters.map((L, i) =>
-          `<g transform="translate(${400 - gw / 2 + i * 210} ${gy - 90}) scale(1.68)">${gridLines()}${glyphGroup(L, { w: 13 })}</g>`).join("");
+        mid = letters.map((L, i) => {
+          const ghost = glyphGroup(L, { w: 13, ghost: true });
+          const live = glyphGroup(L, { w: 13, live: true });
+          return `<g class="midx" data-l="${esc(L)}" transform="translate(${400 - gw / 2 + i * 210} ${gy - 90}) scale(1.68)">${gridLines()}${ghost}${live}</g>`;
+        }).join("");
       }
       let bottom = "";
       if (state.mode === "zhao" && !state.revealed) {
@@ -437,7 +440,7 @@
     const tips = document.getElementById("tips");
     const primaryBtn = document.getElementById("primaryBtn");
     const toggleTips = document.getElementById("toggleTips");
-    const hasPrimary = KIND === "spell";
+    const hasPrimary = KIND === "spell" || KIND === "letter";
 
     function render() {
       if (mode === "deck" && deskActive) return renderDesk();
@@ -450,15 +453,49 @@
       const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= deck[state.i].i).length;
       counter.textContent = `${pos} / ${inGroup}`;
       if (hasPrimary) {
-        primaryBtn.textContent = state.revealed ? (c.type === "match" ? "翻回图" : "收起来") : (c.type === "match" ? "看字母" : "变！");
+        let label;
+        if (c.type === "match") label = state.revealed ? "翻回图" : "看字母";
+        else if (c.type === "letter") label = state.mode === "ren" ? "猜一猜" : (state.revealed ? "一起读" : "看答案");
+        else label = state.revealed ? "收起来" : "变！";
+        primaryBtn.textContent = label;
         primaryBtn.setAttribute("aria-pressed", String(state.revealed));
       }
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
+      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speak(c.letter);
+      if (c.type === "match" && state.revealed) speak(c.letter);
     }
 
+    function animateLetterGlyphs(root, letters) {
+      const gen = ++animGen;
+      const paths = [...root.querySelectorAll(".midx path[data-live]")];
+      if (!paths.length) return;
+      let idx = 0;
+      function step() {
+        if (gen !== animGen) return;
+        if (idx >= paths.length) {
+          setTimeout(() => {
+            if (gen !== animGen) return;
+            paths.forEach((q) => { q.style.transition = "none"; q.style.strokeDashoffset = "1"; });
+            idx = 0;
+            setTimeout(step, 400);
+          }, 1600);
+          return;
+        }
+        const q = paths[idx];
+        q.getBoundingClientRect();
+        q.style.transition = "stroke-dashoffset 700ms ease-in-out";
+        q.style.strokeDashoffset = "0";
+        idx++;
+        setTimeout(step, 900);
+      }
+      setTimeout(step, 450);
+    }
     function bindCard(root, c) {
+      if (c.type === "letter" && (state.mode === "ren" || state.revealed)) {
+        animateLetterGlyphs(root, c.combo || [c.letter]);
+      }
       root.querySelectorAll(".quiz").forEach((el) => {
         el.addEventListener("click", () => {
           const ok = el.dataset.l === c.letter;
@@ -524,7 +561,15 @@
       el.addEventListener("click", fn);
     }
 
-    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    if (hasPrimary) bindTap(primaryBtn, () => {
+      const c = deck[state.i].c;
+      if (KIND === "letter" && c.type === "letter") {
+        if (state.mode === "ren") { state.mode = "zhao"; state.revealed = false; }
+        else if (!state.revealed) { state.revealed = true; }
+        else { state.mode = "ren"; state.revealed = false; }
+        render();
+      } else { state.revealed = !state.revealed; render(); }
+    });
     bindTap(toggleTips, () => {
       const open = tips.hidden;
       if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
@@ -611,8 +656,8 @@
       return `<svg viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet">${art || ""}</svg>`;
     }
 
-    function deskWriteStroke(container, letters) {
-      /* 笔顺动画：逐笔描画（dashoffset 技法） */
+    function deskWriteLoop(container, letters) {
+      /* 自动笔顺：逐笔描画，写完停一会擦掉重写（循环） */
       const gen = ++animGen;
       const W = letters.length * 100 + (letters.length - 1) * 6;
       let html = `<svg viewBox="-4 -4 ${W + 8} 148">
@@ -627,10 +672,9 @@
       html += `</svg>`;
       container.innerHTML = html;
       const svg = container.querySelector("svg");
-      let k = 0;
       const all = [];
       letters.forEach((L) => (STROKES[L] || []).forEach((st) => all.push(st)));
-      all.forEach((st, idx) => {
+      const ps = all.map((st) => {
         const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
         p.setAttribute("d", st.d);
         p.setAttribute("fill", "none"); p.setAttribute("stroke", INK);
@@ -638,16 +682,30 @@
         p.setAttribute("stroke-linejoin", "round"); p.setAttribute("pathLength", "1");
         p.style.strokeDasharray = "1 1.06"; p.style.strokeDashoffset = "1";
         svg.appendChild(p);
-        p.getBoundingClientRect();
-        setTimeout(() => {
-          if (gen !== animGen) return;
-          p.style.transition = "stroke-dashoffset 700ms ease-in-out";
-          p.style.strokeDashoffset = "0";
-          const nm = dEl("deskStrokeName");
-          if (nm) nm.textContent = `第 ${idx + 1} 笔 · ${st.n}`;
-        }, 300 + idx * 900);
+        return p;
       });
-      if (all.length) setTimeout(() => { if (gen === animGen) { const nm = dEl("deskStrokeName"); if (nm) nm.textContent = "写完啦！再来一遍？"; } }, 300 + all.length * 900);
+      let idx = 0;
+      function step() {
+        if (gen !== animGen) return;
+        const nm = dEl("deskStrokeName");
+        if (idx >= ps.length) {
+          if (nm) nm.textContent = "写完啦，再看一遍…";
+          setTimeout(() => {
+            if (gen !== animGen) return;
+            ps.forEach((q) => { q.style.transition = "none"; q.style.strokeDashoffset = "1"; });
+            idx = 0;
+            setTimeout(step, 400);
+          }, 1600);
+          return;
+        }
+        ps[idx].getBoundingClientRect();
+        ps[idx].style.transition = "stroke-dashoffset 700ms ease-in-out";
+        ps[idx].style.strokeDashoffset = "0";
+        if (nm) nm.textContent = `第 ${idx + 1} 笔 · ${all[idx].n}`;
+        idx++;
+        setTimeout(step, 900);
+      }
+      setTimeout(step, 350);
     }
 
     function renderDesk() {
@@ -677,51 +735,26 @@
           <div class="desk-pill q" style="margin:10px 8px 4px">${esc(c.rule || "点下面的声母，和韵母碰一碰！")}</div>`;
       }
 
-      /* 中栏 */
+      /* 中栏：字母卡 = 自动逐笔写字（「一起读」），「猜一猜」藏字点选 */
       if (c.type === "letter") {
         const letters = c.combo || [c.letter];
-        if (state.mode === "ren") {
-          dEl("deskCenter").innerHTML = `<div class="board-wrap">${comboSVG(letters, true, { w: 13 })}</div>
-            <div class="desk-actions">
-              <button class="pill" id="dzStroke">✍️ 看笔顺</button>
-              ${canSpeak ? `<button class="pill" id="dzSpeak">🔊 读一读</button>` : ""}
-            </div>`;
-          dEl("dzSpeak") && (dEl("dzSpeak").onclick = () => speak(c.letter === "ü" ? "ü" : c.letter));
-          dEl("dzStroke").onclick = () => { state.strokeOn = !state.strokeOn; renderDesk(); };
-        } else if (state.strokeOn && false) { /* reserved */ }
         if (state.mode === "zhao" && !state.revealed) {
-          const pool = poolFor(c).slice(0, 3);
+          const pool = poolFor(c);
           dEl("deskCenter").innerHTML = `<div class="desk-hint">是哪个字母？点一点</div>
-            <div class="quiz-row">${[c.letter].concat(pool).map((L) =>
+            <div class="quiz-row">${pool.map((L) =>
               `<button class="quiz-chip" data-l="${esc(L)}">${glyphSVG(L, true, { w: 13 })}</button>`).join("")}</div>`;
           dEl("deskCenter").querySelectorAll(".quiz-chip").forEach((el) => {
             el.addEventListener("click", () => {
               const ok = el.dataset.l === c.letter;
               el.classList.add(ok ? "right" : "wrong");
-              if (ok) { speak(c.letter); state.revealed = true; setTimeout(renderDesk, 600); }
+              if (ok) { state.revealed = true; setTimeout(renderDesk, 600); }
               else setTimeout(() => el.classList.remove("wrong"), 700);
             });
           });
-        } else if (state.mode === "shuo" && !state.revealed) {
-          dEl("deskCenter").innerHTML = `<div class="board-wrap" id="dzReveal" style="cursor:pointer">
-              <svg viewBox="0 0 100 140">${gridLines()}<text x="50" y="86" text-anchor="middle" font-size="52" fill="#dccfae" font-weight="800">？</text></svg></div>
-            <div class="desk-hint">说给爸爸妈妈听，点卡片揭晓</div>`;
-          dEl("dzReveal").onclick = () => { state.revealed = true; renderDesk(); };
-        } else if (state.mode !== "ren" || state.revealed) {
-          if (state.mode !== "ren") {
-            dEl("deskCenter").innerHTML = `<div class="board-wrap">${comboSVG(letters, true, { w: 13 })}</div>
-              <div class="desk-actions"><button class="pill" id="dzStroke">✍️ 看笔顺</button>
-              ${canSpeak ? `<button class="pill" id="dzSpeak">🔊 读一读</button>` : ""}</div>`;
-            dEl("dzSpeak") && (dEl("dzSpeak").onclick = () => speak(c.letter));
-            dEl("dzStroke").onclick = () => { state.strokeOn = !state.strokeOn; renderDesk(); };
-          }
-        }
-        if (state.strokeOn && state.mode === "ren") {
-          dEl("deskCenter").innerHTML = `<div class="board-wrap" id="dzStrokeBox"></div>
-            <div class="desk-hint" id="deskStrokeName">看笔尖怎么走…</div>
-            <div class="desk-actions"><button class="pill" id="dzBack">↩ 回到字母</button></div>`;
-          deskWriteStroke(dEl("dzStrokeBox"), letters);
-          dEl("dzBack").onclick = () => { state.strokeOn = false; renderDesk(); };
+        } else {
+          dEl("deskCenter").innerHTML = `<div class="board-wrap" id="dzBoard"></div>
+            <div class="desk-hint" id="deskStrokeName">看笔尖怎么走…</div>`;
+          deskWriteLoop(dEl("dzBoard"), letters);
         }
       } else if (c.type === "tone") {
         dEl("deskCenter").innerHTML = `<div class="tone-grid">
@@ -794,6 +827,9 @@
       dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      /* 自动念：字母卡（猜一猜未答时不念，避免泄底）；配对卡翻开时 */
+      if (c.type === "letter" && !(state.mode === "zhao" && !state.revealed)) speak(c.letter);
+      if (c.type === "match" && state.revealed) speak(c.letter);
     }
 
     if (mode === "deck") {
@@ -810,7 +846,7 @@
       dEl("deskModes").addEventListener("click", (e) => {
         const b = e.target.closest("[data-mode]");
         if (!b) return;
-        state.mode = b.dataset.mode; state.revealed = false; state.strokeOn = false;
+        state.mode = b.dataset.mode; state.revealed = false;
         dEl("deskModes").querySelectorAll(".pill").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
         render();
       });
