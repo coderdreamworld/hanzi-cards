@@ -67,8 +67,8 @@
     var a = document.createElement("a");
     a.className = "card continue";
     a.href = "./" + last.url + "?from=hub";
-    a.innerHTML = "<b>▶ 继续上次 · " + esc(last.name) + "</b>第 " + esc(last.pos) +
-      " 张" + (last.label ? "「" + esc(last.label) + "」" : "") + "，点这里接着看";
+    a.innerHTML = "<b>▶ 点击进入上次查看 · " + esc(last.name) + "</b>看到 " + esc(last.pos) +
+      (last.label ? "「" + esc(last.label) + "」" : "") + "，点这里接着学";
     var sub = document.querySelector("p.sub");
     if (sub) sub.parentNode.insertBefore(a, sub.nextSibling);
     else document.body.insertBefore(a, document.body.firstChild);
