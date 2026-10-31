@@ -1,4 +1,4 @@
-"""Check that every published page loads the shared analytics consent code."""
+"""Check that every published page loads the shared analytics code."""
 
 from pathlib import Path
 
