@@ -674,7 +674,7 @@
     }
     function strokeNames(c) {
       const letters = c.combo || [c.letter];
-      return letters.map((L) => (STROKES[L] || []).map((s, i) => `第${i + 1}笔${s.n}`).join("，")).join("｜");
+      return letters.map((L) => `${L}：` + (STROKES[L] || []).map((s, i) => `第${i + 1}笔${s.n}`).join("，")).join("；");
     }
 
     function openSheet() {
@@ -822,53 +822,55 @@
     }
 
     function deskWriteLoop(container, letters, opt) {
-      /* 自动笔顺：逐笔描画；loop=false 时写完停住（猜对庆祝用） */
+      /* 自动笔顺：逐笔描画（多字母各自分组）；loop=false 时写完停住 */
       const gen = ++animGen;
       const keepLooping = !(opt && opt.loop === false);
-      const W = letters.length * 100 + (letters.length - 1) * 6;
-      let html = `<svg viewBox="-4 -4 ${W + 8} 148">
-        <g transform="scale(${W / 100},1)">${gridLines().replaceAll('stroke-width="2.5"', 'stroke-width="0.5"').replaceAll('stroke-width="1.4"', 'stroke-width="0.3"')}</g>`;
+      const GAP = 10;
+      const W = letters.length * 100 + (letters.length - 1) * GAP;
+      let html = `<svg viewBox="-4 -4 ${W + 8} 148">`;
       letters.forEach((L, li) => {
-        html += `<g transform="translate(${li * 106} 0)">`;
+        const off = li * (100 + GAP);
+        html += `<g transform="translate(${off} 0)">${gridLines().replaceAll('stroke-width="2.5"', 'stroke-width="2"').replaceAll('stroke-width="1.4"', 'stroke-width="1"')}`;
         (STROKES[L] || []).forEach((st) => {
           html += `<path d="${st.d}" fill="none" stroke="${INK}" stroke-opacity="0.12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`;
         });
-        html += `</g>`;
+        html += `</g><g class="live-g" transform="translate(${off} 0)"></g>`;
       });
       html += `</svg>`;
       container.innerHTML = html;
       const svg = container.querySelector("svg");
-      const all = [];
-      letters.forEach((L) => (STROKES[L] || []).forEach((st) => all.push(st)));
-      const ps = all.map((st) => {
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        p.setAttribute("d", st.d);
-        p.setAttribute("fill", "none"); p.setAttribute("stroke", INK);
-        p.setAttribute("stroke-width", "12"); p.setAttribute("stroke-linecap", "round");
-        p.setAttribute("stroke-linejoin", "round"); p.setAttribute("pathLength", "1");
-        p.style.strokeDasharray = "1 1.06"; p.style.strokeDashoffset = "1";
-        svg.appendChild(p);
-        return p;
-      });
+      const flat = [];
+      letters.forEach((L) => (STROKES[L] || []).forEach((st) => flat.push(st)));
       let idx = 0;
       function step() {
         if (gen !== animGen) return;
         const nm = dEl("deskStrokeName");
-        if (idx >= ps.length) {
+        if (idx >= flat.length) {
           if (nm) nm.textContent = keepLooping ? "写完啦，再看一遍…" : "写对啦！🎉";
           if (!keepLooping) return;
-          setTimeout(() => {
-            if (gen !== animGen) return;
-            ps.forEach((q) => { q.style.transition = "none"; q.style.strokeDashoffset = "1"; });
-            idx = 0;
-            setTimeout(step, 400);
-          }, 1600);
+          svg.querySelectorAll(".live-g path").forEach((q) => { q.style.transition = "none"; q.style.strokeDashoffset = "1"; });
+          idx = 0;
+          setTimeout(step, 400);
           return;
         }
-        ps[idx].getBoundingClientRect();
-        ps[idx].style.transition = "stroke-dashoffset 700ms ease-in-out";
-        ps[idx].style.strokeDashoffset = "0";
-        if (nm) nm.textContent = `第 ${idx + 1} 笔 · ${all[idx].n}`;
+        let acc = 0, ci = 0;
+        for (let k = 0; k < letters.length; k++) {
+          const n = (STROKES[letters[k]] || []).length;
+          if (idx < acc + n) { ci = k; break; }
+          acc += n;
+        }
+        const g = svg.querySelectorAll(".live-g")[ci];
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", flat[idx].d);
+        p.setAttribute("fill", "none"); p.setAttribute("stroke", INK);
+        p.setAttribute("stroke-width", "12"); p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round"); p.setAttribute("pathLength", "1");
+        p.style.strokeDasharray = "1 1.06"; p.style.strokeDashoffset = "1";
+        g.appendChild(p);
+        p.getBoundingClientRect();
+        p.style.transition = "stroke-dashoffset 700ms ease-in-out";
+        p.style.strokeDashoffset = "0";
+        if (nm) nm.textContent = `${letters[ci]} 的第 ${idx - acc + 1} 笔 · ${flat[idx].n}`;
         idx++;
         setTimeout(step, 900);
       }
@@ -1000,8 +1002,9 @@
       dEl("deskFilm").innerHTML = deck.map((d, i) => {
         if (d.c.g !== c.g) return "";
         const raw = d.c.type === "letter" ? d.c.letter : d.c.type === "tone" ? d.c.label : d.c.type === "match" ? d.c.letter : d.c.final;
-        const L = (STROKES[raw] ? raw : raw[0]);
-        return `<button class="mini${i === state.i ? " active" : ""}" data-i="${i}" title="${esc(raw)}">${glyphSVG(L === "v" ? "ü" : L, false, { w: 14 })}</button>`;
+        const isWide = d.c.type === "tone" || !STROKES[raw];
+        const label = !STROKES[raw] ? raw : raw;
+        return `<button class="mini${i === state.i ? " active" : ""}${isWide ? " wide" : ""}" data-i="${i}" title="${esc(raw)}">${isWide ? esc(label) : glyphSVG(label === "v" ? "ü" : label, false, { w: 14 })}</button>`;
       }).join("");
       dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
       const act = document.querySelector("#deskFilm .mini.active");
