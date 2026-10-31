@@ -175,6 +175,14 @@
     @media (hover: hover) and (pointer: fine) and (min-width: 700px) and (max-width: 879.98px) {
       body:not(.desk-on) .narrow-hint { display: flex; }
     }
+.home-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;
+  color:#8a8078;text-decoration:none;border:1.5px solid #e6ded2;border-radius:999px;
+  padding:4px 12px 4px 9px;background:#fff;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.home-btn:active{transform:scale(.94);background:#e8f4ee}
+@media(hover:hover){.home-btn:hover{background:#f6efe2}}
+.head .home-btn{position:absolute;left:max(10px,env(safe-area-inset-left));top:50%;transform:translateY(-50%)}
+.head{position:relative}
+@media(max-width:380px){.home-btn span{display:none}.home-btn{padding:4px 8px}}
 </style>
 </head>
 <body>
@@ -188,7 +196,7 @@
       <button id="next" type="button" aria-label="下一张">›</button>
     </nav>
     <div id="desk" hidden>
-      <header class="desk-top"><h1>情绪小怪兽<span class="s">30 张 · 认识情绪</span></h1></header>
+      <header class="desk-top"><a class="home-btn" href="index.html" aria-label="返回首页">🏠<span> 首页</span></a><h1>情绪小怪兽<span class="s">30 张 · 认识情绪</span></h1></header>
       <section class="desk-main">
         <div class="zone"><div class="card-box"><div class="art-area"><img id="deskImg" alt="情绪卡片"></div></div></div>
         <div class="zone"><div class="card-box"><div class="desk-panel">

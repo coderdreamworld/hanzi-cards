@@ -204,6 +204,14 @@
               box-shadow: 0 4px 16px rgba(74,50,38,.18); z-index: 999; }
     .wx-tip.show { display: flex; }
     .wx-tip .wx-x { margin-left: auto; color: var(--muted, #8d7d73); padding: 2px 6px; cursor: pointer; }
+.home-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;
+  color:#8a8078;text-decoration:none;border:1.5px solid #e6ded2;border-radius:999px;
+  padding:4px 12px 4px 9px;background:#fff;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.home-btn:active{transform:scale(.94);background:#e8f4ee}
+@media(hover:hover){.home-btn:hover{background:#f6efe2}}
+.head .home-btn{position:absolute;left:max(10px,env(safe-area-inset-left));top:50%;transform:translateY(-50%)}
+.head{position:relative}
+@media(max-width:380px){.home-btn span{display:none}.home-btn{padding:4px 8px}}
 </style>
 </head>
 <body>
@@ -223,7 +231,7 @@
       <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
     </div>
     <div id="desk" hidden>
-      <header class="desk-top">
+      <header class="desk-top"><a class="home-btn" href="index.html" aria-label="返回首页">🏠<span> 首页</span></a>
         <h1 id="deskTitle"></h1>
         <nav class="desk-chips" id="deskChips" hidden></nav>
         <button class="desk-state" id="deskState" hidden></button>
@@ -814,5 +822,18 @@
   })();
   </script>
 
+<script>
+(function(){
+  var HTML = '<a class="home-btn" href="index.html" aria-label="返回首页">\ud83c\udfe0<span> \u9996\u9875</span></a>';
+  function put(){
+    document.querySelectorAll(".head, .desk-top").forEach(function(el){
+      if (!el.querySelector(".home-btn")) el.insertAdjacentHTML("afterbegin", HTML);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", put);
+  else put();
+  window.addEventListener("load", put);
+})();
+</script>
 </body>
 </html>
