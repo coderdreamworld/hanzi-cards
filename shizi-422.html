@@ -504,17 +504,21 @@
     // 存于 localStorage（微信关闭后保留，清理缓存会丢→自动降级为从头开始）。
     const DECK_META = { id: "shizi-422", url: "shizi-422.html", name: "识字卡片 · 422 字" };
     let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录，翻动后才更新
+    let posTimer = null;
     function saveLastPos() {
       if (posSkipFirst) { posSkipFirst = false; return; }
-      if (deck.length !== CARDS.length) return;
-      const { c } = deck[state.i];
-      const label = c.pair ? c.pair.join("") : c.char;
-      const st = groupStats();
-      const pos = st.pos + "/" + st.inGroup;
-      try {
-        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
-        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
-      } catch (e) {}
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {           // 停留满 1.5s 才算"正在看"：误触滑到下一张就关页，不会覆盖记录
+        if (mode !== "deck" || deck.length !== CARDS.length) return;
+        const { c } = deck[state.i];
+        const label = c.pair ? c.pair.join("") : c.char;
+        const st = groupStats();
+        const pos = st.pos + "/" + st.inGroup;
+        try {
+          localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
     }
 
     // ════════ 电脑版三栏字卡台（≥1024px；CSS 类 body.desk-on 由 matchMedia 驱动，手机端逻辑零改动） ════════

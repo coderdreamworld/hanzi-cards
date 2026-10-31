@@ -568,17 +568,21 @@
       return m ? { id: m[0], url: m[0] + ".html", name: m[1] } : null;
     })();
     let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录
+    let posTimer = null;
     function saveLastPos() {
       if (posSkipFirst) { posSkipFirst = false; return; }
-      if (!DECK_META || deck.length !== CARDS.length) return;
-      const { c, i } = deck[state.i];
-      const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
-      const inGroup = CARDS.filter((x) => x.g === c.g).length;
-      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
-      try {
-        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
-        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
-      } catch (e) {}
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {           // 停留满 1.5s 才算"正在看"：误触滑走不覆盖记录
+        if (mode !== "deck" || !DECK_META || deck.length !== CARDS.length) return;
+        const { c, i } = deck[state.i];
+        const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
+        const inGroup = CARDS.filter((x) => x.g === c.g).length;
+        const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
+        try {
+          localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
     }
 
     // ════════ 宽屏三栏版（≥960px；手机竖屏/窄竖屏走原布局，零改动） ════════
