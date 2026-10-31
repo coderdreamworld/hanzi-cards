@@ -378,6 +378,51 @@
     function openSheet() { $("sheet").hidden=false; const a=$("sheetGrid").querySelector(".active"); if(a) requestAnimationFrame(()=>a.scrollIntoView({block:"center"})); }
     function closeSheet() { $("sheet").hidden=true; }
 
+    var AC = null;
+    function playCheer() {
+      try {
+        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === "suspended") AC.resume();
+        const now = AC.currentTime;
+        [523, 659, 784, 1047].forEach((f, i) => {           // 上行琶音：答对旋律
+          const o = AC.createOscillator(), g = AC.createGain();
+          o.type = "triangle"; o.frequency.value = f;
+          g.gain.setValueAtTime(0.001, now + i * 0.09);
+          g.gain.exponentialRampToValueAtTime(0.22, now + i * 0.09 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+          o.connect(g).connect(AC.destination);
+          o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.25);
+        });
+        for (let b = 0; b < 3; b++) {                        // 三波噪声：鼓掌
+          const t0 = now + 0.18 + b * 0.2;
+          const buf = AC.createBuffer(1, Math.floor(AC.sampleRate * 0.22), AC.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.7);
+          const src = AC.createBufferSource(); src.buffer = buf;
+          const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1600 + b * 500; bp.Q.value = 0.7;
+          const g = AC.createGain();
+          g.gain.setValueAtTime(0.3, t0);
+          g.gain.exponentialRampToValueAtTime(0.01, t0 + 0.22);
+          src.connect(bp); bp.connect(g); g.connect(AC.destination);
+          src.start(t0);
+        }
+      } catch (e) {}
+    }
+    function confetti() {
+      const colors = ["#e8663c", "#f2b53c", "#4fae9f", "#5fa8d8", "#f5a58c", "#7fae70"];
+      for (let i = 0; i < 30; i++) {
+        const s = document.createElement("div");
+        s.className = "cf";
+        s.style.left = (Math.random() * 100) + "vw";
+        s.style.background = colors[i % colors.length];
+        s.style.animationDelay = (Math.random() * 0.4) + "s";
+        s.style.transform = `rotate(${Math.floor(Math.random() * 360)}deg)`;
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 2800);
+      }
+    }
+    function celebrate() { confetti(); playCheer(); }
+
     function actionClick(e) {
       if (e.target.closest("[data-replay]")) { playCurrent(); return; }
       const mode=e.target.closest("[data-mode]");
@@ -386,7 +431,7 @@
       if(choice) {
         const ok=choice.dataset.choice===labelOf(current());
         choice.classList.add(ok?"right":"wrong");
-        if(ok) { state.revealed=true; playCurrent(); setTimeout(()=>render(false),420); }
+        if(ok) { state.revealed=true; celebrate(); playCurrent(); setTimeout(()=>render(false),900); }
       }
     }
     $("mobileStage").addEventListener("click",actionClick);
