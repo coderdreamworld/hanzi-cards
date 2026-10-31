@@ -1,0 +1,23 @@
+{
+  "name": "孩子的卡片集",
+  "short_name": "卡片集",
+  "description": "识字卡片 · 汉语启蒙 · 情绪认知，共六套亲子卡片",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fdf8ec",
+  "theme_color": "#fdf8ec",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
