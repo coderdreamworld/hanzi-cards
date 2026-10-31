@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>会意字 · 拼字魔法</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: #d4552f;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 10px;
+    }
+    .head { flex: 0 0 auto; text-align: center; padding: 2px 0 4px; }
+    .head .t { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .head .s { font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 128px) * 0.8));
+      width: min(96vw, calc((100svh - 128px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .primary { flex: 0 0 auto; padding: 10px 22px; font-size: 15px; font-weight: 600;
+      background: var(--accent); color: #fff; }
+    .group-btn {
+      flex: 0 0 auto; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff; border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; }
+    .counter { color: var(--muted); font-size: 13px; }
+
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; color: #fff; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+
+    body.static .head, body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 24px; }
+    body.static .card-svg { width: min(92vw, 640px); filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 24px; }
+    body.grid .head { margin-bottom: 14px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 320px)); gap: 22px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 320px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+
+    /* ════════ 宽屏版（≥960px，JS matchMedia 切 body.desk-on；横屏平板/电脑/横屏大手机） ════════ */
+    #desk { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #desk[hidden] { display: none; }
+    body.desk-on .head, body.desk-on .stage, body.desk-on .bar, body.desk-on .tips { display: none; }
+    body.desk-on .gallery { padding: 0; }
+    .desk-top { flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+                padding: 10px 20px; border-bottom: 2px solid #f3e7cd; background: #fbf3dd; }
+    .desk-top h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+    .desk-top h1 .s { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+    .desk-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 2px; }
+    .dchip { border: 0; border-radius: 999px; background: var(--button); color: #2f6b60;
+             padding: 6px 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .dchip:hover { background: var(--button-hover); }
+    .dchip.active { background: var(--accent); color: #fff; font-weight: 600; }
+    .desk-state { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+                  padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .desk-main { flex: 1; min-height: 0; display: grid; gap: 16px; padding: 14px 18px;
+                 grid-template-columns: minmax(320px, 30vw) minmax(300px, 1fr) minmax(280px, 24vw); }
+    @media (min-width: 1440px) {
+      .desk-main { grid-template-columns: minmax(400px, 34vw) 1fr minmax(300px, 24vw); }
+    }
+    /* 880–959 的鼠标桌面：三栏压缩版 */
+    @media (hover: hover) and (pointer: fine) and (min-width: 880px) and (max-width: 959.98px) {
+      .desk-main { grid-template-columns: minmax(300px, 30vw) minmax(240px, 1fr) minmax(240px, 22vw); gap: 12px; padding: 10px 12px; }
+    }
+    .desk-main .zone { min-height: 0; }
+    .card-box { height: 100%; display: flex; flex-direction: column; background: #fff9ea;
+                border: 2px solid #f3e7cd; border-radius: 22px; padding: 14px; overflow: hidden; }
+    .art-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .art-area svg { width: 100%; height: 100%; }
+    .desk-pill { flex: 0 0 auto; margin: 10px 8px 4px; background: #d9f0ea; border-radius: 16px;
+                 padding: 9px 12px; text-align: center; font-size: 17px; font-weight: 600; line-height: 1.5; }
+    .desk-pill.q { background: #fbf0c2; font-weight: 500; color: #6b5a4e; font-size: 15px; }
+    .desk-center { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                   align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .desk-center .board { position: relative; width: min(100%, 62vh); aspect-ratio: 1; }
+    .desk-center .board svg { width: 100%; height: 100%; display: block; }
+    .desk-center .hint { font-size: 13px; color: var(--muted); }
+    .parts-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 0 10px; }
+    .part-tile { background: #fbf3e2; border-radius: 16px; padding: 10px 12px; text-align: center; }
+    .part-tile svg { width: 84px; height: 84px; display: block; }
+    .part-tile .pl { font-size: 13px; color: #6b5a4e; margin-top: 4px; }
+    .parts-plus { font-size: 34px; color: var(--accent); font-weight: 800; }
+    .verse-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 align-items: center; justify-content: center; gap: 4px; overflow: auto; }
+    .verse-box .vt { font-size: 30px; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
+    .verse-box .vl { font-size: clamp(22px, 3.4vh, 34px); font-family: 'Songti SC','STSong','SimSun',serif;
+                     font-weight: 700; letter-spacing: 0.12em; line-height: 1.7; }
+    .verse-box .vl b { color: var(--accent); }
+    .steps-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 justify-content: center; gap: 14px; padding: 0 12px; overflow: auto; }
+    .step-row { display: flex; gap: 14px; align-items: baseline; }
+    .step-n { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px; background: var(--accent);
+              color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .step-t { font-size: clamp(18px, 2.6vh, 24px); font-family: 'Songti SC','STSong','SimSun',serif; font-weight: 600; }
+    .steps-box .vt { text-align: center; font-size: 28px; color: var(--accent); font-weight: 800; margin-bottom: 4px; }
+    .desk-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px; }
+    .desk-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .desk-head .zi { font-size: 42px; font-weight: 700; line-height: 1; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .desk-head .meta { color: var(--muted); font-size: 14px; }
+    .mgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+    .mcell { background: #fbf3e2; border-radius: 12px; padding: 8px 10px; display: flex; align-items: baseline; gap: 8px; }
+    .mcell .mc { font-size: 30px; font-weight: 700; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .mcell .mw { font-size: 13px; color: #6b5a4e; }
+    .desk-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+                 padding: 10px 20px 14px; border-top: 2px solid #f3e7cd; background: #fbf3dd; }
+    .nav-btn { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+               width: 44px; height: 44px; font-size: 20px; cursor: pointer; flex: 0 0 auto; }
+    .nav-btn:hover { filter: brightness(1.08); }
+    .film { flex: 1; display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px; }
+    .mini { flex: 0 0 auto; width: 46px; height: 52px; border: 2px solid transparent; border-radius: 12px;
+            background: var(--button); color: var(--ink); font-family: 'Songti SC','STSong','SimSun',serif;
+            font-size: 26px; cursor: pointer; }
+    .mini:hover { background: var(--button-hover); }
+    .mini.active { border-color: var(--accent); background: #fff; font-weight: 700; }
+    .mini.wide { width: auto; min-width: 46px; padding: 0 10px; font-size: 15px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; letter-spacing: 0.05em; }
+    #desk .counter { font-size: 14px; white-space: nowrap; }
+    /* 鼠标桌面窗口过窄（如缩放过大）：提示如何展开三栏 */
+    .narrow-hint { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                   z-index: 60; background: #fbeecb; color: #6b5a4e; border: 1.5px solid #ead9ac;
+                   border-radius: 999px; padding: 7px 14px; font-size: 13px; gap: 10px;
+                   align-items: center; max-width: 92vw; }
+    .narrow-hint .nh-x { cursor: pointer; color: #8d7d73; padding: 0 2px; }
+    @media (hover: hover) and (pointer: fine) and (min-width: 700px) and (max-width: 879.98px) {
+      body:not(.desk-on) .narrow-hint { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="汉语启蒙卡集">
+    <header class="head" id="head"></header>
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="primaryBtn" class="primary"></button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+    <div id="desk" hidden>
+      <header class="desk-top">
+        <h1 id="deskTitle"></h1>
+        <nav class="desk-chips" id="deskChips" hidden></nav>
+        <button class="desk-state" id="deskState" hidden></button>
+      </header>
+      <section class="desk-main">
+        <div class="zone"><div class="card-box" id="deskLeft"></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-center" id="deskCenter"></div></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-panel" id="deskPanel"></div></div></div>
+      </section>
+      <footer class="desk-foot">
+        <button class="nav-btn" id="deskPrev" aria-label="上一张">←</button>
+        <div class="film" id="deskFilm" aria-label="组内卡片"></div>
+        <span class="counter" id="deskCounter"></span>
+        <button class="nav-btn" id="deskNext" aria-label="下一张">→</button>
+      </footer>
+    </div>
+      <div class="narrow-hint" id="narrowHint"><span>窗口有点窄～拉宽窗口，或按 ⌘0 恢复缩放，可展开完整三栏视图</span><span class="nh-x" onclick="this.parentNode.remove()">✕</span></div>
+  </main>
+
+  <script>
+    const KIND = "magic";
+    const CARDS = [{"type":"magic","key":"明","result":"明","parts":[["日","太阳"],["月","月亮"]],"pinyin":"míng","tone":"第二声","story":"太阳和月亮在一起，亮堂堂。","art_src":"huiyi:明","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","太阳和月亮在一起，亮堂堂。"],["生活里","开灯时说“亮”；找找还有什么能照亮。"]],"g":0},{"type":"magic","key":"林","result":"林","parts":[["木","一棵树"],["木","又一棵树"]],"pinyin":"lín","tone":"第二声","story":"两棵树肩并肩，就是林。","art_src":"huiyi:林","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","两棵树肩并肩，就是林。"],["生活里","去树林散步，数数几棵树种在一起。"]],"g":0},{"type":"magic","key":"森","result":"森","parts":[["木","一棵树"],["木","两棵树"],["木","三棵树"]],"pinyin":"sēn","tone":"第一声","story":"三棵树挤在一起，树更多。","art_src":"huiyi:森","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","三棵树挤在一起，树更多。"],["生活里","比较：一棵树、树林、森林，哪个最大？"]],"g":0},{"type":"magic","key":"从","result":"从","parts":[["人","一个人"],["人","又一个人"]],"pinyin":"cóng","tone":"第二声","story":"一个在前面走，一个在后面跟。","art_src":"huiyi:从","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","一个在前面走，一个在后面跟。"],["生活里","排队时玩“我跟从”：你在谁后面？"]],"g":0},{"type":"magic","key":"众","result":"众","parts":[["人","一个人"],["人","两个人"],["人","三个人"]],"pinyin":"zhòng","tone":"第四声","story":"三个人凑一起，人多了就是众。","art_src":"huiyi:众","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","三个人凑一起，人多了就是众。"],["生活里","人多的地方说“群众”；数数全家有几口人。"]],"g":0},{"type":"magic","key":"休","result":"休","parts":[["人","一个人"],["木","一棵树"]],"pinyin":"xiū","tone":"第一声","story":"人走累了，靠着大树歇一歇。","art_src":"huiyi:休","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","人走累了，靠着大树歇一歇。"],["生活里","跑累了说“休息一下”，做出靠一靠的动作。"]],"g":0},{"type":"magic","key":"尖","result":"尖","parts":[["小","小小的"],["大","大大的"]],"pinyin":"jiān","tone":"第一声","story":"上头小、下头大，就是尖。","art_src":"huiyi:尖","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","上头小、下头大，就是尖。"],["生活里","找家里的尖尖角：铅笔头、屋顶、塔。"]],"g":0},{"type":"magic","key":"尘","result":"尘","parts":[["小","小小的"],["土","小土粒"]],"pinyin":"chén","tone":"第二声","story":"小小的土粒飞起来，就是尘。","art_src":"huiyi:尘","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","小小的土粒飞起来，就是尘。"],["生活里","阳光里看灰尘飘；擦桌子时说“灰尘”。"]],"g":0},{"type":"magic","key":"看","result":"看","parts":[["手","一只手"],["目","一双眼睛"]],"pinyin":"kàn","tone":"第四声","story":"手搭在眼睛上，望得远。","art_src":"dongzuo2:看","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","手搭在眼睛上，望得远。"],["生活里","做“手搭凉棚”望远处的动作，边做边说“看”。"]],"g":0},{"type":"magic","key":"坐","result":"坐","parts":[["人","一个人"],["人","又一个人"],["土","土堆"]],"pinyin":"zuò","tone":"第四声","story":"两个人坐在土堆上。","art_src":"dongzuo:坐","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","两个人坐在土堆上。"],["生活里","坐下时说“坐”；数数几个人坐着。"]],"g":0},{"type":"magic","key":"灭","result":"灭","parts":[["一","一块板"],["火","火苗"]],"pinyin":"miè","tone":"第四声","story":"木板把火一盖，火就灭了。","art_src":"灭","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","木板把火一盖，火就灭了。"],["生活里","吹蜡烛时说“火灭了”；聊聊灭火还要水。"]],"g":0},{"type":"magic","key":"歪","result":"歪","parts":[["不","不"],["正","正"]],"pinyin":"wāi","tone":"第一声","story":"不正，就是歪。","art_src":"歪","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","不正，就是歪。"],["生活里","把玩具摆歪再摆正，边玩边说“歪、正”。"]],"g":0},{"type":"magic","key":"鸣","result":"鸣","parts":[["口","嘴巴"],["鸟","小鸟"]],"pinyin":"míng","tone":"第二声","story":"小鸟张嘴叫出声，就是鸣。","art_src":"鸣","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","小鸟张嘴叫出声，就是鸣。"],["生活里","听鸟叫时说“鸟在鸣”；找找一鸣惊人的故事。"]],"g":0},{"type":"magic","key":"泪","result":"泪","parts":[["氵","三点水"],["目","眼睛"]],"pinyin":"lèi","tone":"第四声","story":"眼睛旁边流下三点水，就是泪。","art_src":"泪","tips":[["怎么玩","遮住下半张，看两个字先猜一猜，再点「变！」"],["字的故事","眼睛旁边流下三点水，就是泪。"],["生活里","聊聊什么时候会有眼泪；擦眼泪说“泪”。"]],"g":0}];
+    const GROUPS = [{"id":"hy","name":"拼字魔法"}];
+    const GLYPHS = {"一":{"d":"M775 368 832 444Q844 460 853.0 460.0Q862 460 915.0 408.5Q968 357 968.0 346.0Q968 335 944 335H111Q84 335 69 328L49 373Q70 368 99 368Z","bx":508.5,"by":394.0},"不":{"d":"M445 614H113Q88 614 70 609L51 652Q72 647 101 647H739L793 726Q802 739 807.5 739.0Q813 739 836.5 723.0Q860 707 880.0 689.5Q900 672 913.5 655.5Q927 639 927 631Q927 614 907 614H561Q524 541 495 495Q518 479 537.5 471.0Q557 463 557.0 450.0Q557 437 528 425V4Q528 -43 529 -63L530 -99Q530 -117 495.5 -132.0Q461 -147 448 -147Q440 -147 440 -135L442 -79Q443 -45 443 -2V413Q294 194 48 59L38 76Q178 186 288.5 332.5Q399 479 445 614ZM590 405Q731 345 796.0 307.5Q861 270 879.5 242.0Q898 214 898.0 173.5Q898 133 884.0 106.5Q870 80 853.0 80.0Q836 80 827.5 89.5Q819 99 802 135Q736 280 579 387Z","bx":482.5,"by":296.0},"人":{"d":"M505 594Q478 259 394.0 106.0Q310 -47 45 -174L36 -157Q255 -20 332.5 168.0Q410 356 424 750Q470 739 509.0 725.5Q548 712 554.5 707.5Q561 703 561.0 697.0Q561 691 543.5 684.5Q526 678 519 669Q562 363 673.5 182.0Q785 1 975 -70L972 -89Q944 -87 918.0 -87.0Q892 -87 873.0 -96.0Q854 -105 828 -131Q821 -138 817 -138Q805 -138 716.0 -37.5Q627 63 578.0 196.5Q529 330 505 594Z","bx":505.5,"by":288.0},"从":{"d":"M661 456Q640 251 604.0 152.0Q568 53 488.5 -21.0Q409 -95 254 -175L243 -160Q329 -101 388.0 -42.0Q447 17 484.0 80.5Q521 144 539.5 215.0Q558 286 571.5 436.0Q585 586 581 754Q628 744 667.0 732.5Q706 721 711.5 716.0Q717 711 717.0 705.0Q717 699 704.5 690.5Q692 682 684.5 669.5Q677 657 673.0 622.5Q669 588 669.0 547.5Q669 507 694.5 397.5Q720 288 746.0 217.5Q772 147 805.5 90.5Q839 34 879.0 -6.5Q919 -47 966 -70L964 -94Q931 -88 912.5 -88.0Q894 -88 879.0 -94.0Q864 -100 850.5 -111.0Q837 -122 832 -122Q813 -122 741.5 22.5Q670 167 661 456ZM317 328Q307 180 248.0 81.5Q189 -17 47 -139L34 -124Q154 4 197.0 145.5Q240 287 240 560Q240 632 238 737Q283 726 319.0 714.0Q355 702 361.0 698.5Q367 695 367.0 689.5Q367 684 356 678Q336 666 334 623Q331 482 321 366Q397 312 436.0 260.5Q475 209 475.0 172.5Q475 136 456.0 111.0Q437 86 415 86Q403 86 397.5 95.5Q392 105 389.5 133.5Q387 162 365.5 221.5Q344 281 317 328Z","bx":500.0,"by":289.5},"休":{"d":"M188 385Q115 272 53 210L35 225Q189 456 260 777Q303 763 338.5 748.0Q374 733 380.0 728.5Q386 724 386.0 718.5Q386 713 371.0 710.0Q356 707 349.5 700.0Q343 693 336 674Q298 578 250 491Q301 474 301 461Q301 453 273 440V-123Q273 -133 266.0 -138.5Q259 -144 228.5 -154.5Q198 -165 191.0 -165.0Q184 -165 184 -154L187 -60Q188 -16 188 23ZM644 482H780L816 533Q831 554 843.5 554.0Q856 554 898.5 512.5Q941 471 941 459Q941 451 921 451H663Q705 297 777.5 197.0Q850 97 970 27L967 9Q948 11 928.5 11.0Q909 11 891.0 4.0Q873 -3 859.5 -15.0Q846 -27 840 -27Q821 -27 745.5 96.5Q670 220 644 404V-114Q644 -124 633.0 -131.0Q622 -138 595.5 -147.5Q569 -157 559 -157Q553 -157 553 -147L555 -106Q556 -64 556 -13V341Q517 237 465.5 157.0Q414 77 289 -51L275 -39Q444 204 502 451H368Q342 451 325 446L308 487Q329 482 358 482H556V644Q556 710 553 758Q599 750 635.0 740.0Q671 730 680.0 725.5Q689 721 689 716Q689 705 644 680Z","bx":502.5,"by":306.0},"众":{"d":"M316 205Q380 168 414.5 129.0Q449 90 449.0 62.0Q449 34 432.0 11.0Q415 -12 393.0 -12.0Q371 -12 370 25Q368 70 352.0 115.0Q336 160 311 187Q280 67 221.0 -4.5Q162 -76 36 -153L23 -142Q147 -36 200.5 86.5Q254 209 260 391Q176 344 48 304L40 322Q206 399 305.5 503.5Q405 608 451 756Q492 742 529.5 724.5Q567 707 567.0 701.5Q567 696 551.0 689.5Q535 683 519 669Q578 569 698.0 492.5Q818 416 959 390L956 372Q908 371 884.5 360.0Q861 349 840 321Q835 314 830 314Q817 314 739.5 366.5Q662 419 600.0 488.5Q538 558 502 644Q388 463 261 392Q378 365 378 353Q378 347 364.5 341.0Q351 335 347.0 327.0Q343 319 334.5 279.5Q326 240 316 205ZM627 261Q601 100 527.0 -4.0Q453 -108 317 -174L305 -163Q442 -63 497.5 61.5Q553 186 564 416Q678 387 678 374Q678 369 664.5 360.5Q651 352 638 322Q692 36 951 -86L945 -102Q923 -100 901.5 -100.0Q880 -100 861.5 -107.0Q843 -114 828.0 -129.0Q813 -144 808 -144Q795 -144 745.5 -78.5Q696 -13 666.0 70.0Q636 153 627 261Z","bx":491.0,"by":291.0},"口":{"d":"M774 -1H258V-68Q258 -83 250.5 -89.0Q243 -95 208.5 -106.0Q174 -117 165 -117Q158 -117 159 -105Q163 -57 163 -5V572Q163 615 160 660Q224 636 270 614H754L787 659Q794 669 800.5 669.0Q807 669 856.5 632.0Q906 595 906.0 585.5Q906 576 871 564V37Q871 14 873 -13L875 -57Q875 -66 867.5 -71.5Q860 -77 826.0 -89.5Q792 -102 780 -102Q774 -102 774 -89ZM258 31H774V581H258Z","bx":532.4375,"by":276.0},"土":{"d":"M444 341H192Q165 341 150 334L130 375Q151 370 180 370H444V662Q444 739 442 756Q553 734 572.0 729.0Q591 724 591.0 714.0Q591 704 542 678V370H753L796 434Q804 446 809 446Q817 446 865.5 402.5Q914 359 914.0 350.0Q914 341 891 341H542V-94H802L850 -20Q856 -11 863 -11Q875 -11 925.5 -59.5Q976 -108 976.0 -115.5Q976 -123 955 -123H111Q84 -123 69 -130L49 -89Q70 -94 99 -94H444Z","bx":512.5,"by":313.0},"坐":{"d":"M465 132H234Q207 132 192 125L172 166Q193 161 222 161H465V667Q465 719 463 761Q595 722 595 706Q595 698 553 688V161H698L733 219Q741 233 749.0 233.0Q757 233 771.0 223.5Q785 214 816.0 188.0Q847 162 853.0 155.0Q859 148 859 143Q859 132 836 132H553V-67H800L842 -4Q852 11 863.0 11.0Q874 11 924.5 -33.5Q975 -78 975.0 -87.0Q975 -96 952 -96H126Q99 -96 84 -103L66 -62Q87 -67 116 -67H465ZM265 434Q232 367 191.0 311.5Q150 256 66 172L50 186Q204 398 257 681Q380 634 380 618Q380 609 362.5 607.0Q345 605 340.5 600.5Q336 596 313.5 542.0Q291 488 276 456Q348 427 381.5 396.5Q415 366 415 328Q415 306 398.0 280.0Q381 254 366.5 254.0Q352 254 347.0 262.0Q342 270 339 290Q328 359 265 434ZM738 435Q681 319 583 224L571 236Q639 352 665.0 429.0Q691 506 724 672Q761 658 797.0 641.0Q833 624 839.0 619.0Q845 614 845 610Q845 603 829.0 600.0Q813 597 807.5 591.5Q802 586 784.5 541.5Q767 497 749 459Q829 425 870.5 392.0Q912 359 912.0 327.0Q912 295 894.5 267.5Q877 240 861 240Q851 240 845.5 247.5Q840 255 822.0 298.5Q804 342 786.0 373.0Q768 404 738 435Z","bx":512.5,"by":329.0},"大":{"d":"M515 473H777L831 536Q841 548 848 548Q859 548 906.5 501.0Q954 454 954 445Q954 438 930 438H564Q609 233 705.0 118.0Q801 3 969 -70L965 -88Q946 -86 929 -86Q862 -86 823 -124Q815 -131 811 -131Q798 -131 721.0 -43.0Q644 45 599.5 152.5Q555 260 537 438H512Q500 223 423.5 109.0Q347 -5 49 -157L38 -141Q267 6 339.0 123.0Q411 240 422 438H123Q101 438 81 431L63 478Q79 473 113 473H424Q427 523 427.0 583.5Q427 644 422 766Q473 755 514.5 743.5Q556 732 561.0 728.5Q566 725 566.0 720.0Q566 715 549.0 705.0Q532 695 526.5 676.0Q521 657 519.0 586.0Q517 515 515 473Z","bx":503.5,"by":304.5},"小":{"d":"M473 756Q549 745 585.5 733.0Q622 721 622 714Q622 704 572 681V-35Q572 -89 558.5 -111.5Q545 -134 504.0 -154.0Q463 -174 448.5 -174.0Q434 -174 432 -154Q427 -111 392.5 -86.0Q358 -61 286 -41L289 -21Q407 -39 435.5 -39.0Q464 -39 470.5 -31.0Q477 -23 477 -2V646Q477 712 473 756ZM259 490Q280 485 329.5 464.5Q379 444 379.0 435.5Q379 427 366.5 422.5Q354 418 344.5 405.5Q335 393 313 349Q248 220 186.0 137.0Q124 54 41 -24L28 -8Q168 182 259 490ZM649 450Q790 358 867.0 283.5Q944 209 944 145Q944 112 928.0 80.5Q912 49 893.0 49.0Q874 49 862.5 65.5Q851 82 832.5 135.0Q814 188 766.5 260.5Q719 333 634 434Z","bx":486.0,"by":291.0},"尖":{"d":"M451 766Q488 760 523.0 751.0Q558 742 569.0 737.0Q580 732 580.0 724.5Q580 717 551 705V459L552 391Q552 380 541.5 373.0Q531 366 502.0 356.0Q473 346 462.5 346.0Q452 346 452 359Q452 361 453.5 392.5Q455 424 455 479V656Q455 722 451 766ZM316 646Q351 620 376.5 598.5Q402 577 406.0 571.0Q410 565 410 559Q410 546 391.0 546.0Q372 546 356.0 536.0Q340 526 318 507Q170 377 64 315L50 333Q184 441 316 646ZM655 619Q786 559 853.5 511.0Q921 463 921 425Q921 409 904.0 379.0Q887 349 869 349Q860 349 852.0 358.5Q844 368 821.0 407.5Q798 447 749.5 503.5Q701 560 647 603ZM528 203Q492 40 397.0 -32.5Q302 -105 57 -161L51 -137Q226 -87 314.0 -9.5Q402 68 432 203H137Q116 203 94 197L77 239Q98 234 127 234H438Q448 289 452 341Q574 323 574 308Q574 301 562.5 296.5Q551 292 546.5 279.5Q542 267 536 234H784L817 296Q825 311 836.5 311.0Q848 311 870 293L921 252Q950 228 950.0 215.5Q950 203 924 203H557Q607 98 722.5 24.5Q838 -49 980 -66L979 -86Q932 -84 905.5 -96.5Q879 -109 865 -142Q861 -151 853 -151Q838 -151 756.0 -103.5Q674 -56 617.0 16.0Q560 88 530 203Z","bx":515.0,"by":302.5},"尘":{"d":"M432 754Q575 724 575 711Q575 704 535 680V437Q535 400 536 384L537 355Q537 347 533.5 344.5Q530 342 504.0 332.0Q478 322 447 322Q440 322 437.0 324.0Q434 326 434 335L436 446V644Q436 710 432 754ZM260 606Q299 589 327.5 572.0Q356 555 364.0 549.0Q372 543 372.0 537.5Q372 532 357.5 530.0Q343 528 330.0 515.5Q317 503 274.5 446.0Q232 389 196.0 356.0Q160 323 60 255L48 271Q128 357 166.0 415.0Q204 473 260 606ZM633 596Q761 533 835.5 480.0Q910 427 910 380Q910 354 893.0 324.5Q876 295 857 295Q846 295 838.0 305.0Q830 315 808.5 361.0Q787 407 737.5 465.5Q688 524 620 577ZM437 119H208Q181 119 166 112L146 158Q167 153 196 153H437V224Q437 301 435 318Q505 308 537.5 298.5Q570 289 570 281Q570 270 532 254V153H712L747 209Q754 220 761.0 220.0Q768 220 792 199L839 159Q861 139 861.0 129.0Q861 119 838 119H532V-82H785L823 -21Q833 -5 843 -5Q852 -5 875.0 -24.5Q898 -44 924.5 -71.0Q951 -98 951.0 -107.0Q951 -116 928 -116H82Q55 -116 40 -123L22 -77Q43 -82 72 -82H437Z","bx":486.5,"by":315.5},"手":{"d":"M458 626Q194 597 88 597V619Q506 672 734 776Q802 717 818.0 699.0Q834 681 834.0 673.0Q834 665 825.0 665.0Q816 665 807.0 668.0Q798 671 777.5 671.0Q757 671 694.5 660.0Q632 649 550 638V456H686L723 510Q732 523 744.0 523.0Q756 523 801.0 481.5Q846 440 846.0 431.5Q846 423 822 423H550V261H786L837 325Q848 338 856.5 338.0Q865 338 911.5 290.5Q958 243 958.0 235.0Q958 227 934 227H550V-49Q550 -87 540.5 -106.5Q531 -126 493.5 -145.5Q456 -165 441 -165Q431 -165 428 -149Q421 -113 394.0 -93.5Q367 -74 290 -50L295 -30Q379 -44 409.5 -44.0Q440 -44 449.0 -32.5Q458 -21 458 10V227H100Q66 227 50 221L32 266Q53 261 82 261H458V423H211Q177 423 161 417L143 461Q164 456 193 456H458Z","bx":495.0,"by":305.5},"日":{"d":"M331 667H700L721 707Q728 722 736.5 722.0Q745 722 783.5 698.5Q822 675 832.5 667.0Q843 659 843.0 650.0Q843 641 800 616V-1L802 -91Q802 -103 799.5 -106.0Q797 -109 778.5 -119.0Q760 -129 738.0 -136.5Q716 -144 710.5 -144.0Q705 -144 705 -132V2H313V-108Q313 -120 304.5 -126.0Q296 -132 263.5 -146.5Q231 -161 225.0 -161.0Q219 -161 220 -151Q225 -102 225 -51V640Q225 682 222 725Q285 697 331 667ZM705 356V638H313V356ZM705 39V325H313V39Z","bx":531.4285714285714,"by":282.0},"明":{"d":"M631 678H778L806 720Q815 733 821.5 733.0Q828 733 857 713L903 681Q921 668 921.0 658.0Q921 648 872 628V-1Q872 -64 862.5 -87.5Q853 -111 809.0 -134.5Q765 -158 754 -158Q745 -158 741.0 -136.0Q737 -114 727.5 -100.0Q718 -86 692.5 -72.0Q667 -58 612 -37L615 -21Q709 -38 735.5 -38.0Q762 -38 773.0 -32.0Q784 -26 784 1V210H587Q575 57 502.0 -15.5Q429 -88 266 -158L257 -141Q334 -89 380.5 -46.0Q427 -3 454.0 41.0Q481 85 493.5 137.0Q506 189 512.0 295.5Q518 402 518.0 512.5Q518 623 513 729Q575 709 631 678ZM605 459H784V649H607Q608 617 608.0 574.0Q608 531 605 459ZM784 428H603Q600 344 590 241H784ZM341 136H202V75Q202 68 200.5 64.0Q199 60 182.5 50.0Q166 40 143.0 34.5Q120 29 115.5 29.0Q111 29 112 38Q117 87 117 138V641Q117 683 114 726Q203 689 236 667H336L364 705Q370 714 376 714Q385 714 427.5 684.0Q470 654 470 643Q470 635 430 619V209L432 119V107Q396 82 373.0 74.0Q350 66 345.5 66.0Q341 66 341 78ZM202 410H341V635H202ZM202 168H341V380H202Z","bx":516.4090909090909,"by":287.5},"月":{"d":"M339 238Q328 91 265.5 2.5Q203 -86 59 -166L44 -151Q136 -72 181.0 0.0Q226 72 241.0 164.0Q256 256 256.0 424.5Q256 593 251 756Q306 735 361 705H660L683 748Q688 757 695.5 757.0Q703 757 754.5 726.0Q806 695 806.0 685.5Q806 676 765 655V-18Q765 -72 755.0 -93.0Q745 -114 695.0 -139.0Q645 -164 632.5 -164.0Q620 -164 617 -150Q608 -112 585.0 -91.5Q562 -71 487 -39L490 -16Q597 -41 623.5 -41.0Q650 -41 658.5 -36.5Q667 -32 667 -16V238ZM349 477H667V672H349Q350 559 349 477ZM667 444H348Q347 346 342 271H667Z","bx":425.0,"by":295.5},"木":{"d":"M393 487H97Q74 487 63 481L47 527Q66 522 89 522H447V655Q447 742 444 775Q587 743 587 729Q587 719 540 698V522H777L823 582Q833 595 839 595Q848 595 896.5 550.5Q945 506 945.0 496.5Q945 487 916 487H590Q621 342 733.0 210.0Q845 78 976 37L975 14Q959 15 945 15Q867 15 841 -27Q836 -36 829 -36Q805 -36 701.5 102.0Q598 240 559 487H540V28Q540 -41 541 -66L542 -120Q542 -128 538.5 -131.5Q535 -135 517.0 -143.0Q499 -151 476.0 -157.0Q453 -163 446.5 -163.0Q440 -163 440 -157L444 -65Q447 -2 447 69V385Q335 115 38 -86L26 -68Q157 59 256.0 209.0Q355 359 393 487Z","bx":501.0,"by":306.0},"林":{"d":"M321 524H359L388 573Q396 587 402.0 587.0Q408 587 440.5 551.5Q473 516 473.0 504.5Q473 493 454 493H321V381Q381 364 419.5 342.5Q458 321 458.0 292.5Q458 264 447.0 242.0Q436 220 415 220Q408 220 404.0 226.0Q400 232 395 245Q359 328 321 360V-95Q321 -111 315.0 -118.0Q309 -125 282.5 -137.0Q256 -149 246.0 -149.0Q236 -149 236 -136L238 -91Q240 -63 240 -34V308Q204 224 155.5 160.5Q107 97 25 24L13 35Q158 217 224 493H123Q97 493 80 488L63 529Q84 524 113 524H240V654Q240 720 237 768Q365 731 365 718Q365 710 321 687ZM722 486Q765 313 818.5 221.0Q872 129 980 47L978 33Q933 34 914.5 28.0Q896 22 882.5 8.5Q869 -5 865 -5Q852 -5 798.0 99.0Q744 203 705 444V-36L707 -114Q707 -135 672.5 -147.5Q638 -160 630.5 -160.0Q623 -160 623 -137V308Q581 211 519.0 137.0Q457 63 349 -28L336 -16Q439 97 498.5 209.5Q558 322 603 486H549Q523 486 506 481L488 523Q509 518 538 518H623V651Q623 715 620 765Q726 731 738.5 725.5Q751 720 751.0 712.0Q751 704 705 685V518H819L856 575Q862 585 869 585Q880 585 920.5 544.0Q961 503 961.0 494.5Q961 486 936 486Z","bx":496.5,"by":304.0},"森":{"d":"M534 628H771L809 685Q818 699 826.5 699.0Q835 699 846.5 690.5Q858 682 887.0 658.5Q916 635 926.0 624.5Q936 614 936.0 607.0Q936 600 914 600H576Q697 471 961 445L959 429Q919 428 895.5 416.0Q872 404 859 374Q855 367 848 367Q834 367 746.0 411.5Q658 456 617.0 498.5Q576 541 550 600H534V486L536 380Q536 363 529.5 356.0Q523 349 495.5 339.0Q468 329 457.5 329.0Q447 329 447 350Q447 355 448.5 385.5Q450 416 450 473V547Q325 406 50 333L44 350Q269 446 389 600H142Q116 600 99 595L82 633Q103 628 132 628H450V654Q450 720 447 768Q487 765 518.5 758.5Q550 752 556.5 749.0Q563 746 563 743Q563 736 534 717ZM699 227V-9L701 -114Q701 -130 696.0 -135.5Q691 -141 665.5 -150.5Q640 -160 630 -160Q621 -160 621 -140V91Q535 -12 397 -95L383 -82Q560 62 605 227H552Q526 227 509 222L492 257Q513 252 542 252H621V276Q621 342 618 390Q668 382 694.0 372.5Q720 363 720 358Q720 352 699 341V252H803L842 302Q850 312 858.0 312.0Q866 312 895.5 286.5Q925 261 935.5 253.0Q946 245 946.0 236.0Q946 227 929 227H728Q762 133 835.0 59.0Q908 -15 988 -36L984 -52Q949 -51 927.5 -55.0Q906 -59 891.5 -70.5Q877 -82 872 -82Q857 -82 789.0 8.5Q721 99 707 227ZM250 220H100Q74 220 57 215L40 253Q61 248 90 248H264V294Q264 327 261 367Q364 349 364 337Q364 330 340 317V248H372L402 286Q411 298 419.5 298.0Q428 298 460.5 267.5Q493 237 493.0 228.5Q493 220 472 220H340V161Q415 138 438.5 118.0Q462 98 462.0 69.5Q462 41 450.5 21.5Q439 2 430.0 2.0Q421 2 417.5 5.0Q414 8 410 19Q378 94 340 131V-115Q340 -132 334.0 -138.5Q328 -145 308.0 -153.5Q288 -162 274.0 -162.0Q260 -162 260.0 -155.0Q260 -148 262.0 -110.0Q264 -72 264 -21V103Q195 9 43 -93L32 -79Q180 61 250 220Z","bx":510.0,"by":303.0},"正":{"d":"M561 340H692L734 403Q742 415 749 415Q760 415 812.5 374.5Q865 334 865.0 318.5Q865 303 840 303H561V-51H773L818 6Q831 22 844.0 22.0Q857 22 876.5 1.0Q896 -20 922.0 -44.5Q948 -69 948.0 -78.5Q948 -88 924 -88H99Q77 -88 64 -93L43 -46Q59 -51 83 -51H212V370Q212 420 210 459Q252 448 288.0 435.0Q324 422 330.5 418.0Q337 414 337 408Q337 396 302 378V-51H468V636H154Q132 636 119 631L98 678Q114 673 138 673H745L785 729Q795 743 808.5 743.0Q822 743 870.5 704.5Q919 666 919.0 651.0Q919 636 899 636H561Z","bx":495.5,"by":325.0},"歪":{"d":"M551 666Q517 628 498 610Q543 596 551.5 592.5Q560 589 560.0 583.0Q560 577 538 565V369Q538 361 535.0 358.0Q532 355 505.5 346.5Q479 338 449 333Q441 330 441 344L443 381Q444 419 444 463V558Q269 403 39 330L33 349Q287 473 436 666H129Q113 666 100 662L84 701Q102 696 116 696H752L797 756Q806 768 816.0 768.0Q826 768 870.0 725.5Q914 683 914 672Q914 666 894 666ZM583 573Q705 553 763.0 534.0Q821 515 839.0 494.0Q857 473 857.0 444.5Q857 416 850.0 403.5Q843 391 831.0 391.0Q819 391 809.0 397.5Q799 404 773.5 433.0Q748 462 695.0 494.5Q642 527 578 549ZM533 139H695L738 193Q745 202 751 202Q761 202 804.0 162.0Q847 122 847.0 115.0Q847 108 827 108H533V-61H778L828 0Q839 13 845.5 13.0Q852 13 867.5 0.5Q883 -12 907.0 -35.5Q931 -59 940.5 -69.5Q950 -80 950.0 -87.0Q950 -94 934 -94H68Q53 -94 40 -98L24 -57Q38 -61 56 -61H210V168Q210 206 208 239Q273 225 302.5 215.5Q332 206 332 197Q332 185 297 172V-61H441V288H165Q150 288 137 284L120 324Q134 320 152 320H739L772 367Q781 379 791.0 379.0Q801 379 846.0 343.0Q891 307 891.0 297.5Q891 288 867 288H533Z","bx":487.0,"by":335.0},"氵":{"d":"M156 720Q252 695 296.5 672.0Q341 649 341 614Q341 587 319.5 555.5Q298 524 284.5 524.0Q271 524 258.0 557.5Q245 591 216.5 629.5Q188 668 149 701ZM73 498Q163 477 206.5 453.5Q250 430 250 394Q250 369 232.5 339.5Q215 310 192 310Q182 310 177.0 316.0Q172 322 159.5 356.0Q147 390 127.0 418.5Q107 447 65 481ZM382 477 280 188Q262 137 257.5 111.0Q253 85 253.0 54.0Q253 23 257.5 -31.5Q262 -86 262.0 -112.5Q262 -139 252.0 -156.5Q242 -174 216.0 -174.0Q190 -174 168.0 -153.0Q146 -132 146 -103Q146 -94 149 -84Q174 8 174 55Q174 74 166.5 84.5Q159 95 136.5 104.5Q114 114 60 131L64 152Q117 146 145.5 146.0Q174 146 189.0 159.0Q204 172 225 212L366 485Z","bx":221.0,"by":273.0},"泪":{"d":"M151 715Q252 692 288.0 671.0Q324 650 324.0 620.5Q324 591 313.0 567.0Q302 543 289.0 543.0Q276 543 269.0 549.5Q262 556 239.0 591.5Q216 627 197.0 646.0Q178 665 140 697ZM494 696H785L808 732Q816 744 824 744Q834 744 882.5 716.5Q931 689 931 679Q931 667 887 647V-25L889 -116Q889 -125 887.0 -128.5Q885 -132 871.5 -137.5Q858 -143 831.5 -149.5Q805 -156 798.5 -156.0Q792 -156 792 -143V-39H491V-119Q491 -132 482.5 -138.0Q474 -144 444.5 -153.0Q415 -162 404 -162Q398 -162 399 -150Q404 -105 404 -54V658Q404 700 401 743Q459 716 494 696ZM491 461H792V659H491ZM792 428H491V240H792ZM792 -8V207H491V-8ZM386 565 272 241Q246 168 239.0 134.5Q232 101 232.0 66.5Q232 32 240.5 -22.0Q249 -76 249.0 -100.0Q249 -124 241.5 -136.0Q234 -148 215 -148Q132 -148 132 -87Q132 -77 134 -66Q149 5 149.0 44.5Q149 84 142.5 96.5Q136 109 113.5 119.5Q91 130 43 145L45 168Q67 166 85 166Q137 166 165.0 184.5Q193 203 218 256L368 574ZM55 482Q141 461 175.0 449.0Q209 437 220.0 423.0Q231 409 231.0 378.5Q231 348 220.5 331.5Q210 315 197.5 315.0Q185 315 178.5 320.5Q172 326 149.5 361.5Q127 397 105.5 418.5Q84 440 50 465Z","bx":487.0,"by":291.0},"火":{"d":"M604 272Q705 402 756 540Q866 462 866 447Q866 442 860.0 439.5Q854 437 848.0 437.5Q842 438 834.0 438.0Q826 438 816.0 430.5Q806 423 790 403Q716 310 619 239Q739 -11 951 -65V-87Q899 -84 866.5 -93.5Q834 -103 816 -130Q808 -141 800 -141Q777 -141 664.0 2.5Q551 146 523 439Q509 279 495.0 210.0Q481 141 438.0 75.5Q395 10 309.0 -50.0Q223 -110 69 -172L62 -152Q238 -53 323.0 46.0Q408 145 424.0 353.5Q440 562 440.0 636.0Q440 710 437 764Q507 751 544.0 739.5Q581 728 581.0 719.0Q581 710 567 702Q543 691 542 672L532 545Q552 397 604 272ZM300 534Q307 462 307 410Q307 285 263.0 231.5Q219 178 174 178Q151 178 136.0 190.5Q121 203 121.0 221.5Q121 240 153 269Q221 331 245.0 390.0Q269 449 278 534Z","bx":506.5,"by":296.0},"灭":{"d":"M435 618H113Q86 618 71 611L53 655Q74 650 103 650H763L812 719Q822 733 831.5 733.0Q841 733 895.0 688.0Q949 643 949.0 630.5Q949 618 909 618H464Q486 613 516.5 603.0Q547 593 553.0 589.0Q559 585 559 581Q559 573 529 558Q541 393 587 277Q673 355 780 521Q888 450 888 428Q888 419 875 419Q870 419 864.5 420.0Q859 421 854 421Q833 421 808 401Q692 307 596 257Q693 35 969 -55L965 -73Q855 -69 814 -119Q810 -124 805 -124Q788 -124 697.5 -38.0Q607 48 560.5 169.5Q514 291 514 525Q511 353 503.5 279.5Q496 206 464.5 137.5Q433 69 374.5 16.0Q316 -37 228.0 -80.0Q140 -123 29 -151V-130Q195 -59 278.0 12.0Q361 83 398.5 198.0Q436 313 436 534Q436 574 435 618ZM276 541Q294 458 294 392Q294 298 260.0 250.0Q226 202 178 202Q155 202 140.0 212.5Q125 223 125.0 241.0Q125 259 164.0 292.5Q203 326 228.0 390.5Q253 455 255 541Z","bx":499.0,"by":291.0},"目":{"d":"M303 686H688L721 729Q729 739 736.0 739.0Q743 739 776 713L822 677Q835 666 835.0 659.0Q835 652 797 634V-16L799 -107Q799 -116 797.0 -119.5Q795 -123 781.5 -128.5Q768 -134 741.5 -140.5Q715 -147 708.5 -147.0Q702 -147 702 -134V-32H295V-110Q295 -123 286.5 -129.0Q278 -135 247.0 -146.0Q216 -157 208.0 -157.0Q200 -157 201 -145Q206 -100 206 -48V651Q206 693 203 736Q265 709 303 686ZM295 463H702V653H295ZM702 432H295V227H702ZM702 1V196H295V1Z","bx":517.9444444444445,"by":291.0},"看":{"d":"M417 627Q243 618 78 619L77 645Q512 666 787 767Q866 683 866 666Q866 660 859.0 660.0Q852 660 838.0 663.0Q824 666 805.5 666.0Q787 666 725.5 657.0Q664 648 524 635Q505 576 490 536H710L748 591Q758 606 767.0 606.0Q776 606 818.0 566.0Q860 526 860 515Q860 507 829 507H478Q460 461 439 420H822L860 471Q873 488 883.5 488.0Q894 488 936.0 448.5Q978 409 978.0 400.0Q978 391 949 391H424Q407 358 386 326L395 316H704L725 343Q730 350 736 350Q748 350 798.0 327.5Q848 305 848.0 295.5Q848 286 812 264V-58Q812 -75 813 -90L815 -114Q815 -117 814.0 -120.0Q813 -123 793.0 -131.0Q773 -139 748.5 -144.0Q724 -149 718.0 -149.0Q712 -149 712 -141V-68H387V-122Q387 -133 381.0 -137.0Q375 -141 339.5 -150.5Q304 -160 293 -160Q288 -160 289 -151Q293 -119 293 -47V209Q235 148 181.0 108.0Q127 68 40 15L25 35Q137 120 209.0 202.0Q281 284 334 391H106Q78 391 64 385L44 425Q65 420 94 420H348Q369 466 383 507H196Q168 507 154 501L130 541Q151 536 180 536H393Q406 577 417 627ZM387 202H712V285H387ZM712 173H387V87H712ZM712 -37V56H387V-37Z","bx":501.5,"by":303.5},"鸟":{"d":"M316 593V245H808L832 282Q838 293 844.5 293.0Q851 293 877.5 276.5Q904 260 922.0 242.0Q940 224 940 220Q940 210 901 195Q893 78 884.0 14.0Q875 -50 863.5 -78.5Q852 -107 829.0 -124.0Q806 -141 751.5 -157.5Q697 -174 679 -174Q672 -174 668.5 -169.5Q665 -165 663.5 -144.5Q662 -124 653.0 -110.0Q644 -96 614.0 -82.5Q584 -69 516 -49L521 -29Q671 -59 712.5 -59.0Q754 -59 769.5 -40.0Q785 -21 796.0 39.0Q807 99 806 216H315L296 190Q291 182 284 182Q260 182 186 231Q230 257 230 283V587Q230 630 226 665Q304 639 339 621H357Q381 702 391 779Q520 748 520 731Q520 723 496 719Q486 717 468.0 697.0Q450 677 409 621H651L679 662Q689 673 696.5 673.0Q704 673 749.5 647.5Q795 622 795.0 608.0Q795 594 758 580Q755 507 743.5 433.5Q732 360 716.0 336.0Q700 312 660.0 295.5Q620 279 608.5 279.0Q597 279 594 297Q589 331 574.0 343.0Q559 355 504 369L507 387Q582 373 606.0 373.0Q630 373 637.0 384.5Q644 396 652.5 457.5Q661 519 661 593ZM396 575Q461 547 495.5 519.0Q530 491 530.0 460.0Q530 429 511.0 409.0Q492 389 468.5 389.0Q445 389 444 429Q442 480 428.0 507.5Q414 535 388 560ZM609 92 645 145Q653 156 659 156Q669 156 710.5 118.0Q752 80 752.0 69.5Q752 59 727 59H120Q94 59 76 54L58 97Q80 92 110 92Z","bx":499.0,"by":302.5},"鸣":{"d":"M566 629Q593 723 604 783Q693 748 706.0 740.5Q719 733 719.0 725.0Q719 717 700 715Q668 712 611 629H772L794 661Q801 670 806 670Q815 670 855.5 642.5Q896 615 896.0 605.0Q896 595 859 583Q857 535 849.5 455.0Q842 375 836.5 352.5Q831 330 817.5 316.0Q804 302 770.5 289.5Q737 277 727 277Q718 277 716 294Q712 328 693.5 342.5Q675 357 623 365L624 385Q693 376 720.5 376.0Q748 376 757.5 385.0Q767 394 770.0 453.0Q773 512 773 603H545V257H836L865 292Q871 301 877.5 301.0Q884 301 912.5 282.5Q941 264 955.0 254.5Q969 245 969.0 236.5Q969 228 927 212Q924 137 911.5 30.0Q899 -77 878.0 -104.0Q857 -131 820.5 -143.5Q784 -156 766.5 -156.0Q749 -156 746 -134Q741 -101 718.5 -84.0Q696 -67 628 -48L632 -30Q728 -45 763.0 -45.0Q798 -45 810.5 -29.0Q823 -13 831.5 43.0Q840 99 843 228H548L522 197Q516 190 511 190Q497 190 403 243Q454 258 459.5 267.0Q465 276 465 293V581Q465 636 462 673Q498 663 566 629ZM195 613H268L288 644Q294 653 301.5 653.0Q309 653 343.5 634.0Q378 615 385.0 609.5Q392 604 392.0 597.0Q392 590 362 569V291L364 199Q364 189 362.5 186.5Q361 184 348.5 176.5Q336 169 316.0 162.0Q296 155 289.0 155.0Q282 155 282 164V212H179V126Q179 114 171.5 108.5Q164 103 138.0 94.5Q112 86 102 86Q95 86 96 99Q99 134 99 190V571Q99 613 96 656Q153 635 195 613ZM282 239V585H179V239ZM586 563Q702 533 702 478Q702 456 686.0 433.5Q670 411 651 411Q642 411 638.5 415.5Q635 420 632 432Q615 508 577 552ZM675 81 713 139Q721 150 726 150Q736 150 778.0 113.0Q820 76 820.0 63.0Q820 50 794 50H353Q328 50 310 45L293 86Q314 81 343 81Z","bx":532.4375,"by":313.5}};
+    const ART = {"明":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><line x1=\"373.0\" y1=\"248.0\" x2=\"400.0\" y2=\"248.0\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"346.34671708797583\" y1=\"312.34671708797583\" x2=\"365.4386001800126\" y2=\"331.4386001800126\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"282.0\" y1=\"339.0\" x2=\"282.0\" y2=\"366.0\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"217.65328291202417\" y1=\"312.34671708797583\" x2=\"198.5613998199874\" y2=\"331.4386001800126\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"191.0\" y1=\"248.0\" x2=\"164.0\" y2=\"248.00000000000003\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"217.65328291202417\" y1=\"183.65328291202417\" x2=\"198.56139981998737\" y2=\"164.5613998199874\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"282.0\" y1=\"157.0\" x2=\"282.0\" y2=\"130.0\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"346.3467170879758\" y1=\"183.65328291202417\" x2=\"365.4386001800126\" y2=\"164.56139981998737\" stroke=\"#d99a2b\" stroke-width=\"8\" stroke-linecap=\"round\"/><circle cx=\"285.8\" cy=\"252.56\" r=\"76\" fill=\"#e2952a\"/><circle cx=\"278.96\" cy=\"244.96\" r=\"71.44\" fill=\"#f7ae35\"/><circle cx=\"259.2\" cy=\"225.2\" r=\"13.68\" fill=\"#f9c95e\" opacity=\"0.9\"/><circle cx=\"258\" cy=\"238\" r=\"7\" fill=\"#4a3226\"/><circle cx=\"306\" cy=\"238\" r=\"7\" fill=\"#4a3226\"/><path d=\"M 258 262 Q 282 280 306 262\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 502 148 C 384.0 196.0 384.0 300.0 502 348 C 460.0 296.0 460.0 200.0 502 148 Z\" fill=\"#f2b53c\"/><path d=\"M 468 266 Q 486 282 504 266\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>","林":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"261.4\" y=\"373.5\" width=\"27.2\" height=\"78.2\" rx=\"8.5\" fill=\"#b57b44\"/><circle cx=\"275\" cy=\"305.5\" r=\"73.1\" fill=\"#7fae70\"/><circle cx=\"222.3\" cy=\"339.5\" r=\"52.699999999999996\" fill=\"#7fae70\"/><circle cx=\"327.7\" cy=\"339.5\" r=\"52.699999999999996\" fill=\"#7fae70\"/><circle cx=\"258.0\" cy=\"280.0\" r=\"46.75\" fill=\"#9cc98a\" opacity=\"0.85\"/><rect x=\"471.4\" y=\"373.5\" width=\"27.2\" height=\"78.2\" rx=\"8.5\" fill=\"#b57b44\"/><circle cx=\"485\" cy=\"305.5\" r=\"73.1\" fill=\"#7fae70\"/><circle cx=\"432.3\" cy=\"339.5\" r=\"52.699999999999996\" fill=\"#7fae70\"/><circle cx=\"537.7\" cy=\"339.5\" r=\"52.699999999999996\" fill=\"#7fae70\"/><circle cx=\"468.0\" cy=\"280.0\" r=\"46.75\" fill=\"#9cc98a\" opacity=\"0.85\"/>","森":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"370.08\" y=\"330.2\" width=\"19.84\" height=\"57.04\" rx=\"6.2\" fill=\"#b57b44\"/><circle cx=\"380\" cy=\"280.6\" r=\"53.32\" fill=\"#7fae70\"/><circle cx=\"341.56\" cy=\"305.4\" r=\"38.44\" fill=\"#7fae70\"/><circle cx=\"418.44\" cy=\"305.4\" r=\"38.44\" fill=\"#7fae70\"/><circle cx=\"367.6\" cy=\"262.0\" r=\"34.1\" fill=\"#9cc98a\" opacity=\"0.85\"/><rect x=\"260.8\" y=\"389.0\" width=\"22.4\" height=\"64.39999999999999\" rx=\"7.0\" fill=\"#b57b44\"/><circle cx=\"272\" cy=\"333.0\" r=\"60.199999999999996\" fill=\"#7fae70\"/><circle cx=\"228.6\" cy=\"361.0\" r=\"43.4\" fill=\"#7fae70\"/><circle cx=\"315.4\" cy=\"361.0\" r=\"43.4\" fill=\"#7fae70\"/><circle cx=\"258.0\" cy=\"312.0\" r=\"38.5\" fill=\"#9cc98a\" opacity=\"0.85\"/><rect x=\"476.8\" y=\"389.0\" width=\"22.4\" height=\"64.39999999999999\" rx=\"7.0\" fill=\"#b57b44\"/><circle cx=\"488\" cy=\"333.0\" r=\"60.199999999999996\" fill=\"#7fae70\"/><circle cx=\"444.6\" cy=\"361.0\" r=\"43.4\" fill=\"#7fae70\"/><circle cx=\"531.4\" cy=\"361.0\" r=\"43.4\" fill=\"#7fae70\"/><circle cx=\"474.0\" cy=\"312.0\" r=\"38.5\" fill=\"#9cc98a\" opacity=\"0.85\"/>","从":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><g transform=\"rotate(4 300 349.12)\"><rect x=\"273.48\" y=\"339.76\" width=\"20.28\" height=\"65.52\" rx=\"9.36\" fill=\"#4a97c9\"/><rect x=\"306.24\" y=\"339.76\" width=\"20.28\" height=\"60.84\" rx=\"9.36\" fill=\"#4a97c9\"/></g><ellipse cx=\"279.72\" cy=\"419.32\" rx=\"16.38\" ry=\"7.800000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"318.72\" cy=\"416.2\" rx=\"16.38\" ry=\"7.800000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 256.32 292.96000000000004 Q 254.76 353.8 268.8 355.36 L 331.2 355.36 Q 345.24 353.8 343.68 292.96000000000004 Q 300 280.48 256.32 292.96000000000004 Z\" fill=\"#5fa8d8\"/><line x1=\"265.68\" y1=\"297.64000000000004\" x2=\"250.07999999999998\" y2=\"353.80000000000007\" stroke=\"#f8cba4\" stroke-width=\"23.400000000000002\" stroke-linecap=\"round\"/><circle cx=\"250.07999999999998\" cy=\"353.80000000000007\" r=\"10.14\" fill=\"#f8cba4\"/><line x1=\"334.32\" y1=\"297.64000000000004\" x2=\"349.92\" y2=\"353.80000000000007\" stroke=\"#f8cba4\" stroke-width=\"23.400000000000002\" stroke-linecap=\"round\"/><circle cx=\"349.92\" cy=\"353.80000000000007\" r=\"10.14\" fill=\"#f8cba4\"/><circle cx=\"254.76\" cy=\"246.16000000000003\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"345.24\" cy=\"246.16000000000003\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"300\" cy=\"238.36\" r=\"48.36\" fill=\"#f8cba4\"/><path d=\"M 252.6072 221.43400000000003 Q 256.476 181.2952 300 184.1968 Q 343.524 181.2952 347.3928 221.43400000000003 Q 326.598 213.21280000000002 300 218.04880000000003 Q 273.402 213.21280000000002 252.6072 221.43400000000003 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"282.84\" cy=\"232.12\" rx=\"7.800000000000001\" ry=\"10.14\" fill=\"#4a3226\"/><circle cx=\"282.84\" cy=\"228.22000000000003\" r=\"2.652\" fill=\"#fdfdfa\"/><ellipse cx=\"317.16\" cy=\"232.12\" rx=\"7.800000000000001\" ry=\"10.14\" fill=\"#4a3226\"/><circle cx=\"317.16\" cy=\"228.22000000000003\" r=\"2.652\" fill=\"#fdfdfa\"/><path d=\"M 271.92 213.21280000000002 Q 282.84 208.3768 293.76 212.24560000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.68\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 306.24 212.24560000000002 Q 317.16 208.3768 328.08 213.21280000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.68\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 284.4 258.64 Q 300 271.12 315.6 258.64\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5.46\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"265.68\" cy=\"249.28\" r=\"8.58\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"334.32\" cy=\"249.28\" r=\"8.58\" fill=\"#f5a58c\" opacity=\"0.8\"/><g transform=\"rotate(4 468 381.12)\"><rect x=\"441.48\" y=\"371.76\" width=\"20.28\" height=\"65.52\" rx=\"9.36\" fill=\"#4a97c9\"/><rect x=\"474.24\" y=\"371.76\" width=\"20.28\" height=\"60.84\" rx=\"9.36\" fill=\"#4a97c9\"/></g><ellipse cx=\"447.72\" cy=\"451.32\" rx=\"16.38\" ry=\"7.800000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"486.72\" cy=\"448.2\" rx=\"16.38\" ry=\"7.800000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 424.32 324.96000000000004 Q 422.76 385.8 436.8 387.36 L 499.2 387.36 Q 513.24 385.8 511.68 324.96000000000004 Q 468 312.48 424.32 324.96000000000004 Z\" fill=\"#5fa8d8\"/><line x1=\"433.68\" y1=\"329.64000000000004\" x2=\"418.08\" y2=\"385.80000000000007\" stroke=\"#f8cba4\" stroke-width=\"23.400000000000002\" stroke-linecap=\"round\"/><circle cx=\"418.08\" cy=\"385.80000000000007\" r=\"10.14\" fill=\"#f8cba4\"/><line x1=\"502.32\" y1=\"329.64000000000004\" x2=\"517.92\" y2=\"385.80000000000007\" stroke=\"#f8cba4\" stroke-width=\"23.400000000000002\" stroke-linecap=\"round\"/><circle cx=\"517.92\" cy=\"385.80000000000007\" r=\"10.14\" fill=\"#f8cba4\"/><circle cx=\"422.76\" cy=\"278.16\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"513.24\" cy=\"278.16\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"468\" cy=\"270.36\" r=\"48.36\" fill=\"#f8cba4\"/><path d=\"M 420.6072 253.43400000000003 Q 424.476 213.2952 468 216.1968 Q 511.524 213.2952 515.3928 253.43400000000003 Q 494.598 245.21280000000002 468 250.04880000000003 Q 441.402 245.21280000000002 420.6072 253.43400000000003 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"450.84\" cy=\"264.12\" rx=\"7.800000000000001\" ry=\"10.14\" fill=\"#4a3226\"/><circle cx=\"450.84\" cy=\"260.22\" r=\"2.652\" fill=\"#fdfdfa\"/><ellipse cx=\"485.16\" cy=\"264.12\" rx=\"7.800000000000001\" ry=\"10.14\" fill=\"#4a3226\"/><circle cx=\"485.16\" cy=\"260.22\" r=\"2.652\" fill=\"#fdfdfa\"/><path d=\"M 439.92 245.21280000000002 Q 450.84 240.3768 461.76 244.24560000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.68\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 474.24 244.24560000000002 Q 485.16 240.3768 496.08 245.21280000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.68\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 452.4 290.64 Q 468 303.12 483.6 290.64\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5.46\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"433.68\" cy=\"281.28000000000003\" r=\"8.58\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"502.32\" cy=\"281.28000000000003\" r=\"8.58\" fill=\"#f5a58c\" opacity=\"0.8\"/>","众":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><ellipse cx=\"380\" cy=\"377\" rx=\"90\" ry=\"15\" fill=\"#b9dcc9\"/><ellipse cx=\"380\" cy=\"379\" rx=\"58\" ry=\"8\" fill=\"#4a3226\" opacity=\"0.1\"/><rect x=\"362.6\" y=\"314.52\" width=\"15.079999999999998\" height=\"48.72\" rx=\"6.959999999999999\" fill=\"#4a97c9\"/><rect x=\"382.32\" y=\"314.52\" width=\"15.079999999999998\" height=\"48.72\" rx=\"6.959999999999999\" fill=\"#4a97c9\"/><ellipse cx=\"370.14\" cy=\"372.52\" rx=\"12.18\" ry=\"5.8\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"389.86\" cy=\"372.52\" rx=\"12.18\" ry=\"5.8\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 347.52 278.56 Q 346.36 323.8 356.8 324.96 L 403.2 324.96 Q 413.64 323.8 412.48 278.56 Q 380 269.28000000000003 347.52 278.56 Z\" fill=\"#5fa8d8\"/><line x1=\"354.48\" y1=\"282.04\" x2=\"342.88\" y2=\"323.8\" stroke=\"#f8cba4\" stroke-width=\"17.4\" stroke-linecap=\"round\"/><circle cx=\"342.88\" cy=\"323.8\" r=\"7.539999999999999\" fill=\"#f8cba4\"/><line x1=\"405.52\" y1=\"282.04\" x2=\"417.12\" y2=\"323.8\" stroke=\"#f8cba4\" stroke-width=\"17.4\" stroke-linecap=\"round\"/><circle cx=\"417.12\" cy=\"323.8\" r=\"7.539999999999999\" fill=\"#f8cba4\"/><circle cx=\"346.36\" cy=\"243.76000000000002\" r=\"6.38\" fill=\"#f8cba4\"/><circle cx=\"413.64\" cy=\"243.76000000000002\" r=\"6.38\" fill=\"#f8cba4\"/><circle cx=\"380\" cy=\"237.96\" r=\"35.96\" fill=\"#f8cba4\"/><path d=\"M 344.7592 225.374 Q 347.63599999999997 195.5272 380 197.6848 Q 412.36400000000003 195.5272 415.2408 225.374 Q 399.778 219.26080000000002 380 222.85680000000002 Q 360.222 219.26080000000002 344.7592 225.374 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"367.24\" cy=\"233.32000000000002\" rx=\"5.8\" ry=\"7.539999999999999\" fill=\"#4a3226\"/><circle cx=\"367.24\" cy=\"230.42000000000002\" r=\"1.9719999999999998\" fill=\"#fdfdfa\"/><ellipse cx=\"392.76\" cy=\"233.32000000000002\" rx=\"5.8\" ry=\"7.539999999999999\" fill=\"#4a3226\"/><circle cx=\"392.76\" cy=\"230.42000000000002\" r=\"1.9719999999999998\" fill=\"#fdfdfa\"/><path d=\"M 359.12 219.26080000000002 Q 367.24 215.6648 375.36 218.54160000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.4799999999999995\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 384.64 218.54160000000002 Q 392.76 215.6648 400.88 219.26080000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.4799999999999995\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 368.4 253.04000000000002 Q 380 262.32 391.6 253.04000000000002\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4.06\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"354.48\" cy=\"246.08\" r=\"6.38\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"405.52\" cy=\"246.08\" r=\"6.38\" fill=\"#f5a58c\" opacity=\"0.8\"/><rect x=\"262.2\" y=\"378.03999999999996\" width=\"17.16\" height=\"55.440000000000005\" rx=\"7.92\" fill=\"#4a97c9\"/><rect x=\"284.64\" y=\"378.03999999999996\" width=\"17.16\" height=\"55.440000000000005\" rx=\"7.92\" fill=\"#4a97c9\"/><ellipse cx=\"270.78\" cy=\"444.04\" rx=\"13.860000000000001\" ry=\"6.6000000000000005\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"293.22\" cy=\"444.04\" rx=\"13.860000000000001\" ry=\"6.6000000000000005\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 245.04 337.12 Q 243.72 388.59999999999997 255.6 389.91999999999996 L 308.4 389.91999999999996 Q 320.28 388.59999999999997 318.96 337.12 Q 282 326.56 245.04 337.12 Z\" fill=\"#5fa8d8\"/><line x1=\"252.96\" y1=\"341.08\" x2=\"239.76\" y2=\"388.6\" stroke=\"#f8cba4\" stroke-width=\"19.8\" stroke-linecap=\"round\"/><circle cx=\"239.76\" cy=\"388.6\" r=\"8.58\" fill=\"#f8cba4\"/><line x1=\"311.04\" y1=\"341.08\" x2=\"324.24\" y2=\"388.6\" stroke=\"#f8cba4\" stroke-width=\"19.8\" stroke-linecap=\"round\"/><circle cx=\"324.24\" cy=\"388.6\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"243.72\" cy=\"297.52000000000004\" r=\"7.260000000000001\" fill=\"#f8cba4\"/><circle cx=\"320.28\" cy=\"297.52000000000004\" r=\"7.260000000000001\" fill=\"#f8cba4\"/><circle cx=\"282\" cy=\"290.92\" r=\"40.92\" fill=\"#f8cba4\"/><path d=\"M 241.8984 276.598 Q 245.172 242.6344 282 245.0896 Q 318.828 242.6344 322.1016 276.598 Q 304.50600000000003 269.64160000000004 282 273.7336 Q 259.49399999999997 269.64160000000004 241.8984 276.598 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"267.48\" cy=\"285.64000000000004\" rx=\"6.6000000000000005\" ry=\"8.58\" fill=\"#4a3226\"/><circle cx=\"267.48\" cy=\"282.34000000000003\" r=\"2.244\" fill=\"#fdfdfa\"/><ellipse cx=\"296.52\" cy=\"285.64000000000004\" rx=\"6.6000000000000005\" ry=\"8.58\" fill=\"#4a3226\"/><circle cx=\"296.52\" cy=\"282.34000000000003\" r=\"2.244\" fill=\"#fdfdfa\"/><path d=\"M 258.24 269.64160000000004 Q 267.48 265.5496 276.72 268.82320000000004\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.96\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 287.28 268.82320000000004 Q 296.52 265.5496 305.76 269.64160000000004\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.96\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 268.8 308.08000000000004 Q 282 318.64000000000004 295.2 308.08000000000004\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4.62\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"252.96\" cy=\"300.16\" r=\"7.260000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"311.04\" cy=\"300.16\" r=\"7.260000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/><rect x=\"458.2\" y=\"378.03999999999996\" width=\"17.16\" height=\"55.440000000000005\" rx=\"7.92\" fill=\"#4a97c9\"/><rect x=\"480.64\" y=\"378.03999999999996\" width=\"17.16\" height=\"55.440000000000005\" rx=\"7.92\" fill=\"#4a97c9\"/><ellipse cx=\"466.78\" cy=\"444.04\" rx=\"13.860000000000001\" ry=\"6.6000000000000005\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"489.22\" cy=\"444.04\" rx=\"13.860000000000001\" ry=\"6.6000000000000005\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 441.04 337.12 Q 439.72 388.59999999999997 451.6 389.91999999999996 L 504.4 389.91999999999996 Q 516.28 388.59999999999997 514.96 337.12 Q 478 326.56 441.04 337.12 Z\" fill=\"#5fa8d8\"/><line x1=\"448.96\" y1=\"341.08\" x2=\"435.76\" y2=\"388.6\" stroke=\"#f8cba4\" stroke-width=\"19.8\" stroke-linecap=\"round\"/><circle cx=\"435.76\" cy=\"388.6\" r=\"8.58\" fill=\"#f8cba4\"/><line x1=\"507.04\" y1=\"341.08\" x2=\"520.24\" y2=\"388.6\" stroke=\"#f8cba4\" stroke-width=\"19.8\" stroke-linecap=\"round\"/><circle cx=\"520.24\" cy=\"388.6\" r=\"8.58\" fill=\"#f8cba4\"/><circle cx=\"439.72\" cy=\"297.52000000000004\" r=\"7.260000000000001\" fill=\"#f8cba4\"/><circle cx=\"516.28\" cy=\"297.52000000000004\" r=\"7.260000000000001\" fill=\"#f8cba4\"/><circle cx=\"478\" cy=\"290.92\" r=\"40.92\" fill=\"#f8cba4\"/><path d=\"M 437.8984 276.598 Q 441.172 242.6344 478 245.0896 Q 514.828 242.6344 518.1016 276.598 Q 500.50600000000003 269.64160000000004 478 273.7336 Q 455.49399999999997 269.64160000000004 437.8984 276.598 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"463.48\" cy=\"285.64000000000004\" rx=\"6.6000000000000005\" ry=\"8.58\" fill=\"#4a3226\"/><circle cx=\"463.48\" cy=\"282.34000000000003\" r=\"2.244\" fill=\"#fdfdfa\"/><ellipse cx=\"492.52\" cy=\"285.64000000000004\" rx=\"6.6000000000000005\" ry=\"8.58\" fill=\"#4a3226\"/><circle cx=\"492.52\" cy=\"282.34000000000003\" r=\"2.244\" fill=\"#fdfdfa\"/><path d=\"M 454.24 269.64160000000004 Q 463.48 265.5496 472.72 268.82320000000004\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.96\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 483.28 268.82320000000004 Q 492.52 265.5496 501.76 269.64160000000004\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"3.96\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 464.8 308.08000000000004 Q 478 318.64000000000004 491.2 308.08000000000004\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4.62\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"448.96\" cy=\"300.16\" r=\"7.260000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"507.04\" cy=\"300.16\" r=\"7.260000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/>","休":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><g opacity=\"0.1\"><ellipse cx=\"486\" cy=\"444\" rx=\"215\" ry=\"13\" fill=\"#4a3226\"/></g><polygon points=\"497,452 559,452 549,196 507,196\" fill=\"#b57b44\"/><polygon points=\"479,452 509,452 503,426\" fill=\"#b57b44\"/><polygon points=\"547,452 577,452 553,426\" fill=\"#b57b44\"/><circle cx=\"520\" cy=\"148\" r=\"104\" fill=\"#7fae70\"/><circle cx=\"392\" cy=\"176\" r=\"66\" fill=\"#7fae70\"/><circle cx=\"648\" cy=\"172\" r=\"68\" fill=\"#7fae70\"/><circle cx=\"566\" cy=\"100\" r=\"56\" fill=\"#9cc98a\" opacity=\"0.9\"/><g transform=\"rotate(10 422 452)\"><rect x=\"399.5\" y=\"384.5\" width=\"19.5\" height=\"49.5\" rx=\"9.0\" fill=\"#4a97c9\"/><rect x=\"425.0\" y=\"384.5\" width=\"19.5\" height=\"49.5\" rx=\"9.0\" fill=\"#4a97c9\"/><ellipse cx=\"408.5\" cy=\"446.0\" rx=\"16.5\" ry=\"7.5\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"462.5\" cy=\"446.0\" rx=\"16.5\" ry=\"7.5\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 380.0 338.0 Q 378.5 398.0 392.0 399.5 L 452.0 399.5 Q 465.5 398.0 464.0 338.0 Q 422 326.0 380.0 338.0 Z\" fill=\"#4fae9f\"/><line x1=\"389.0\" y1=\"342.5\" x2=\"374.0\" y2=\"396.5\" stroke=\"#f8cba4\" stroke-width=\"22.5\" stroke-linecap=\"round\"/><circle cx=\"374.0\" cy=\"396.5\" r=\"9.75\" fill=\"#f8cba4\"/><line x1=\"455.0\" y1=\"342.5\" x2=\"470.0\" y2=\"396.5\" stroke=\"#f8cba4\" stroke-width=\"22.5\" stroke-linecap=\"round\"/><circle cx=\"470.0\" cy=\"396.5\" r=\"9.75\" fill=\"#f8cba4\"/><circle cx=\"378.5\" cy=\"293.0\" r=\"8.25\" fill=\"#f8cba4\"/><circle cx=\"465.5\" cy=\"293.0\" r=\"8.25\" fill=\"#f8cba4\"/><circle cx=\"422\" cy=\"285.5\" r=\"46.5\" fill=\"#f8cba4\"/><path d=\"M 376.43 269.225 Q 380.15 230.63 422 233.42 Q 463.85 230.63 467.57 269.225 Q 447.575 261.32000000000005 422 265.97 Q 396.425 261.32000000000005 376.43 269.225 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"405.5\" cy=\"279.5\" rx=\"7.5\" ry=\"9.75\" fill=\"#4a3226\"/><circle cx=\"405.5\" cy=\"275.75\" r=\"2.55\" fill=\"#fdfdfa\"/><ellipse cx=\"438.5\" cy=\"279.5\" rx=\"7.5\" ry=\"9.75\" fill=\"#4a3226\"/><circle cx=\"438.5\" cy=\"275.75\" r=\"2.55\" fill=\"#fdfdfa\"/><path d=\"M 395.0 261.32 Q 405.5 256.67 416.0 260.39\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 428.0 260.39 Q 438.5 256.67 449.0 261.32\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 407.0 305.0 Q 422 317.0 437.0 305.0\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"389.0\" cy=\"296.0\" r=\"8.25\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"455.0\" cy=\"296.0\" r=\"8.25\" fill=\"#f5a58c\" opacity=\"0.8\"/><rect x=\"357.5\" y=\"384.5\" width=\"87.0\" height=\"18.0\" rx=\"9.0\" fill=\"#4a97c9\"/><ellipse cx=\"405.5\" cy=\"267.5\" rx=\"9.375\" ry=\"11.625\" fill=\"#f8cba4\"/><ellipse cx=\"438.5\" cy=\"267.5\" rx=\"9.375\" ry=\"11.625\" fill=\"#f8cba4\"/><path d=\"M 399.5 267.5 Q 405.5 273.5 411.5 267.5\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 432.5 267.5 Q 438.5 273.5 444.5 267.5\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g>","尖":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><polygon points=\"230,436 530,436 380,306\" fill=\"#7cc8bb\"/><rect x=\"230\" y=\"424\" width=\"300\" height=\"16\" rx=\"8\" fill=\"#3e9486\"/><rect x=\"368\" y=\"186\" width=\"24\" height=\"96\" rx=\"4\" fill=\"#f2b53c\"/><rect x=\"368\" y=\"282\" width=\"24\" height=\"10\" rx=\"2\" fill=\"#c9cdd1\"/><rect x=\"370\" y=\"292\" width=\"20\" height=\"16\" rx=\"7\" fill=\"#f5a58c\"/><polygon points=\"368,188 392,188 380,130\" fill=\"#e9b97e\"/><polygon points=\"376,148 384,148 380,130\" fill=\"#4a3226\"/>","尘":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><ellipse cx=\"320\" cy=\"436\" rx=\"150\" ry=\"16\" fill=\"#d9d0c2\"/><line x1=\"452\" y1=\"166\" x2=\"316\" y2=\"372\" stroke=\"#a9743f\" stroke-width=\"20\" stroke-linecap=\"round\"/><rect x=\"438\" y=\"152\" width=\"36\" height=\"24\" rx=\"10\" fill=\"#8a5a33\"/><path d=\"M 316 372 L 452 166\" fill=\"none\" stroke=\"#c9a55c\" stroke-width=\"8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"322\" y1=\"372\" x2=\"318\" y2=\"382\" stroke=\"#d9b98a\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"322\" y1=\"372\" x2=\"296\" y2=\"396\" stroke=\"#d9b98a\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"322\" y1=\"372\" x2=\"276\" y2=\"406\" stroke=\"#d9b98a\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"322\" y1=\"372\" x2=\"258\" y2=\"412\" stroke=\"#d9b98a\" stroke-width=\"10\" stroke-linecap=\"round\"/><rect x=\"306\" y=\"360\" width=\"44\" height=\"18\" rx=\"8\" fill=\"#b98a4a\"/><circle cx=\"300\" cy=\"336\" r=\"8\" fill=\"#b0a898\"/><circle cx=\"272\" cy=\"310\" r=\"6\" fill=\"#b0a898\"/><circle cx=\"246\" cy=\"286\" r=\"7\" fill=\"#b0a898\"/><circle cx=\"224\" cy=\"260\" r=\"5\" fill=\"#b0a898\"/><circle cx=\"208\" cy=\"236\" r=\"4\" fill=\"#b0a898\"/><circle cx=\"286\" cy=\"344\" r=\"4\" fill=\"#c9c2b8\"/><circle cx=\"260\" cy=\"318\" r=\"4\" fill=\"#c9c2b8\"/><circle cx=\"236\" cy=\"296\" r=\"4\" fill=\"#c9c2b8\"/><circle cx=\"214\" cy=\"272\" r=\"3\" fill=\"#c9c2b8\"/>","看":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"273.6\" y=\"342.71999999999997\" width=\"22.88\" height=\"73.92\" rx=\"10.56\" fill=\"#4a97c9\"/><rect x=\"303.52\" y=\"342.71999999999997\" width=\"22.88\" height=\"73.92\" rx=\"10.56\" fill=\"#4a97c9\"/><ellipse cx=\"285.04\" cy=\"430.72\" rx=\"18.48\" ry=\"8.8\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"314.96\" cy=\"430.72\" rx=\"18.48\" ry=\"8.8\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 250.72 288.15999999999997 Q 248.96 356.79999999999995 264.8 358.56 L 335.2 358.56 Q 351.04 356.79999999999995 349.28 288.15999999999997 Q 300 274.08 250.72 288.15999999999997 Z\" fill=\"#5fa8d8\"/><g transform=\"rotate(-98 338.72 293.43999999999994)\"><line x1=\"338.72\" y1=\"293.43999999999994\" x2=\"414.40000000000003\" y2=\"293.43999999999994\" stroke=\"#f8cba4\" stroke-width=\"26.4\" stroke-linecap=\"round\"/><circle cx=\"416.16\" cy=\"293.43999999999994\" r=\"11.44\" fill=\"#f8cba4\"/></g><line x1=\"261.28\" y1=\"293.43999999999994\" x2=\"241.92000000000002\" y2=\"355.03999999999996\" stroke=\"#f8cba4\" stroke-width=\"26.4\" stroke-linecap=\"round\"/><circle cx=\"241.92000000000002\" cy=\"355.03999999999996\" r=\"11.44\" fill=\"#f8cba4\"/><circle cx=\"248.96\" cy=\"235.35999999999996\" r=\"9.68\" fill=\"#f8cba4\"/><circle cx=\"351.04\" cy=\"235.35999999999996\" r=\"9.68\" fill=\"#f8cba4\"/><circle cx=\"300\" cy=\"226.55999999999995\" r=\"54.56\" fill=\"#f8cba4\"/><path d=\"M 246.5312 207.46399999999994 Q 250.896 162.17919999999995 300 165.45279999999994 Q 349.104 162.17919999999995 353.4688 207.46399999999994 Q 330.008 198.18879999999996 300 203.64479999999995 Q 269.992 198.18879999999996 246.5312 207.46399999999994 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"280.64\" cy=\"219.51999999999995\" rx=\"8.8\" ry=\"11.44\" fill=\"#4a3226\"/><circle cx=\"282.4\" cy=\"214.23999999999995\" r=\"2.992\" fill=\"#fdfdfa\"/><ellipse cx=\"319.36\" cy=\"219.51999999999995\" rx=\"8.8\" ry=\"11.44\" fill=\"#4a3226\"/><circle cx=\"321.12\" cy=\"214.23999999999995\" r=\"2.992\" fill=\"#fdfdfa\"/><path d=\"M 268.32 198.18879999999996 Q 280.64 192.73279999999994 292.96 197.09759999999994\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.28\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 307.04 197.09759999999994 Q 319.36 192.73279999999994 331.68 198.18879999999996\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.28\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 277.12 249.43999999999994 Q 300 240.63999999999993 322.88 249.43999999999994 Q 321.12 272.31999999999994 300 275.8399999999999 Q 278.88 272.31999999999994 277.12 249.43999999999994 Z\" fill=\"#6b3325\"/><path d=\"M 287.68 263.5199999999999 Q 300 256.47999999999996 312.32 263.5199999999999 Q 307.92 273.19999999999993 300 274.0799999999999 Q 292.08 273.19999999999993 287.68 263.5199999999999 Z\" fill=\"#f0876f\"/><circle cx=\"261.28\" cy=\"238.87999999999994\" r=\"9.68\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"338.72\" cy=\"238.87999999999994\" r=\"9.68\" fill=\"#f5a58c\" opacity=\"0.8\"/><line x1=\"352\" y1=\"214\" x2=\"538\" y2=\"188\" stroke=\"#3e9486\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-dasharray=\"2 16\"/><ellipse cx=\"560\" cy=\"184\" rx=\"24\" ry=\"16\" fill=\"#5fa8d8\"/><circle cx=\"580\" cy=\"172\" r=\"11\" fill=\"#5fa8d8\"/><polygon points=\"588,168 602,172 588,176\" fill=\"#d99a2b\"/><path d=\"M 548 178 Q 558 156 580 162 Q 564 174 548 178 Z\" fill=\"#4a97c9\"/><polygon points=\"538,188 514,198 540,196\" fill=\"#4a97c9\"/><circle cx=\"582\" cy=\"170\" r=\"3\" fill=\"#fdfdfa\"/>","坐":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"324\" y=\"388\" width=\"16\" height=\"56\" rx=\"6\" fill=\"#b57b44\"/><rect x=\"420\" y=\"388\" width=\"16\" height=\"56\" rx=\"6\" fill=\"#b57b44\"/><rect x=\"310\" y=\"364\" width=\"140\" height=\"24\" rx=\"10\" fill=\"#c89058\"/><rect x=\"352.4\" y=\"361.2\" width=\"23.92\" height=\"60.720000000000006\" rx=\"11.040000000000001\" fill=\"#4a97c9\"/><rect x=\"383.68\" y=\"361.2\" width=\"23.92\" height=\"60.720000000000006\" rx=\"11.040000000000001\" fill=\"#4a97c9\"/><ellipse cx=\"363.44\" cy=\"436.64\" rx=\"20.240000000000002\" ry=\"9.200000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"429.68\" cy=\"436.64\" rx=\"20.240000000000002\" ry=\"9.200000000000001\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 328.48 304.16 Q 326.64 377.76 343.2 379.6 L 416.8 379.6 Q 433.36 377.76 431.52 304.16 Q 380 289.44 328.48 304.16 Z\" fill=\"#5fa8d8\"/><line x1=\"339.52\" y1=\"309.68\" x2=\"321.12\" y2=\"375.92\" stroke=\"#f8cba4\" stroke-width=\"27.6\" stroke-linecap=\"round\"/><circle cx=\"321.12\" cy=\"375.92\" r=\"11.96\" fill=\"#f8cba4\"/><line x1=\"420.48\" y1=\"309.68\" x2=\"438.88\" y2=\"375.92\" stroke=\"#f8cba4\" stroke-width=\"27.6\" stroke-linecap=\"round\"/><circle cx=\"438.88\" cy=\"375.92\" r=\"11.96\" fill=\"#f8cba4\"/><circle cx=\"326.64\" cy=\"248.96\" r=\"10.120000000000001\" fill=\"#f8cba4\"/><circle cx=\"433.36\" cy=\"248.96\" r=\"10.120000000000001\" fill=\"#f8cba4\"/><circle cx=\"380\" cy=\"239.76000000000002\" r=\"57.04\" fill=\"#f8cba4\"/><path d=\"M 324.1008 219.79600000000002 Q 328.664 172.45280000000002 380 175.87520000000004 Q 431.336 172.45280000000002 435.8992 219.79600000000002 Q 411.372 210.09920000000002 380 215.80320000000003 Q 348.628 210.09920000000002 324.1008 219.79600000000002 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"359.76\" cy=\"232.4\" rx=\"9.200000000000001\" ry=\"11.96\" fill=\"#4a3226\"/><circle cx=\"359.76\" cy=\"227.8\" r=\"3.128\" fill=\"#fdfdfa\"/><ellipse cx=\"400.24\" cy=\"232.4\" rx=\"9.200000000000001\" ry=\"11.96\" fill=\"#4a3226\"/><circle cx=\"400.24\" cy=\"227.8\" r=\"3.128\" fill=\"#fdfdfa\"/><path d=\"M 346.88 210.09920000000002 Q 359.76 204.39520000000002 372.64 208.9584\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.5200000000000005\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 387.36 208.9584 Q 400.24 204.39520000000002 413.12 210.09920000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.5200000000000005\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 361.6 263.68 Q 380 278.40000000000003 398.4 263.68\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6.44\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"339.52\" cy=\"252.64000000000001\" r=\"10.120000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"420.48\" cy=\"252.64000000000001\" r=\"10.120000000000001\" fill=\"#f5a58c\" opacity=\"0.8\"/>","灭":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 356 238 Q 318 302 334 356 Q 348 404 384 416 Q 420 404 432 354 Q 446 298 404 234 Q 392 218 382 204 Q 377 222 356 238 Z\" fill=\"#e8663c\"/><path d=\"M 380 302 Q 361 342 372 374 Q 382 396 398 396 Q 413 380 416 350 Q 419 320 396 296 Q 388 288 380 302 Z\" fill=\"#f7ae35\"/><path d=\"M 296 336 Q 280 372 292 398 Q 302 416 320 418 Q 336 412 340 390 Q 344 362 328 338 Q 312 320 296 336 Z\" fill=\"#d4552f\"/><g transform=\"translate(382,206) rotate(-9)\"><rect x=\"-162\" y=\"-15\" width=\"324\" height=\"30\" rx=\"13\" fill=\"#e9b97e\"/><line x1=\"-120\" y1=\"0\" x2=\"120\" y2=\"0\" stroke=\"#b57b44\" stroke-width=\"5\" stroke-linecap=\"round\"/><rect x=\"-162\" y=\"5\" width=\"324\" height=\"10\" rx=\"5\" fill=\"#b57b44\" opacity=\"0.4\"/></g><path d=\"M 328 152 Q 312 120 332 94 Q 352 70 340 44\" fill=\"none\" stroke=\"#cfc7ba\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 424 152 Q 442 122 424 96 Q 408 74 420 50\" fill=\"none\" stroke=\"#cfc7ba\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"340\" cy=\"38\" r=\"12\" fill=\"#ddd6ca\"/><circle cx=\"420\" cy=\"44\" r=\"10\" fill=\"#ddd6ca\"/>","歪":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><line x1=\"440\" y1=\"432\" x2=\"440\" y2=\"150\" stroke=\"#c9c2b8\" stroke-width=\"7\" stroke-dasharray=\"2 20\" stroke-linecap=\"round\"/><g transform=\"rotate(30 470 430)\"><rect x=\"454\" y=\"132\" width=\"32\" height=\"300\" rx=\"14\" fill=\"#4fae9f\"/><polygon points=\"486,146 566,170 486,194\" fill=\"#e8663c\"/><circle cx=\"470\" cy=\"130\" r=\"16\" fill=\"#f7ae35\"/></g><ellipse cx=\"470\" cy=\"438\" rx=\"96\" ry=\"18\" fill=\"#c9a06a\" opacity=\"0.85\"/><path d=\"M 556 210 Q 582 254 574 306\" fill=\"none\" stroke=\"#e8a13c\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 590 190 Q 626 252 614 320\" fill=\"none\" stroke=\"#e8a13c\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>","鸣":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><g transform=\"rotate(-30 258 296)\"><ellipse cx=\"258\" cy=\"296\" rx=\"42\" ry=\"17\" fill=\"#4a97c9\"/></g><g transform=\"rotate(-8 250 316)\"><ellipse cx=\"250\" cy=\"316\" rx=\"44\" ry=\"17\" fill=\"#4a97c9\"/></g><circle cx=\"340\" cy=\"312\" r=\"92\" fill=\"#5fa8d8\"/><ellipse cx=\"342\" cy=\"344\" rx=\"60\" ry=\"48\" fill=\"#a8d4ee\"/><circle cx=\"438\" cy=\"226\" r=\"58\" fill=\"#5fa8d8\"/><circle cx=\"452\" cy=\"212\" r=\"14\" fill=\"#fdfdfa\"/><circle cx=\"455\" cy=\"212\" r=\"7\" fill=\"#4a3226\"/><polygon points=\"488,210 544,198 492,228\" fill=\"#f2a13c\"/><polygon points=\"488,234 538,250 490,246\" fill=\"#e08a2c\"/><g transform=\"rotate(-18 332 302)\"><ellipse cx=\"332\" cy=\"302\" rx=\"48\" ry=\"30\" fill=\"#3e9486\"/></g><line x1=\"322\" y1=\"398\" x2=\"322\" y2=\"438\" stroke=\"#d99a2b\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"362\" y1=\"400\" x2=\"362\" y2=\"438\" stroke=\"#d99a2b\" stroke-width=\"7\" stroke-linecap=\"round\"/><path d=\"M 566 198 Q 592 226 584 262\" fill=\"none\" stroke=\"#f2b53c\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 600 172 Q 640 216 626 274\" fill=\"none\" stroke=\"#f2b53c\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 636 148 Q 690 206 670 286\" fill=\"none\" stroke=\"#f2b53c\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>","泪":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 172 252 Q 380 128 588 252 Q 380 348 172 252 Z\" fill=\"#fdfdfa\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"380\" cy=\"240\" r=\"60\" fill=\"#4a97c9\"/><circle cx=\"380\" cy=\"240\" r=\"28\" fill=\"#4a3226\"/><circle cx=\"362\" cy=\"221\" r=\"10\" fill=\"#fdfdfa\"/><line x1=\"298\" y1=\"172\" x2=\"282\" y2=\"132\" stroke=\"#4a3226\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"380\" y1=\"152\" x2=\"380\" y2=\"112\" stroke=\"#4a3226\" stroke-width=\"8\" stroke-linecap=\"round\"/><line x1=\"462\" y1=\"172\" x2=\"478\" y2=\"132\" stroke=\"#4a3226\" stroke-width=\"8\" stroke-linecap=\"round\"/><path d=\"M 248 96 Q 380 44 512 96\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 560 296 Q 594.0 346.0 560 376 Q 526.0 346.0 560 296 Z\" fill=\"#79c2e6\"/><path d=\"M 592 392 Q 609.0 417.0 592 432 Q 575.0 417.0 592 392 Z\" fill=\"#79c2e6\"/><ellipse cx=\"566\" cy=\"442\" rx=\"66\" ry=\"13\" fill=\"#79c2e6\" opacity=\"0.55\"/>"};
+    const ACCENT = "#d4552f";
+    const TINT = "#f6dece";
+    const TITLE = "会意字 · 拼字魔法";
+    const SUB = "熟字加熟字，拼出新字——让孩子猜";
+    const INK = "#4a3226", MUTED = "#8d7d73", CREAM = "#fdf8ec";
+    const SONG = "'Songti SC','STSong','SimSun',serif";
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, revealed: qs.get("reveal") === "1" };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function glyphPath(ch, cx, cy, s) {
+      const g = GLYPHS[ch];
+      if (!g) return "";
+      return `<path d="${g.d}" transform="translate(${(cx - s * g.bx).toFixed(2)},${(cy + s * g.by).toFixed(2)}) scale(${s},${-s})" fill="${INK}"/>`;
+    }
+
+    function txt(x, y, size, fill, content, weight = 600, family = SONG, ls = 0, anchor = "middle") {
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}" fill="${fill}" font-family="${family}"${ls ? ` letter-spacing="${ls}"` : ""}>${content}</text>`;
+    }
+
+    function band(x, y, w, h, rx, fill) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`; }
+
+    function wrapLines(s, width) {
+      s = s.trim();
+      const lines = [];
+      while (s.length > width) {
+        let cut = width;
+        while (cut < s.length && /[，。；！？、～]/.test(s[cut])) cut++;
+        lines.push(s.slice(0, cut));
+        s = s.slice(cut).trim();
+      }
+      if (s) lines.push(s);
+      return lines;
+    }
+
+    function frame() {
+      return `<rect x="10" y="10" width="780" height="980" rx="42" fill="${CREAM}" stroke="${ACCENT}" stroke-width="10"/>`;
+    }
+
+    // ---------- 象形字：看图猜字 ----------
+    function cardPic(c, revealed) {
+      let s = frame();
+      s += `<g transform="translate(20,84)">${ART[c.key]}</g>`;
+      if (!revealed) {
+        s += band(96, 600, 608, 156, 34, TINT);
+        s += txt(400, 668, 46, INK, "这是哪个字呀？", 700);
+        s += txt(400, 718, 27, MUTED, "想一想，再点下面的按钮翻开", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += txt(400, 630, 30, ACCENT, `${esc(c.pinyin)} · ${esc(c.tone)}`, 700, "system-ui,-apple-system,sans-serif");
+        s += glyphPath(c.char, 400, 758, 0.24);
+        s += band(110, 878, 580, 84, 26, TINT);
+        const lines = wrapLines(c.story, 14);
+        if (lines.length === 1) s += txt(400, 930, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 912, 27, INK, esc(lines[0]), 600); s += txt(400, 946, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 会意字：拼字魔法 ----------
+    function cardMagic(c, revealed) {
+      let s = frame();
+      const n = c.parts.length;
+      const tileW = n === 2 ? 196 : 150, gap = 42;
+      const x0 = 400 - (n * tileW + (n - 1) * gap) / 2;
+      c.parts.forEach((p, i) => {
+        const tx = x0 + i * (tileW + gap);
+        s += band(tx, 82, tileW, 214, 30, TINT);
+        s += glyphPath(p[0], tx + tileW / 2, 166, n === 2 ? 0.15 : 0.115);
+        s += txt(tx + tileW / 2, 264, 25, MUTED, esc(p[1]), 500, "system-ui,-apple-system,sans-serif");
+        if (i < n - 1) s += txt(tx + tileW + gap / 2, 208, 62, ACCENT, "＋", 800);
+      });
+      s += band(140, 316, 520, 66, 33, TINT);
+      s += txt(400, 359, 33, INK, "拼在一起，是什么字？", 700);
+      s += band(96, 408, 608, 546, 36, "#fbf3e2");
+      if (!revealed) {
+        s += txt(400, 706, 150, "#dccfae", "？", 800);
+        s += txt(400, 836, 29, MUTED, "先猜一猜，再点「变！」", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += `<g transform="translate(58,440) scale(0.9)">${ART[c.key]}</g>`;
+        s += `<circle cx="656" cy="522" r="104" fill="${CREAM}" stroke="${ACCENT}" stroke-width="8"/>`;
+        s += glyphPath(c.result, 656, 528, 0.175);
+        s += txt(656, 658, 27, ACCENT, esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif");
+        s += band(92, 890, 616, 84, 26, TINT);
+        const lines = wrapLines(c.story, 15);
+        if (lines.length === 1) s += txt(400, 942, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 924, 27, INK, esc(lines[0]), 600); s += txt(400, 958, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 部首家族：找朋友 ----------
+    function cardFamily(c) {
+      let s = frame();
+      s += `<g transform="translate(28,54) scale(0.5)">${ART[c.key]}</g>`;
+      s += `<circle cx="588" cy="176" r="118" fill="#f7dfa0"/><circle cx="588" cy="176" r="100" fill="#fdf3cf"/>`;
+      s += glyphPath(c.radical, 588, 182, 0.21);
+      s += txt(400, 372, 50, ACCENT, esc(c.name), 800);
+      s += txt(400, 428, 29, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif");
+      const n = c.members.length;
+      const cols = Math.min(4, Math.ceil(n / 2)), rows = Math.ceil(n / cols);
+      const cellW = 680 / cols, cellH = 400 / rows;
+      const gs = cols >= 4 ? 0.135 : (cols === 3 ? 0.15 : 0.15);
+      c.members.forEach((m, i) => {
+        const row = Math.floor(i / cols), col = i % cols;
+        const rowN = row === rows - 1 ? n - (rows - 1) * cols : cols;
+        const cx = 60 + cellW * col + cellW / 2 + (680 - rowN * cellW) / 2;
+        const cy = 470 + row * cellH;
+        s += band(cx - cellW / 2 + 8, cy + 8, cellW - 16, cellH - 16, 22, TINT);
+        s += glyphPath(m[0], cx, cy + cellH / 2 - 12, gs);
+        s += txt(cx, cy + cellH - 16, 24, "#6b5a4e", esc(m[1]), 500, "system-ui,-apple-system,sans-serif");
+      });
+      s += band(90, 894, 620, 72, 24, TINT);
+      const q = wrapLines(c.tips[2][1], 20);
+      if (q.length === 1) s += txt(400, 938, 26, INK, esc(q[0]), 500);
+      else { s += txt(400, 922, 23, INK, esc(q[0]), 500); s += txt(400, 952, 23, INK, esc(q[1]), 500); }
+      return s;
+    }
+
+    // ---------- 韵语与声音游戏 ----------
+    function cardVerse(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.lines.forEach((line, i) => {
+        const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+        const y = 210 + i * 96;
+        if (m) {
+          s += txt(400, y, 58, INK, esc(m[1]) + `<tspan fill="${ACCENT}">${esc(m[2])}</tspan>` + esc(m[3]), 700, SONG, 5);
+        } else {
+          s += txt(400, y, 58, INK, esc(line), 700, SONG, 5);
+        }
+      });
+      s += `<g transform="translate(210,668) scale(0.5)">${ART[c.key]}</g>`;
+      s += txt(400, 948, 26, MUTED, "句尾的字，结尾声音很像哦", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardGame(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.steps.forEach((st, i) => {
+        const y = 196 + i * 78;
+        s += `<circle cx="152" cy="${y - 11}" r="23" fill="${ACCENT}"/>`;
+        s += txt(152, y - 2, 25, "#fff", String(i + 1), 700, "system-ui,-apple-system,sans-serif");
+        s += txt(192, y, 32, INK, esc(st), 600, SONG, 1, "start");
+      });
+      s += `<g transform="translate(202,472) scale(0.52)">${ART[c.key]}</g>`;
+      s += band(255, 774, 290, 56, 28, TINT);
+      s += txt(400, 811, 26, "#6b5a4e", "和爸爸妈妈一起玩", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardSVG(card, revealed) {
+      const inner = KIND === "pic" ? cardPic(card, revealed)
+        : KIND === "magic" ? cardMagic(card, revealed)
+        : KIND === "family" ? cardFamily(card)
+        : card.type === "verse" ? cardVerse(card)
+        : cardGame(card);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${esc(card.key)}" class="card-svg">${inner}</svg>`;
+    }
+
+    const LEADS = {
+      pic: "先让孩子看图猜一猜，再翻开验证；翻开前别提示。",
+      magic: "先遮着答案让孩子猜，再点「变！」揭晓；猜错也是好机会。",
+      family: "这一套是讲解卡：先认部首，再把家族成员读一遍。",
+      shengyin: "这一套玩声音：重点是耳朵和嘴巴，不要求认字。",
+    };
+
+    function tipsHTML(card) {
+      let h = `<div class="lead">${LEADS[KIND] || ""}</div>`;
+      (card.tips || []).forEach((row) => {
+        h += `<div class="tip-row"><span class="tip-tag">${esc(row[0])}</span><span>${esc(row[1])}</span></div>`;
+      });
+      return h;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const primaryBtn = document.getElementById("primaryBtn");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+    const hasPrimary = KIND === "pic" || KIND === "magic";
+    const multiGroup = GROUPS.length > 1;
+
+    const PRIMARY_LABEL = { pic: ["翻开字", "藏起字"], magic: ["变！", "收起来"] };
+
+    function render() {
+      if (mode === "deck" && deskActive) return renderDesk();
+      const { c, i } = deck[state.i];
+      const shown = mode === "grid" ? true : state.revealed;
+      cardWrap.innerHTML = cardSVG(c, shown);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      if (hasPrimary) {
+        const [on, off] = PRIMARY_LABEL[KIND];
+        primaryBtn.textContent = state.revealed ? off : on;
+        primaryBtn.setAttribute("aria-pressed", String(state.revealed));
+      }
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+      if (mode === "deck") saveLastPos();
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      state.revealed = false;
+      closeTips();
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; state.revealed = false; closeTips(); render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click，按钮动作直接绑 touchend。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    bindTap(toggleTips, () => {
+      const open = tips.hidden;
+      if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
+      else closeTips();
+      toggleTips.setAttribute("aria-pressed", String(open));
+    });
+    if (multiGroup) groupBtn.addEventListener("click", openSheet);
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    const edgeSwipe = (x) => x < 28 || x > innerWidth - 28;   // 屏幕左右边缘是系统返回手势区，不当翻页
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      if (edgeSwipe(t.clientX)) { barTouch = null; return; }
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup && multiGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      if (edgeSwipe(e.touches[0].clientX)) { touchX = null; return; }   // 边缘滑动多为系统返回/退出，不翻页
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    document.getElementById("head").innerHTML =
+      `<span class="t">${esc(TITLE)}</span><span class="s">${esc(SUB)}</span>`;
+
+    // ════════     // 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。
+    const DECK_META = (() => {
+      const m = { pic: ["xiangxing", "象形字 · 看图猜字"], magic: ["huiyi", "会意字 · 拼字魔法"],
+                  family: ["bushou", "部首家族 · 找朋友"], shengyin: ["yunyu", "韵语与声音游戏"] }[KIND];
+      return m ? { id: m[0], url: m[0] + ".html", name: m[1] } : null;
+    })();
+    let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {           // 停留满 1.5s 才算"正在看"：误触滑走不覆盖记录
+        if (mode !== "deck" || !DECK_META || deck.length !== CARDS.length) return;
+        const { c, i } = deck[state.i];
+        const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
+        const inGroup = CARDS.filter((x) => x.g === c.g).length;
+        const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
+        try {
+          localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+
+    // ════════ 宽屏三栏版（≥960px；手机竖屏/窄竖屏走原布局，零改动） ════════
+    const deskMQ = window.matchMedia("(min-width: 960px), (min-width: 880px) and (hover: hover) and (pointer: fine)");
+    let deskActive = false;
+    function updateDeskMode() {
+      if (mode !== "deck") return;
+      const want = deskMQ.matches;
+      if (want === deskActive) return;
+      deskActive = want;
+      document.getElementById("desk").hidden = !want;
+      document.body.classList.toggle("desk-on", want);
+      if (want) cardWrap.innerHTML = "";
+    }
+    const dEl = (id) => document.getElementById(id);
+    function artSVG(key, vb) {
+      return `<svg viewBox="0 0 ${vb || "760 480"}" preserveAspectRatio="xMidYMid meet" aria-label="插画">${ART[key] || ""}</svg>`;
+    }
+    function glyphSVG(ch, size, s) {
+      const vb = size;
+      return `<svg viewBox="0 0 ${vb} ${vb}">${glyphPath(ch, vb / 2, vb / 2 + s * 40, s)}</svg>`;
+    }
+    function boardSVG(inner) {
+      return `<svg viewBox="0 0 600 600"><rect x="6" y="6" width="588" height="588" rx="36" fill="#fffdf3" stroke="#e3d3a8" stroke-width="4"/>${inner}</svg>`;
+    }
+    const qMark = () => boardSVG(txt(300, 392, 170, "#dccfae", "？", 800) + txt(300, 520, 26, "#b0a49a", "点一下揭晓", 500, "system-ui,-apple-system,sans-serif"));
+
+    function deskLeftHTML(c, shown) {
+      if (KIND === "pic") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill ${shown ? "" : "q"}">${shown ? esc(c.story) : "这是哪个字呀？想一想，再点中间翻开"}</div>`;
+      }
+      if (KIND === "magic") {
+        const tiles = c.parts.map((p) =>
+          `<div class="part-tile">${glyphSVG(p[0], 120, 0.095)}<div class="pl">${esc(p[1])}</div></div>`)
+          .join(`<div class="parts-plus">＋</div>`);
+        const below = shown
+          ? `<div class="art-area">${artSVG(c.key)}</div>`
+          : `<div class="art-area">${qMark()}</div>`;
+        return `<div class="parts-row">${tiles}</div>${below}
+          <div class="desk-pill q">${shown ? esc(c.story) : "拼在一起，是什么字？"}</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill">${esc(c.name)} · ${esc(c.meaning)}</div>`;
+      }
+      return `<div class="art-area">${artSVG(c.key)}</div>`;
+    }
+
+    function deskCenterHTML(c, shown) {
+      if (KIND === "pic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击卡片${state.revealed ? "藏起" : "翻开"}</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin) + " · " + esc(c.tone), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.char, 300, 350, 0.34))}</div><div class="hint">点击卡片藏起</div>`;
+      }
+      if (KIND === "magic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击「变！」揭晓答案</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.result, 300, 350, 0.30))}</div><div class="hint">点击卡片收起来</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="board">${boardSVG(
+          `<circle cx="300" cy="300" r="196" fill="#f7dfa0"/><circle cx="300" cy="300" r="168" fill="#fdf3cf"/>` +
+          glyphPath(c.radical, 300, 312, 0.30) +
+          txt(300, 552, 40, "#b0772f", esc(c.name), 800) +
+          txt(300, 596, 24, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif"))}</div>`;
+      }
+      if (c.type === "verse") {
+        const lines = c.lines.map((line) => {
+          const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+          return m ? `<div class="vl">${esc(m[1])}<b>${esc(m[2])}</b>${esc(m[3])}</div>` : `<div class="vl">${esc(line)}</div>`;
+        }).join("");
+        return `<div class="verse-box"><div class="vt">${esc(c.title)}</div>${lines}</div>`;
+      }
+      const steps = c.steps.map((st, i) =>
+        `<div class="step-row"><div class="step-n">${i + 1}</div><div class="step-t">${esc(st)}</div></div>`).join("");
+      return `<div class="steps-box"><div class="vt">${esc(c.title)}</div>${steps}</div>`;
+    }
+
+    function deskPanelHTML(c) {
+      const shown = state.revealed;
+      let head = "";
+      if (KIND === "pic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.char) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "magic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.result) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "family") head = `<div class="desk-head"><span class="zi">${esc(c.radical)}</span><span class="meta">${esc(c.name)}</span></div>`;
+      else head = `<div class="desk-head"><span class="zi">${esc(c.title)}</span><span class="meta">${esc(GROUPS[c.g].name)}</span></div>`;
+      let members = "";
+      if (KIND === "family") {
+        members = `<div class="mgrid">` + c.members.map((m) =>
+          `<div class="mcell"><span class="mc">${esc(m[0])}</span><span class="mw">${esc(m[1])}</span></div>`).join("") + `</div>`;
+      }
+      let story = "";
+      if ((KIND === "pic" || KIND === "magic") && shown) story = "";
+      return head + tipsHTML(c) + members;
+    }
+
+    function deskPos() {
+      const { c, i } = deck[state.i];
+      return CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+    }
+    function deskInGroup() { return CARDS.filter((x) => x.g === deck[state.i].c.g).length; }
+
+    function deskLabel(c) {
+      if (KIND === "pic") return c.char;
+      if (KIND === "magic") return c.result;
+      if (KIND === "family") return c.radical;
+      return { label: c.title, wide: true };
+    }
+
+    function renderDesk() {
+      const { c } = deck[state.i];
+      const shown = state.revealed;
+      dEl("deskTitle").innerHTML = `${esc(TITLE)}<span class="s">${esc(SUB)}</span>`;
+      if (multiGroup) {
+        dEl("deskChips").hidden = false;
+        dEl("deskChips").innerHTML = GROUPS.map((g, gi) =>
+          `<button class="dchip${gi === c.g ? " active" : ""}" data-g="${gi}">${esc(g.name)}</button>`).join("");
+      }
+      const st = dEl("deskState");
+      if (hasPrimary) {
+        st.hidden = false;
+        st.textContent = shown ? (KIND === "pic" ? "藏起字" : "收起来") : (KIND === "pic" ? "翻开字" : "变！");
+      } else st.hidden = true;
+      dEl("deskLeft").innerHTML = deskLeftHTML(c, shown);
+      dEl("deskCenter").innerHTML = deskCenterHTML(c, shown);
+      dEl("deskPanel").innerHTML = deskPanelHTML(c);
+      dEl("deskFilm").innerHTML = deck.map((d, i) => {
+        if (d.c.g !== c.g) return "";
+        const L = deskLabel(d.c);
+        const wide = typeof L === "object";
+        return `<button class="mini${i === state.i ? " active" : ""}${wide ? " wide" : ""}" data-i="${i}">${esc(wide ? L.label : L)}</button>`;
+      }).join("");
+      dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
+      const act = document.querySelector("#deskFilm .mini.active");
+      if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      saveLastPos();
+    }
+
+    if (mode === "deck") {
+      dEl("deskPrev").addEventListener("click", () => go(-1));
+      dEl("deskNext").addEventListener("click", () => go(1));
+      dEl("deskFilm").addEventListener("click", (e) => {
+        const b = e.target.closest(".mini");
+        if (b) { state.i = Number(b.dataset.i); state.revealed = false; render(); }
+      });
+      dEl("deskChips").addEventListener("click", (e) => {
+        const b = e.target.closest(".dchip");
+        if (b) jumpTo(Number(b.dataset.g));
+      });
+      dEl("deskCenter").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      dEl("deskState").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      if (window.matchMedia) deskMQ.addEventListener("change", () => { updateDeskMode(); render(); });
+    }
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub" && DECK_META) {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && deck.length === CARDS.length && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      updateDeskMode();
+      render();
+      if (qs.get("tips") === "1") {
+        tips.innerHTML = tipsHTML(deck[state.i].c);
+        tips.hidden = false;
+        toggleTips.setAttribute("aria-pressed", "true");
+      }
+      if (qs.get("sheet") === "1") openSheet();
+      if (!multiGroup) { groupBtn.style.display = "none"; }
+      if (!hasPrimary) { primaryBtn.style.display = "none"; }
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c, true)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      render();
+    }
+  </script>
+</body>
+</html>

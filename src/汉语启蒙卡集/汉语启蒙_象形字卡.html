@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>象形字 · 看图猜字</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: #3e9486;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 10px;
+    }
+    .head { flex: 0 0 auto; text-align: center; padding: 2px 0 4px; }
+    .head .t { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .head .s { font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 128px) * 0.8));
+      width: min(96vw, calc((100svh - 128px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .primary { flex: 0 0 auto; padding: 10px 22px; font-size: 15px; font-weight: 600;
+      background: var(--accent); color: #fff; }
+    .group-btn {
+      flex: 0 0 auto; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff; border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; }
+    .counter { color: var(--muted); font-size: 13px; }
+
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; color: #fff; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+
+    body.static .head, body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 24px; }
+    body.static .card-svg { width: min(92vw, 640px); filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 24px; }
+    body.grid .head { margin-bottom: 14px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 320px)); gap: 22px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 320px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+
+    /* ════════ 宽屏版（≥960px，JS matchMedia 切 body.desk-on；横屏平板/电脑/横屏大手机） ════════ */
+    #desk { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #desk[hidden] { display: none; }
+    body.desk-on .head, body.desk-on .stage, body.desk-on .bar, body.desk-on .tips { display: none; }
+    body.desk-on .gallery { padding: 0; }
+    .desk-top { flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+                padding: 10px 20px; border-bottom: 2px solid #f3e7cd; background: #fbf3dd; }
+    .desk-top h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+    .desk-top h1 .s { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+    .desk-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 2px; }
+    .dchip { border: 0; border-radius: 999px; background: var(--button); color: #2f6b60;
+             padding: 6px 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .dchip:hover { background: var(--button-hover); }
+    .dchip.active { background: var(--accent); color: #fff; font-weight: 600; }
+    .desk-state { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+                  padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .desk-main { flex: 1; min-height: 0; display: grid; gap: 16px; padding: 14px 18px;
+                 grid-template-columns: minmax(320px, 30vw) minmax(300px, 1fr) minmax(280px, 24vw); }
+    @media (min-width: 1440px) {
+      .desk-main { grid-template-columns: minmax(400px, 34vw) 1fr minmax(300px, 24vw); }
+    }
+    /* 880–959 的鼠标桌面：三栏压缩版 */
+    @media (hover: hover) and (pointer: fine) and (min-width: 880px) and (max-width: 959.98px) {
+      .desk-main { grid-template-columns: minmax(300px, 30vw) minmax(240px, 1fr) minmax(240px, 22vw); gap: 12px; padding: 10px 12px; }
+    }
+    .desk-main .zone { min-height: 0; }
+    .card-box { height: 100%; display: flex; flex-direction: column; background: #fff9ea;
+                border: 2px solid #f3e7cd; border-radius: 22px; padding: 14px; overflow: hidden; }
+    .art-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .art-area svg { width: 100%; height: 100%; }
+    .desk-pill { flex: 0 0 auto; margin: 10px 8px 4px; background: #d9f0ea; border-radius: 16px;
+                 padding: 9px 12px; text-align: center; font-size: 17px; font-weight: 600; line-height: 1.5; }
+    .desk-pill.q { background: #fbf0c2; font-weight: 500; color: #6b5a4e; font-size: 15px; }
+    .desk-center { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                   align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .desk-center .board { position: relative; width: min(100%, 62vh); aspect-ratio: 1; }
+    .desk-center .board svg { width: 100%; height: 100%; display: block; }
+    .desk-center .hint { font-size: 13px; color: var(--muted); }
+    .parts-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 0 10px; }
+    .part-tile { background: #fbf3e2; border-radius: 16px; padding: 10px 12px; text-align: center; }
+    .part-tile svg { width: 84px; height: 84px; display: block; }
+    .part-tile .pl { font-size: 13px; color: #6b5a4e; margin-top: 4px; }
+    .parts-plus { font-size: 34px; color: var(--accent); font-weight: 800; }
+    .verse-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 align-items: center; justify-content: center; gap: 4px; overflow: auto; }
+    .verse-box .vt { font-size: 30px; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
+    .verse-box .vl { font-size: clamp(22px, 3.4vh, 34px); font-family: 'Songti SC','STSong','SimSun',serif;
+                     font-weight: 700; letter-spacing: 0.12em; line-height: 1.7; }
+    .verse-box .vl b { color: var(--accent); }
+    .steps-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 justify-content: center; gap: 14px; padding: 0 12px; overflow: auto; }
+    .step-row { display: flex; gap: 14px; align-items: baseline; }
+    .step-n { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px; background: var(--accent);
+              color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .step-t { font-size: clamp(18px, 2.6vh, 24px); font-family: 'Songti SC','STSong','SimSun',serif; font-weight: 600; }
+    .steps-box .vt { text-align: center; font-size: 28px; color: var(--accent); font-weight: 800; margin-bottom: 4px; }
+    .desk-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px; }
+    .desk-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .desk-head .zi { font-size: 42px; font-weight: 700; line-height: 1; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .desk-head .meta { color: var(--muted); font-size: 14px; }
+    .mgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+    .mcell { background: #fbf3e2; border-radius: 12px; padding: 8px 10px; display: flex; align-items: baseline; gap: 8px; }
+    .mcell .mc { font-size: 30px; font-weight: 700; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .mcell .mw { font-size: 13px; color: #6b5a4e; }
+    .desk-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+                 padding: 10px 20px 14px; border-top: 2px solid #f3e7cd; background: #fbf3dd; }
+    .nav-btn { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+               width: 44px; height: 44px; font-size: 20px; cursor: pointer; flex: 0 0 auto; }
+    .nav-btn:hover { filter: brightness(1.08); }
+    .film { flex: 1; display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px; }
+    .mini { flex: 0 0 auto; width: 46px; height: 52px; border: 2px solid transparent; border-radius: 12px;
+            background: var(--button); color: var(--ink); font-family: 'Songti SC','STSong','SimSun',serif;
+            font-size: 26px; cursor: pointer; }
+    .mini:hover { background: var(--button-hover); }
+    .mini.active { border-color: var(--accent); background: #fff; font-weight: 700; }
+    .mini.wide { width: auto; min-width: 46px; padding: 0 10px; font-size: 15px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; letter-spacing: 0.05em; }
+    #desk .counter { font-size: 14px; white-space: nowrap; }
+    /* 鼠标桌面窗口过窄（如缩放过大）：提示如何展开三栏 */
+    .narrow-hint { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                   z-index: 60; background: #fbeecb; color: #6b5a4e; border: 1.5px solid #ead9ac;
+                   border-radius: 999px; padding: 7px 14px; font-size: 13px; gap: 10px;
+                   align-items: center; max-width: 92vw; }
+    .narrow-hint .nh-x { cursor: pointer; color: #8d7d73; padding: 0 2px; }
+    @media (hover: hover) and (pointer: fine) and (min-width: 700px) and (max-width: 879.98px) {
+      body:not(.desk-on) .narrow-hint { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="汉语启蒙卡集">
+    <header class="head" id="head"></header>
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="primaryBtn" class="primary"></button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+    <div id="desk" hidden>
+      <header class="desk-top">
+        <h1 id="deskTitle"></h1>
+        <nav class="desk-chips" id="deskChips" hidden></nav>
+        <button class="desk-state" id="deskState" hidden></button>
+      </header>
+      <section class="desk-main">
+        <div class="zone"><div class="card-box" id="deskLeft"></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-center" id="deskCenter"></div></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-panel" id="deskPanel"></div></div></div>
+      </section>
+      <footer class="desk-foot">
+        <button class="nav-btn" id="deskPrev" aria-label="上一张">←</button>
+        <div class="film" id="deskFilm" aria-label="组内卡片"></div>
+        <span class="counter" id="deskCounter"></span>
+        <button class="nav-btn" id="deskNext" aria-label="下一张">→</button>
+      </footer>
+    </div>
+      <div class="narrow-hint" id="narrowHint"><span>窗口有点窄～拉宽窗口，或按 ⌘0 恢复缩放，可展开完整三栏视图</span><span class="nh-x" onclick="this.parentNode.remove()">✕</span></div>
+  </main>
+
+  <script>
+    const KIND = "pic";
+    const CARDS = [{"type":"pic","key":"日","char":"日","pinyin":"rì","tone":"第四声","story":"古人画个圆圈加一点，就是太阳。","art_src":"seed:日","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","古人画个圆圈加一点，就是太阳。"],["生活里","白天指指太阳；日历上找找“日”。"]],"g":0},{"type":"pic","key":"月","char":"月","pinyin":"yuè","tone":"第四声","story":"照着弯弯的月牙画，就是月。","art_src":"tianwen:月","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","照着弯弯的月牙画，就是月。"],["生活里","晚上看月亮；日历上找找“月”。"]],"g":0},{"type":"pic","key":"山","char":"山","pinyin":"shān","tone":"第一声","story":"三个山峰连在一起。","art_src":"seed:山","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","三个山峰连在一起。"],["生活里","出门看远处的山；绘本里找山。"]],"g":0},{"type":"pic","key":"水","char":"水","pinyin":"shuǐ","tone":"第三声","story":"小河在流，溅起小水花。","art_src":"seed:水","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","小河在流，溅起小水花。"],["生活里","喝水洗手时说“水”；看看矿泉水瓶。"]],"g":0},{"type":"pic","key":"火","char":"火","pinyin":"huǒ","tone":"第三声","story":"火苗向上窜的样子。","art_src":"ziran:火","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","火苗向上窜的样子。"],["生活里","看蜡烛的火苗（注意安全），说说谁怕火。"]],"g":0},{"type":"pic","key":"木","char":"木","pinyin":"mù","tone":"第四声","story":"枝叶、树干、树根，一棵树。","art_src":"zhiwu:木","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","枝叶、树干、树根，一棵树。"],["生活里","摸摸木头桌椅；公园里找树。"]],"g":0},{"type":"pic","key":"人","char":"人","pinyin":"rén","tone":"第二声","story":"一个人侧着身子站好。","art_src":"rencheng:人","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","一个人侧着身子站好。"],["生活里","一家人个个都是“人”；找找人偶。"]],"g":0},{"type":"pic","key":"口","char":"口","pinyin":"kǒu","tone":"第三声","story":"张开的嘴巴。","art_src":"renti:口","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","张开的嘴巴。"],["生活里","对着镜子张大嘴；数数家里有几口人。"]],"g":0},{"type":"pic","key":"目","char":"目","pinyin":"mù","tone":"第四声","story":"一只眼睛：眼眶里有个眼珠。","art_src":"renti:目","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","一只眼睛：眼眶里有个眼珠。"],["生活里","指指自己的眼睛；“目”就是眼睛。"]],"g":0},{"type":"pic","key":"耳","char":"耳","pinyin":"ěr","tone":"第三声","story":"一只耳朵的样子。","art_src":"renti:耳","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","一只耳朵的样子。"],["生活里","捏捏耳朵；玩“听声猜物”。"]],"g":0},{"type":"pic","key":"手","char":"手","pinyin":"shǒu","tone":"第三声","story":"五根手指张开的手掌。","art_src":"seed:手","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","五根手指张开的手掌。"],["生活里","数手指头；拍手击掌都说“手”。"]],"g":0},{"type":"pic","key":"田","char":"田","pinyin":"tián","tone":"第二声","story":"方方的地，田埂分成小块。","art_src":"ziran:田","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","方方的地，田埂分成小块。"],["生活里","看农田照片；说说田里长什么。"]],"g":0},{"type":"pic","key":"雨","char":"雨","pinyin":"yǔ","tone":"第三声","story":"天上落下来的雨点。","art_src":"tianwen:雨","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","天上落下来的雨点。"],["生活里","雨天听雨声、看雨点；找找雨伞。"]],"g":0},{"type":"pic","key":"云","char":"云","pinyin":"yún","tone":"第二声","story":"天上卷卷的云。","art_src":"tianwen:云","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","天上卷卷的云。"],["生活里","躺着看云朵变形状。"]],"g":0},{"type":"pic","key":"鸟","char":"鸟","pinyin":"niǎo","tone":"第三声","story":"有头有翅膀的小鸟，一点是眼睛。","art_src":"dongwu:鸟","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","有头有翅膀的小鸟，一点是眼睛。"],["生活里","公园看鸟听鸟叫；找找“鸟”字。"]],"g":0},{"type":"pic","key":"鱼","char":"鱼","pinyin":"yú","tone":"第二声","story":"有头有尾，还有鱼鳍。","art_src":"dongwu:鱼","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","有头有尾，还有鱼鳍。"],["生活里","看鱼缸或水族馆；认鱼的身体。"]],"g":0},{"type":"pic","key":"马","char":"马","pinyin":"mǎ","tone":"第三声","story":"鬃毛飞扬、四条腿的马。","art_src":"dongwu:马","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","鬃毛飞扬、四条腿的马。"],["生活里","玩木马；学马跑步“哒哒哒”。"]],"g":0},{"type":"pic","key":"羊","char":"羊","pinyin":"yáng","tone":"第二声","story":"头顶两只弯弯的角。","art_src":"dongwu:羊","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","头顶两只弯弯的角。"],["生活里","学小羊叫“咩”；摸摸羊毛衫。"]],"g":0},{"type":"pic","key":"牛","char":"牛","pinyin":"niú","tone":"第二声","story":"头顶两只尖尖的角。","art_src":"dongwu:牛","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","头顶两只尖尖的角。"],["生活里","学牛叫“哞”；喝牛奶时说“牛”。"]],"g":0},{"type":"pic","key":"兔","char":"兔","pinyin":"tù","tone":"第四声","story":"长耳朵短尾巴，那一点是小尾巴。","art_src":"dongwu:兔","tips":[["怎么玩","先只看图，让孩子猜是哪个字，再翻开验证"],["字的故事","长耳朵短尾巴，那一点是小尾巴。"],["生活里","学小兔跳；看看兔子玩偶。"]],"g":0}];
+    const GROUPS = [{"id":"xx","name":"象形字"}];
+    const GLYPHS = {"云":{"d":"M707 658 750 717Q759 729 767 729Q780 729 822.5 683.5Q865 638 865.0 630.0Q865 622 846 622H226Q199 622 184 615L166 663Q187 658 216 658ZM426 355H103Q76 355 61 348L43 396Q64 391 93 391H810L858 458Q867 471 875 471Q887 471 935.5 422.0Q984 373 984.0 364.0Q984 355 966 355H461Q512 331 528.5 320.5Q545 310 545.0 302.0Q545 294 525 292Q511 290 488 261Q346 82 276 12L709 26Q658 112 573 209L587 226Q697 151 754.5 103.5Q812 56 833.0 24.5Q854 -7 854.0 -41.5Q854 -76 838.5 -111.0Q823 -146 800 -146Q789 -146 782.5 -138.0Q776 -130 766.0 -98.5Q756 -67 731 -15Q358 -69 289.5 -79.5Q221 -90 207.5 -96.5Q194 -103 190.0 -103.0Q186 -103 183.0 -99.0Q180 -95 165.5 -64.5Q151 -34 136 1Q177 7 194.5 13.5Q212 20 231.0 40.5Q250 61 291.0 119.0Q332 177 370.0 244.0Q408 311 426 355Z","bx":513.5,"by":291.5},"人":{"d":"M505 594Q478 259 394.0 106.0Q310 -47 45 -174L36 -157Q255 -20 332.5 168.0Q410 356 424 750Q470 739 509.0 725.5Q548 712 554.5 707.5Q561 703 561.0 697.0Q561 691 543.5 684.5Q526 678 519 669Q562 363 673.5 182.0Q785 1 975 -70L972 -89Q944 -87 918.0 -87.0Q892 -87 873.0 -96.0Q854 -105 828 -131Q821 -138 817 -138Q805 -138 716.0 -37.5Q627 63 578.0 196.5Q529 330 505 594Z","bx":505.5,"by":288.0},"兔":{"d":"M577 476H749L774 509Q781 519 788.5 519.0Q796 519 843.5 492.5Q891 466 891.0 455.0Q891 444 850 418V268Q850 251 851 240L853 220Q853 205 816.0 194.5Q779 184 768.0 184.0Q757 184 757 197V235H634V-29Q634 -42 643.0 -50.5Q652 -59 684.0 -64.0Q716 -69 781 -69Q829 -69 848.5 -56.0Q868 -43 878.0 -5.0Q888 33 904 139H926Q924 99 924.0 61.0Q924 23 932.5 1.5Q941 -20 965 -39Q978 -49 978.0 -57.0Q978 -65 953.0 -95.0Q928 -125 888.5 -133.5Q849 -142 748.0 -142.0Q647 -142 610.5 -132.0Q574 -122 561.5 -95.5Q549 -69 549 -10V235Q524 77 412.0 -18.0Q300 -113 71 -174L64 -155Q255 -79 345.0 6.5Q435 92 463 235H320V196Q320 186 311.5 180.5Q303 175 272.5 166.0Q242 157 233.0 157.0Q224 157 225 168Q230 213 230 263V431Q158 371 70 325L55 340Q310 543 410 789Q451 774 485.5 758.5Q520 743 525.0 738.0Q530 733 530 728Q530 718 511.5 717.0Q493 716 480.5 704.5Q468 693 428 640H595L628 684Q639 698 648.0 698.0Q657 698 686.5 676.0Q716 654 731.5 643.0Q747 632 747.0 623.0Q747 614 730.0 613.0Q713 612 698.5 604.0Q684 596 657.0 568.0Q630 540 577 476ZM306 476H537Q568 535 595 609H403Q346 539 287 482Q295 481 306 476ZM481 440H320V274H469Q478 342 481 440ZM757 274V440H571Q556 280 554 274ZM688 189Q775 126 801.5 100.5Q828 75 828.0 55.0Q828 35 816.0 5.0Q804 -25 786.0 -25.0Q768 -25 763.0 -17.5Q758 -10 747.0 30.0Q736 70 719.0 102.0Q702 134 674 172Z","bx":516.5,"by":307.5},"口":{"d":"M774 -1H258V-68Q258 -83 250.5 -89.0Q243 -95 208.5 -106.0Q174 -117 165 -117Q158 -117 159 -105Q163 -57 163 -5V572Q163 615 160 660Q224 636 270 614H754L787 659Q794 669 800.5 669.0Q807 669 856.5 632.0Q906 595 906.0 585.5Q906 576 871 564V37Q871 14 873 -13L875 -57Q875 -66 867.5 -71.5Q860 -77 826.0 -89.5Q792 -102 780 -102Q774 -102 774 -89ZM258 31H774V581H258Z","bx":532.4375,"by":276.0},"山":{"d":"M466 -32V603Q466 702 462 770Q503 762 544.5 750.0Q586 738 594.5 733.5Q603 729 603 724Q603 714 562 692V-32H776V408Q776 503 772 546Q809 539 846.5 527.5Q884 516 896.5 509.5Q909 503 909.0 494.5Q909 486 871 466V16Q871 -47 872.5 -72.0Q874 -97 874.0 -105.5Q874 -114 864.5 -120.5Q855 -127 826.0 -137.5Q797 -148 784 -148Q776 -148 776 -132V-66H252L220 -105Q212 -115 205.0 -115.0Q198 -115 165.5 -95.0Q133 -75 112 -56Q143 -31 149.5 -21.0Q156 -11 156 11V365Q156 482 152 519Q199 510 233.5 500.0Q268 490 276.0 486.0Q284 482 284 476Q284 464 242 441V-32Z","bx":510.5,"by":311.0},"手":{"d":"M458 626Q194 597 88 597V619Q506 672 734 776Q802 717 818.0 699.0Q834 681 834.0 673.0Q834 665 825.0 665.0Q816 665 807.0 668.0Q798 671 777.5 671.0Q757 671 694.5 660.0Q632 649 550 638V456H686L723 510Q732 523 744.0 523.0Q756 523 801.0 481.5Q846 440 846.0 431.5Q846 423 822 423H550V261H786L837 325Q848 338 856.5 338.0Q865 338 911.5 290.5Q958 243 958.0 235.0Q958 227 934 227H550V-49Q550 -87 540.5 -106.5Q531 -126 493.5 -145.5Q456 -165 441 -165Q431 -165 428 -149Q421 -113 394.0 -93.5Q367 -74 290 -50L295 -30Q379 -44 409.5 -44.0Q440 -44 449.0 -32.5Q458 -21 458 10V227H100Q66 227 50 221L32 266Q53 261 82 261H458V423H211Q177 423 161 417L143 461Q164 456 193 456H458Z","bx":495.0,"by":305.5},"日":{"d":"M331 667H700L721 707Q728 722 736.5 722.0Q745 722 783.5 698.5Q822 675 832.5 667.0Q843 659 843.0 650.0Q843 641 800 616V-1L802 -91Q802 -103 799.5 -106.0Q797 -109 778.5 -119.0Q760 -129 738.0 -136.5Q716 -144 710.5 -144.0Q705 -144 705 -132V2H313V-108Q313 -120 304.5 -126.0Q296 -132 263.5 -146.5Q231 -161 225.0 -161.0Q219 -161 220 -151Q225 -102 225 -51V640Q225 682 222 725Q285 697 331 667ZM705 356V638H313V356ZM705 39V325H313V39Z","bx":531.4285714285714,"by":282.0},"月":{"d":"M339 238Q328 91 265.5 2.5Q203 -86 59 -166L44 -151Q136 -72 181.0 0.0Q226 72 241.0 164.0Q256 256 256.0 424.5Q256 593 251 756Q306 735 361 705H660L683 748Q688 757 695.5 757.0Q703 757 754.5 726.0Q806 695 806.0 685.5Q806 676 765 655V-18Q765 -72 755.0 -93.0Q745 -114 695.0 -139.0Q645 -164 632.5 -164.0Q620 -164 617 -150Q608 -112 585.0 -91.5Q562 -71 487 -39L490 -16Q597 -41 623.5 -41.0Q650 -41 658.5 -36.5Q667 -32 667 -16V238ZM349 477H667V672H349Q350 559 349 477ZM667 444H348Q347 346 342 271H667Z","bx":425.0,"by":295.5},"木":{"d":"M393 487H97Q74 487 63 481L47 527Q66 522 89 522H447V655Q447 742 444 775Q587 743 587 729Q587 719 540 698V522H777L823 582Q833 595 839 595Q848 595 896.5 550.5Q945 506 945.0 496.5Q945 487 916 487H590Q621 342 733.0 210.0Q845 78 976 37L975 14Q959 15 945 15Q867 15 841 -27Q836 -36 829 -36Q805 -36 701.5 102.0Q598 240 559 487H540V28Q540 -41 541 -66L542 -120Q542 -128 538.5 -131.5Q535 -135 517.0 -143.0Q499 -151 476.0 -157.0Q453 -163 446.5 -163.0Q440 -163 440 -157L444 -65Q447 -2 447 69V385Q335 115 38 -86L26 -68Q157 59 256.0 209.0Q355 359 393 487Z","bx":501.0,"by":306.0},"水":{"d":"M534 488V-46Q534 -101 515.0 -121.5Q496 -142 455.5 -157.5Q415 -173 403.5 -173.0Q392 -173 389 -160Q379 -119 356.0 -101.0Q333 -83 259 -58L263 -37Q351 -54 386.0 -54.0Q421 -54 429.5 -43.5Q438 -33 438 -9V673Q438 759 436 779Q571 743 571 727Q571 719 534 698V631Q563 493 611 391Q739 521 796 602Q821 583 850.0 553.5Q879 524 885.5 515.5Q892 507 892 501Q892 490 872 494Q864 495 858 495Q838 495 806 472Q738 422 625 361Q737 138 979 45L975 21Q951 24 930.0 24.0Q909 24 892.0 13.0Q875 2 858 -26Q853 -34 846 -34Q823 -34 709.5 92.0Q596 218 534 488ZM274 473 311 516Q317 523 324.0 523.0Q331 523 359.0 503.5Q387 484 401.5 472.5Q416 461 416.0 451.0Q416 441 394 433Q379 428 364 379Q322 242 288.5 174.0Q255 106 204.5 60.0Q154 14 48 -50L39 -31Q146 51 200.5 155.0Q255 259 284 443H91Q66 443 53 437L36 478Q58 473 89 473Z","bx":507.5,"by":303.0},"火":{"d":"M604 272Q705 402 756 540Q866 462 866 447Q866 442 860.0 439.5Q854 437 848.0 437.5Q842 438 834.0 438.0Q826 438 816.0 430.5Q806 423 790 403Q716 310 619 239Q739 -11 951 -65V-87Q899 -84 866.5 -93.5Q834 -103 816 -130Q808 -141 800 -141Q777 -141 664.0 2.5Q551 146 523 439Q509 279 495.0 210.0Q481 141 438.0 75.5Q395 10 309.0 -50.0Q223 -110 69 -172L62 -152Q238 -53 323.0 46.0Q408 145 424.0 353.5Q440 562 440.0 636.0Q440 710 437 764Q507 751 544.0 739.5Q581 728 581.0 719.0Q581 710 567 702Q543 691 542 672L532 545Q552 397 604 272ZM300 534Q307 462 307 410Q307 285 263.0 231.5Q219 178 174 178Q151 178 136.0 190.5Q121 203 121.0 221.5Q121 240 153 269Q221 331 245.0 390.0Q269 449 278 534Z","bx":506.5,"by":296.0},"牛":{"d":"M451 485H255Q196 380 97 280L75 292Q198 470 248 709Q273 696 315.5 669.5Q358 643 362.5 638.0Q367 633 367.0 628.0Q367 623 345.5 619.0Q324 615 306.5 580.5Q289 546 272 515H451V698Q451 741 448 782Q584 746 584 729Q584 719 541 704V515H718L758 571Q769 586 775 586Q785 586 833.5 544.5Q882 503 882 492Q882 485 858 485H541V242H760L811 311Q820 323 828.0 323.0Q836 323 889.0 277.5Q942 232 942.0 222.5Q942 213 920 213H541V-113Q541 -123 531.0 -130.5Q521 -138 489.0 -152.0Q457 -166 452.0 -166.0Q447 -166 447 -157L449 -104Q451 -43 451 2V213H107Q81 213 65 207L41 247Q62 242 91 242H451Z","bx":491.5,"by":308.0},"田":{"d":"M258 672H749L794 725Q789 733 797.0 733.0Q805 733 824.5 720.0Q844 707 867.5 690.0Q891 673 898.5 666.5Q906 660 906 655Q906 644 859 619V6Q859 -38 860 -56L861 -89Q861 -98 851.0 -105.5Q841 -113 807.0 -125.0Q773 -137 763 -137Q758 -137 758 -127V-35H243V-107Q243 -118 240.0 -121.5Q237 -125 222.0 -132.5Q207 -140 181.5 -148.0Q156 -156 150.5 -156.0Q145 -156 146 -148Q151 -98 151 -47V644Q151 686 148 729Q228 691 258 672ZM454 642H243V345H454ZM758 345V642H548V345ZM243 310V1H454V310ZM758 1V310H548V1Z","bx":525.9230769230769,"by":288.5},"目":{"d":"M303 686H688L721 729Q729 739 736.0 739.0Q743 739 776 713L822 677Q835 666 835.0 659.0Q835 652 797 634V-16L799 -107Q799 -116 797.0 -119.5Q795 -123 781.5 -128.5Q768 -134 741.5 -140.5Q715 -147 708.5 -147.0Q702 -147 702 -134V-32H295V-110Q295 -123 286.5 -129.0Q278 -135 247.0 -146.0Q216 -157 208.0 -157.0Q200 -157 201 -145Q206 -100 206 -48V651Q206 693 203 736Q265 709 303 686ZM295 463H702V653H295ZM702 432H295V227H702ZM702 1V196H295V1Z","bx":517.9444444444445,"by":291.0},"羊":{"d":"M446 539H149Q122 539 107 532L89 575Q110 570 139 570H569Q637 697 655 790Q695 778 726.5 762.5Q758 747 767.5 739.5Q777 732 777 726Q777 714 754 714Q735 714 706.5 683.0Q678 652 615 570H762L797 623Q806 637 816.0 637.0Q826 637 843 623L883 591Q907 572 916.0 562.5Q925 553 925.0 546.0Q925 539 901 539H541V361H698L731 417Q740 431 750.5 431.0Q761 431 808.5 390.0Q856 349 856.0 340.0Q856 331 834 331H541V155H788L835 221Q844 234 850 234Q859 234 908.5 189.5Q958 145 958.0 135.0Q958 125 937 125H541V21Q541 -33 543 -75L546 -139Q546 -145 534.5 -152.0Q523 -159 490.5 -171.5Q458 -184 450.5 -184.0Q443 -184 443 -173L445 -116Q446 -52 446 12V125H114Q87 125 72 118L54 160Q75 155 104 155H446V331H198Q171 331 156 324L138 366Q159 361 188 361H446ZM252 774Q340 748 384.5 719.5Q429 691 429.0 659.5Q429 628 409.5 600.0Q390 572 370 583Q361 583 355.5 593.5Q350 604 344.0 622.5Q338 641 309.0 684.0Q280 727 244 760Z","bx":506.0,"by":303.0},"耳":{"d":"M274 671H139Q117 671 104 666L83 710Q99 705 123 705H790L833 760Q843 773 852.5 773.0Q862 773 906.5 730.0Q951 687 951 677Q951 671 932 671H729V123L810 126L857 200Q865 213 876.5 213.0Q888 213 910.5 190.5Q933 168 959.0 143.0Q985 118 985.0 109.0Q985 100 959 99L729 90V-12Q729 -61 730 -87L732 -130Q732 -139 722.5 -146.0Q713 -153 679.5 -165.5Q646 -178 639.5 -178.0Q633 -178 633 -168V86L95 65Q70 64 56 54L33 99Q44 96 68 97L274 105ZM633 671H363V498H633ZM633 464H363V306H633ZM363 273V108L633 119V273Z","bx":509.0,"by":297.5},"雨":{"d":"M447 629H107Q80 629 65 622L47 665Q68 660 97 660H774L828 724Q835 733 841.0 733.0Q847 733 866.5 719.5Q886 706 916.5 681.5Q947 657 952.0 651.0Q957 645 957 640Q957 629 942 629H535V497H767L788 527Q799 543 808 543Q814 543 861.0 517.5Q908 492 908 482Q908 472 869 449V3Q869 -65 860.5 -88.5Q852 -112 811.0 -134.5Q770 -157 761.0 -157.0Q752 -157 748 -144Q731 -79 631 -38L636 -18Q713 -39 746.0 -39.0Q779 -39 779 -15V466H535V15Q535 -18 536 -55L538 -89Q538 -96 536.0 -98.5Q534 -101 519.0 -106.5Q504 -112 481.0 -117.0Q458 -122 451.0 -122.0Q444 -122 444 -107L445 -68Q447 -28 447 22V466H224V-105Q224 -114 221.0 -118.0Q218 -122 201.5 -130.5Q185 -139 164.5 -144.0Q144 -149 138.0 -149.0Q132 -149 132.0 -144.5Q132 -140 134.5 -101.0Q137 -62 137 -12V450Q137 499 135 537Q194 518 240 497H447ZM589 424Q653 393 687.5 366.5Q722 340 722.0 316.0Q722 292 704.0 268.0Q686 244 667 244Q653 244 647.5 251.0Q642 258 636.5 291.0Q631 324 618.0 349.0Q605 374 578 407ZM288 421Q343 392 374.5 367.5Q406 343 406.0 317.5Q406 292 388.5 269.0Q371 246 352 246Q338 246 332.5 253.0Q327 260 322.5 293.0Q318 326 307.5 350.0Q297 374 277 404ZM293 217Q347 180 371.5 160.0Q396 140 403.0 126.5Q410 113 410.0 93.5Q410 74 390.0 52.0Q370 30 353.0 30.0Q336 30 331.5 37.0Q327 44 325 69Q320 144 278 204ZM591 217Q656 185 689.0 160.0Q722 135 722.0 110.5Q722 86 702.5 62.5Q683 39 664 39Q654 39 650.0 45.0Q646 51 636.0 87.5Q626 124 613.5 148.5Q601 173 580 200Z","bx":502.0,"by":288.0},"马":{"d":"M624 303 664 670H215Q196 670 179 663L153 708Q177 704 203 704H658L691 750Q696 757 701.5 757.0Q707 757 734.5 739.5Q762 722 784.0 705.0Q806 688 806 683Q806 672 755 650L717 303H804L837 346Q844 354 849 354Q857 354 905.0 318.0Q953 282 953 273Q953 260 906 249Q895 142 878.0 56.5Q861 -29 846.5 -65.0Q832 -101 810.0 -119.5Q788 -138 739.0 -153.0Q690 -168 669 -168Q660 -168 656.5 -163.0Q653 -158 652 -141Q650 -107 612.0 -81.0Q574 -55 502 -30L507 -9Q645 -46 688.5 -46.0Q732 -46 749.0 -29.5Q766 -13 785.0 79.0Q804 171 813 268H363L336 231Q329 222 320 222Q303 222 231 279Q256 296 262.0 305.0Q268 314 271 337L294 537Q298 578 298 619Q322 616 370.0 601.5Q418 587 418.0 578.5Q418 570 386 560L359 303ZM578 121 616 175Q625 188 632.0 188.0Q639 188 658.5 174.0Q678 160 700.0 142.5Q722 125 730.0 115.0Q738 105 738 98Q738 86 719 86H124Q97 86 82 79L64 126Q85 121 114 121Z","bx":508.5,"by":294.5},"鱼":{"d":"M201 406Q155 367 62 294L48 308Q263 510 375 774Q407 764 444.5 748.0Q482 732 489.0 727.0Q496 722 496.0 717.0Q496 712 477.5 706.5Q459 701 443.0 678.5Q427 656 402 623H587L619 656Q628 665 636.0 665.0Q644 665 667 648L711 616Q732 601 732.0 589.5Q732 578 705.5 576.5Q679 575 651.5 557.0Q624 539 530 458H728L764 498Q770 505 778.5 505.0Q787 505 816.0 485.5Q845 466 857.5 458.0Q870 450 870 441Q870 427 830 407V140Q830 110 832 77L833 47Q833 39 825.5 33.0Q818 27 788.5 17.0Q759 7 751.0 7.0Q743 7 743 21V68H289V40Q289 29 283.5 25.0Q278 21 243.0 9.5Q208 -2 201.5 -2.0Q195 -2 196 9Q201 58 201 109ZM379 592Q324 521 272 471Q285 463 292 458H482Q555 543 582 592ZM484 279V424H289V279ZM567 424V279H743V424ZM567 245V97H743V245ZM484 97V245H289V97ZM795 -88 846 -26Q854 -16 860 -16Q871 -16 918.0 -58.5Q965 -101 965.0 -111.5Q965 -122 945 -122H96Q69 -122 54 -129L36 -83Q57 -88 86 -88Z","bx":500.5,"by":322.5},"鸟":{"d":"M316 593V245H808L832 282Q838 293 844.5 293.0Q851 293 877.5 276.5Q904 260 922.0 242.0Q940 224 940 220Q940 210 901 195Q893 78 884.0 14.0Q875 -50 863.5 -78.5Q852 -107 829.0 -124.0Q806 -141 751.5 -157.5Q697 -174 679 -174Q672 -174 668.5 -169.5Q665 -165 663.5 -144.5Q662 -124 653.0 -110.0Q644 -96 614.0 -82.5Q584 -69 516 -49L521 -29Q671 -59 712.5 -59.0Q754 -59 769.5 -40.0Q785 -21 796.0 39.0Q807 99 806 216H315L296 190Q291 182 284 182Q260 182 186 231Q230 257 230 283V587Q230 630 226 665Q304 639 339 621H357Q381 702 391 779Q520 748 520 731Q520 723 496 719Q486 717 468.0 697.0Q450 677 409 621H651L679 662Q689 673 696.5 673.0Q704 673 749.5 647.5Q795 622 795.0 608.0Q795 594 758 580Q755 507 743.5 433.5Q732 360 716.0 336.0Q700 312 660.0 295.5Q620 279 608.5 279.0Q597 279 594 297Q589 331 574.0 343.0Q559 355 504 369L507 387Q582 373 606.0 373.0Q630 373 637.0 384.5Q644 396 652.5 457.5Q661 519 661 593ZM396 575Q461 547 495.5 519.0Q530 491 530.0 460.0Q530 429 511.0 409.0Q492 389 468.5 389.0Q445 389 444 429Q442 480 428.0 507.5Q414 535 388 560ZM609 92 645 145Q653 156 659 156Q669 156 710.5 118.0Q752 80 752.0 69.5Q752 59 727 59H120Q94 59 76 54L58 97Q80 92 110 92Z","bx":499.0,"by":302.5}};
+    const ART = {"日":"<g >\n    <g stroke=\"#f2a72e\" stroke-width=\"18\" stroke-linecap=\"round\">\n      <line x1=\"210\" y1=\"340\" x2=\"166\" y2=\"340\"/>\n      <line x1=\"235\" y1=\"257\" x2=\"197\" y2=\"234\"/>\n      <line x1=\"296\" y1=\"196\" x2=\"273\" y2=\"158\"/>\n      <line x1=\"380\" y1=\"172\" x2=\"380\" y2=\"126\"/>\n      <line x1=\"464\" y1=\"196\" x2=\"487\" y2=\"158\"/>\n      <line x1=\"525\" y1=\"257\" x2=\"563\" y2=\"234\"/>\n      <line x1=\"550\" y1=\"340\" x2=\"594\" y2=\"340\"/>\n    </g>\n    <circle cx=\"380\" cy=\"340\" r=\"130\" fill=\"#f7ae35\"/>\n    <circle cx=\"366\" cy=\"324\" r=\"92\" fill=\"#f9c95e\" opacity=\"0.85\"/>\n    <path d=\"M 40 462 Q 380 322 720 462 L 720 480 L 40 480 Z\" fill=\"#a9cf8e\"/>\n  </g>","月":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"70\" y=\"48\" width=\"620\" height=\"372\" rx=\"36\" fill=\"#2e4d74\"/><path d=\"M 380 128 A 122 122 0 1 1 380 372 A 175 175 0 0 0 380 128 Z\" fill=\"#f2b53c\"/><path d=\"M 443 238 Q 455 248 467 238\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 444 288 Q 456 298 468 288\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"476\" cy=\"262\" r=\"9\" fill=\"#f5a58c\" opacity=\"0.75\"/>","山":"<g >\n    <ellipse cx=\"380\" cy=\"443\" rx=\"248\" ry=\"26\" fill=\"#c8e6d8\"/>\n    <path d=\"M 105 438 C 180 340 250 210 310 128 Q 326 104 342 126 C 366 160 392 196 420 224 C 440 204 462 192 484 196 Q 502 199 518 220 C 556 280 600 350 648 438 Z\" fill=\"#7fae70\"/>\n    <path d=\"M 105 438 C 180 340 250 210 310 128 Q 326 104 342 126 C 348 136 356 146 364 158 C 302 248 224 350 168 438 Z\" fill=\"#9cc98a\"/>\n    <path d=\"M 446 202 Q 472 186 496 204 Q 482 218 462 214 Q 448 210 446 202 Z\" fill=\"#9cc98a\" opacity=\"0.85\"/>\n  </g>","水":"<g >\n    <ellipse cx=\"380\" cy=\"446\" rx=\"222\" ry=\"22\" fill=\"#c8e6d8\"/>\n    <g transform=\"translate(545,150) rotate(-38)\">\n      <path d=\"M -44 -56 L -100 -34 L -44 -22 Z\" fill=\"#9cc9e2\"/>\n      <path d=\"M -44 -56 L 44 -56 L 52 40 Q 54 56 38 56 L -38 56 Q -54 56 -52 40 Z\" fill=\"#9cc9e2\"/>\n      <rect x=\"-24\" y=\"-70\" width=\"48\" height=\"18\" rx=\"7\" fill=\"#7fa9c4\"/>\n      <path d=\"M 46 -30 Q 100 -6 48 26\" fill=\"none\" stroke=\"#9cc9e2\" stroke-width=\"15\" stroke-linecap=\"round\"/>\n      <rect x=\"-24\" y=\"-34\" width=\"16\" height=\"70\" rx=\"8\" fill=\"#b7d8ec\" opacity=\"0.8\"/>\n    </g>\n    <path d=\"M 438 190 Q 402 254 378 322 L 390 316 Q 408 252 456 180 Z\" fill=\"#5fb0dd\"/>\n    <path d=\"M 444 194 Q 402 254 384 318\" fill=\"none\" stroke=\"#a5d9f0\" stroke-width=\"6\" stroke-linecap=\"round\"/>\n    <ellipse cx=\"380\" cy=\"268\" rx=\"72\" ry=\"14\" fill=\"#cfe6f0\"/>\n    <path d=\"M 310 272 L 322 424 Q 324 440 341 440 L 419 440 Q 436 440 438 424 L 450 272 Z\" fill=\"#e2f0f5\"/>\n    <path d=\"M 317 328 Q 346 316 380 326 Q 414 336 443 328 L 435 420 Q 433 432 419 432 L 341 432 Q 327 432 325 420 Z\" fill=\"#79c2e6\"/>\n    <ellipse cx=\"380\" cy=\"328\" rx=\"61\" ry=\"9\" fill=\"#a5d9f0\" opacity=\"0.9\"/>\n    <ellipse cx=\"388\" cy=\"322\" rx=\"14\" ry=\"5\" fill=\"#cfe9f7\"/>\n    <path d=\"M 372 324 L 364 334\" stroke=\"#a5d9f0\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\"/>\n    <path d=\"M 402 324 L 408 336\" stroke=\"#a5d9f0\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\"/>\n    <rect x=\"332\" y=\"286\" width=\"14\" height=\"140\" rx=\"7\" fill=\"#ffffff\" opacity=\"0.6\"/>\n  </g>","火":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><g transform=\"translate(9,10)\"><path d=\"M 380 138 C 354 190 318 228 310 284 C 302 348 336 376 380 376 C 424 376 458 348 450 284 C 442 228 406 190 380 138 Z\" fill=\"#e8663c\"/></g><path d=\"M 380 138 C 354 190 318 228 310 284 C 302 348 336 376 380 376 C 424 376 458 348 450 284 C 442 228 406 190 380 138 Z\" fill=\"#e8663c\"/><path d=\"M 380 214 C 366 248 348 270 344 302 C 340 340 358 358 380 358 C 402 358 420 340 416 302 C 412 270 394 248 380 214 Z\" fill=\"#f2b53c\"/><circle cx=\"362\" cy=\"302\" r=\"7\" fill=\"#4a3226\"/><circle cx=\"398\" cy=\"302\" r=\"7\" fill=\"#4a3226\"/><circle cx=\"364\" cy=\"300\" r=\"2.2\" fill=\"#fdfdfa\"/><circle cx=\"400\" cy=\"300\" r=\"2.2\" fill=\"#fdfdfa\"/><path d=\"M 366 322 Q 380 332 394 322\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"350\" cy=\"314\" r=\"8\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"410\" cy=\"314\" r=\"8\" fill=\"#f5a58c\" opacity=\"0.75\"/><g transform=\"rotate(-15 380 402)\"><rect x=\"272\" y=\"386\" width=\"216\" height=\"32\" rx=\"16\" fill=\"#b57b44\"/><circle cx=\"276\" cy=\"402\" r=\"16\" fill=\"#e9b97e\"/></g><g transform=\"rotate(15 380 402)\"><rect x=\"272\" y=\"386\" width=\"216\" height=\"32\" rx=\"16\" fill=\"#c89058\"/><circle cx=\"484\" cy=\"402\" r=\"16\" fill=\"#e9b97e\"/></g>","木":"<ellipse cx=\"380\" cy=\"446\" rx=\"205\" ry=\"20\" fill=\"#c8e6d8\"/><path d=\"M 356 428 L 364 318 L 396 318 L 404 428 Z\" fill=\"#a9743f\"/><path d=\"M 372 314 Q 334 282 300 254\" fill=\"none\" stroke=\"#a9743f\" stroke-width=\"15\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 388 314 Q 428 286 460 260\" fill=\"none\" stroke=\"#a9743f\" stroke-width=\"15\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 316 L 380 214\" fill=\"none\" stroke=\"#a9743f\" stroke-width=\"15\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 372 428 Q 356 440 336 448\" fill=\"none\" stroke=\"#a9743f\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 388 428 Q 404 440 424 448\" fill=\"none\" stroke=\"#a9743f\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"294\" cy=\"238\" r=\"40\" fill=\"#7fae70\"/><circle cx=\"468\" cy=\"246\" r=\"38\" fill=\"#7fae70\"/><circle cx=\"380\" cy=\"192\" r=\"46\" fill=\"#9cc98a\"/><circle cx=\"338\" cy=\"230\" r=\"27\" fill=\"#9cc98a\" opacity=\"0.85\"/><circle cx=\"432\" cy=\"228\" r=\"26\" fill=\"#9cc98a\" opacity=\"0.8\"/><circle cx=\"294\" cy=\"238\" r=\"16\" fill=\"#c4debb\" opacity=\"0.8\"/><circle cx=\"380\" cy=\"178\" r=\"17\" fill=\"#c4debb\" opacity=\"0.8\"/>","人":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"350.6\" y=\"340.12\" width=\"25.48\" height=\"82.32\" rx=\"11.76\" fill=\"#4a97c9\"/><rect x=\"383.92\" y=\"340.12\" width=\"25.48\" height=\"82.32\" rx=\"11.76\" fill=\"#4a97c9\"/><ellipse cx=\"363.34\" cy=\"438.12\" rx=\"20.58\" ry=\"9.8\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"396.66\" cy=\"438.12\" rx=\"20.58\" ry=\"9.8\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 325.12 279.36 Q 323.16 355.8 340.8 357.76 L 419.2 357.76 Q 436.84 355.8 434.88 279.36 Q 380 263.68 325.12 279.36 Z\" fill=\"#4fae9f\"/><line x1=\"336.88\" y1=\"285.24\" x2=\"317.28\" y2=\"355.8\" stroke=\"#f8cba4\" stroke-width=\"29.4\" stroke-linecap=\"round\"/><circle cx=\"317.28\" cy=\"355.8\" r=\"12.74\" fill=\"#f8cba4\"/><line x1=\"423.12\" y1=\"285.24\" x2=\"442.72\" y2=\"355.8\" stroke=\"#f8cba4\" stroke-width=\"29.4\" stroke-linecap=\"round\"/><circle cx=\"442.72\" cy=\"355.8\" r=\"12.74\" fill=\"#f8cba4\"/><circle cx=\"323.16\" cy=\"220.56000000000006\" r=\"10.78\" fill=\"#f8cba4\"/><circle cx=\"436.84\" cy=\"220.56000000000006\" r=\"10.78\" fill=\"#f8cba4\"/><circle cx=\"380\" cy=\"210.76000000000005\" r=\"60.76\" fill=\"#f8cba4\"/><path d=\"M 320.4552 189.49400000000006 Q 325.31600000000003 139.06320000000005 380 142.70880000000005 Q 434.68399999999997 139.06320000000005 439.5448 189.49400000000006 Q 413.418 179.16480000000004 380 185.24080000000004 Q 346.582 179.16480000000004 320.4552 189.49400000000006 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"358.44\" cy=\"202.92000000000004\" rx=\"9.8\" ry=\"12.74\" fill=\"#4a3226\"/><circle cx=\"358.44\" cy=\"198.02000000000004\" r=\"3.332\" fill=\"#fdfdfa\"/><ellipse cx=\"401.56\" cy=\"202.92000000000004\" rx=\"9.8\" ry=\"12.74\" fill=\"#4a3226\"/><circle cx=\"401.56\" cy=\"198.02000000000004\" r=\"3.332\" fill=\"#fdfdfa\"/><path d=\"M 344.72 179.16480000000004 Q 358.44 173.08880000000005 372.16 177.94960000000003\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.88\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 387.84 177.94960000000003 Q 401.56 173.08880000000005 415.28 179.16480000000004\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"5.88\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 360.4 236.24000000000004 Q 380 251.92000000000004 399.6 236.24000000000004\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6.859999999999999\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"336.88\" cy=\"224.48000000000005\" r=\"10.78\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"423.12\" cy=\"224.48000000000005\" r=\"10.78\" fill=\"#f5a58c\" opacity=\"0.8\"/>","口":"<ellipse cx=\"380\" cy=\"452\" rx=\"255\" ry=\"22\" fill=\"#c8e6d8\"/><circle cx=\"218\" cy=\"286.1\" r=\"25.11\" fill=\"#f8cba4\"/><circle cx=\"542\" cy=\"286.1\" r=\"25.11\" fill=\"#f8cba4\"/><ellipse cx=\"214.76\" cy=\"286.1\" rx=\"11.340000000000002\" ry=\"16.2\" fill=\"#eeb28a\"/><ellipse cx=\"545.24\" cy=\"286.1\" rx=\"11.340000000000002\" ry=\"16.2\" fill=\"#eeb28a\"/><circle cx=\"388.1\" cy=\"287.72\" r=\"162\" fill=\"#eeb28a\"/><circle cx=\"380\" cy=\"278\" r=\"159.57\" fill=\"#f8cba4\"/><path d=\"M 221 221 Q 234 87 380 97 Q 526 87 539 221 Q 469 194 380 210 Q 291 194 221 221 Z\" fill=\"#5a3d2b\"/><path d=\"M 289 242 Q 325 221 361 239\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"7.29\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 399 239 Q 435 221 471 242\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"7.29\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"328.15999999999997\" cy=\"261.8\" rx=\"12.15\" ry=\"17.009999999999998\" fill=\"#4a3226\"/><circle cx=\"331.4\" cy=\"253.7\" r=\"4.212\" fill=\"#fdfdfa\"/><ellipse cx=\"431.84000000000003\" cy=\"261.8\" rx=\"12.15\" ry=\"17.009999999999998\" fill=\"#4a3226\"/><circle cx=\"428.6\" cy=\"253.7\" r=\"4.212\" fill=\"#fdfdfa\"/><ellipse cx=\"380\" cy=\"295.82\" rx=\"9.719999999999999\" ry=\"8.1\" fill=\"#eeb28a\"/><circle cx=\"276.32\" cy=\"316.88\" r=\"17.82\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"483.68\" cy=\"316.88\" r=\"17.82\" fill=\"#f5a58c\" opacity=\"0.8\"/><ellipse cx=\"380\" cy=\"372\" rx=\"74\" ry=\"58\" fill=\"#e8a080\"/><ellipse cx=\"380\" cy=\"373\" rx=\"64\" ry=\"48\" fill=\"#5a3226\"/><ellipse cx=\"380\" cy=\"400\" rx=\"34\" ry=\"16\" fill=\"#f0876f\"/>","目":"<ellipse cx=\"380\" cy=\"452\" rx=\"250\" ry=\"22\" fill=\"#c8e6d8\"/><path d=\"M 130 262 Q 380 128 630 262 Q 380 396 130 262 Z\" fill=\"#fbfdff\"/><path d=\"M 130 262 Q 380 128 630 262\" fill=\"none\" stroke=\"#d8c2a8\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 158 268 Q 380 154 602 268\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 168 278 Q 380 372 592 278\" fill=\"none\" stroke=\"#d9b28c\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"380\" cy=\"268\" r=\"94\" fill=\"#7a5236\"/><circle cx=\"380\" cy=\"268\" r=\"48\" fill=\"#3a2418\"/><circle cx=\"352\" cy=\"232\" r=\"20\" fill=\"#fdfdfa\"/><circle cx=\"410\" cy=\"292\" r=\"9\" fill=\"#fdfdfa\" opacity=\"0.85\"/><line x1=\"196\" y1=\"208\" x2=\"226\" y2=\"224\" stroke=\"#4a3226\" stroke-width=\"9\" stroke-linecap=\"round\"/><line x1=\"262\" y1=\"172\" x2=\"284\" y2=\"190\" stroke=\"#4a3226\" stroke-width=\"9\" stroke-linecap=\"round\"/><line x1=\"336\" y1=\"150\" x2=\"350\" y2=\"168\" stroke=\"#4a3226\" stroke-width=\"9\" stroke-linecap=\"round\"/>","耳":"<ellipse cx=\"380\" cy=\"452\" rx=\"250\" ry=\"22\" fill=\"#c8e6d8\"/><path d=\"M 152 244 A 130 130 0 0 0 152 372\" fill=\"none\" stroke=\"#a8d4f0\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 208 282 A 72 72 0 0 0 208 340\" fill=\"none\" stroke=\"#a8d4f0\" stroke-width=\"8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 148 C 486 150 508 262 498 334 C 489 400 448 448 376 452 C 302 448 260 396 256 318 C 252 238 296 152 380 148 Z\" fill=\"#f8cba4\"/><path d=\"M 366 190 C 300 196 286 268 292 326 C 298 386 330 428 380 434\" fill=\"none\" stroke=\"#e0a379\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"400\" cy=\"318\" rx=\"66\" ry=\"84\" fill=\"#eeb28a\" opacity=\"0.75\"/><ellipse cx=\"392\" cy=\"316\" rx=\"20\" ry=\"28\" fill=\"#c98d5f\"/><path d=\"M 314 386 Q 356 406 408 396\" fill=\"none\" stroke=\"#e0a379\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>","手":"<g >\n    <defs>\n      <g id=\"hand-seed\">\n        <rect x=\"-50\" y=\"-52\" width=\"100\" height=\"124\" rx=\"36\" fill=\"#f7c49c\"/>\n        <rect x=\"-50\" y=\"-102\" width=\"28\" height=\"76\" rx=\"14\" fill=\"#f7c49c\" transform=\"rotate(-8 -36 -30)\"/>\n        <rect x=\"-16\" y=\"-112\" width=\"30\" height=\"86\" rx=\"15\" fill=\"#f7c49c\" transform=\"rotate(-2 -1 -30)\"/>\n        <rect x=\"18\" y=\"-106\" width=\"29\" height=\"80\" rx=\"14.5\" fill=\"#f7c49c\" transform=\"rotate(5 32 -30)\"/>\n        <rect x=\"52\" y=\"-86\" width=\"25\" height=\"62\" rx=\"12.5\" fill=\"#f7c49c\" transform=\"rotate(12 64 -30)\"/>\n        <rect x=\"-86\" y=\"-34\" width=\"34\" height=\"88\" rx=\"17\" fill=\"#f7c49c\" transform=\"rotate(-30 -52 20)\"/>\n        <ellipse cx=\"0\" cy=\"46\" rx=\"38\" ry=\"20\" fill=\"#eeb28a\" opacity=\"0.3\"/>\n        <rect x=\"-50\" y=\"64\" width=\"100\" height=\"56\" rx=\"20\" fill=\"#f2b03c\"/>\n        <rect x=\"-50\" y=\"64\" width=\"100\" height=\"18\" rx=\"9\" fill=\"#e8a13c\"/>\n      </g>\n    </defs>\n    <ellipse cx=\"380\" cy=\"452\" rx=\"238\" ry=\"20\" fill=\"#c8e6d8\"/>\n    <use href=\"#hand-seed\" transform=\"translate(265,302) scale(-1,1)\"/>\n    <use href=\"#hand-seed\" transform=\"translate(495,294)\"/>\n  </g>","田":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><polygon points=\"140,466 620,466 520,300 240,300\" fill=\"#bfe2ea\"/><path d=\"M 240 300 L 140 466 L 620 466 L 520 300 Z\" fill=\"none\" stroke=\"#b57b44\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"199\" y1=\"368\" x2=\"561\" y2=\"368\" stroke=\"#b57b44\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"164\" y1=\"426\" x2=\"596\" y2=\"426\" stroke=\"#b57b44\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"380\" y1=\"300\" x2=\"380\" y2=\"466\" stroke=\"#b57b44\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"310\" y1=\"300\" x2=\"245\" y2=\"466\" stroke=\"#b57b44\" stroke-width=\"9\" stroke-linecap=\"round\"/><line x1=\"450\" y1=\"300\" x2=\"515\" y2=\"466\" stroke=\"#b57b44\" stroke-width=\"9\" stroke-linecap=\"round\"/><line x1=\"345\" y1=\"344\" x2=\"334.0\" y2=\"326.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"345\" y1=\"344\" x2=\"345\" y2=\"320.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"345\" y1=\"344\" x2=\"356.0\" y2=\"326.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"344\" x2=\"404.0\" y2=\"326.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"344\" x2=\"415\" y2=\"320.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"344\" x2=\"426.0\" y2=\"326.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"283\" y1=\"398\" x2=\"272.0\" y2=\"380.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"283\" y1=\"398\" x2=\"283\" y2=\"374.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"283\" y1=\"398\" x2=\"294.0\" y2=\"380.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"350\" y1=\"398\" x2=\"338.45\" y2=\"379.1\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"350\" y1=\"398\" x2=\"350\" y2=\"372.8\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"350\" y1=\"398\" x2=\"361.55\" y2=\"379.1\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"398\" x2=\"403.45\" y2=\"379.1\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"398\" x2=\"415\" y2=\"372.8\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"415\" y1=\"398\" x2=\"426.55\" y2=\"379.1\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"481\" y1=\"398\" x2=\"470.0\" y2=\"380.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"481\" y1=\"398\" x2=\"481\" y2=\"374.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"481\" y1=\"398\" x2=\"492.0\" y2=\"380.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"313\" y1=\"452\" x2=\"302.0\" y2=\"434.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"313\" y1=\"452\" x2=\"313\" y2=\"428.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"313\" y1=\"452\" x2=\"324.0\" y2=\"434.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"447\" y1=\"452\" x2=\"436.0\" y2=\"434.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"447\" y1=\"452\" x2=\"447\" y2=\"428.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"447\" y1=\"452\" x2=\"458.0\" y2=\"434.0\" stroke=\"#7fae70\" stroke-width=\"6\" stroke-linecap=\"round\"/>","雨":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><ellipse cx=\"380\" cy=\"424\" rx=\"118\" ry=\"20\" fill=\"#a5d9f0\"/><ellipse cx=\"380\" cy=\"420\" rx=\"92\" ry=\"14\" fill=\"#bfe4f6\"/><path d=\"M 300 412 Q 318 394 336 410\" fill=\"none\" stroke=\"#9fd3ee\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 428 410 Q 446 392 464 408\" fill=\"none\" stroke=\"#9fd3ee\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"268\" cy=\"396\" r=\"6\" fill=\"#9fd3ee\"/><circle cx=\"490\" cy=\"400\" r=\"7\" fill=\"#9fd3ee\"/><circle cx=\"352\" cy=\"384\" r=\"5\" fill=\"#9fd3ee\"/><line x1=\"296\" y1=\"218\" x2=\"268\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"344\" y1=\"224\" x2=\"318\" y2=\"344\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"392\" y1=\"218\" x2=\"364\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"440\" y1=\"224\" x2=\"414\" y2=\"344\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"486\" y1=\"218\" x2=\"458\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><path d=\"M 300 357 Q 309.35 370.75 300 379 Q 290.65 370.75 300 357 Z\" fill=\"#79c2e6\"/><path d=\"M 452 363 Q 461.35 376.75 452 385 Q 442.65 376.75 452 363 Z\" fill=\"#79c2e6\"/><circle cx=\"300.2\" cy=\"168\" r=\"57.0\" fill=\"#7a828d\"/><circle cx=\"380\" cy=\"130.0\" r=\"72.2\" fill=\"#7a828d\"/><circle cx=\"459.8\" cy=\"168\" r=\"57.0\" fill=\"#7a828d\"/><rect x=\"266.0\" y=\"156.6\" width=\"228.0\" height=\"68.39999999999999\" rx=\"34.199999999999996\" fill=\"#7a828d\"/><circle cx=\"300.2\" cy=\"152\" r=\"57.0\" fill=\"#9098a3\"/><circle cx=\"380\" cy=\"114.0\" r=\"72.2\" fill=\"#9098a3\"/><circle cx=\"459.8\" cy=\"152\" r=\"57.0\" fill=\"#9098a3\"/><rect x=\"266.0\" y=\"140.6\" width=\"228.0\" height=\"68.39999999999999\" rx=\"34.199999999999996\" fill=\"#9098a3\"/>","云":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"70\" y=\"48\" width=\"620\" height=\"372\" rx=\"36\" fill=\"#dceefa\"/><g transform=\"translate(0,12)\"><circle cx=\"270.8\" cy=\"258\" r=\"78.0\" fill=\"#cfe4f4\"/><circle cx=\"380\" cy=\"206.0\" r=\"98.8\" fill=\"#cfe4f4\"/><circle cx=\"489.2\" cy=\"258\" r=\"78.0\" fill=\"#cfe4f4\"/><rect x=\"224.0\" y=\"242.4\" width=\"312.0\" height=\"93.60000000000001\" rx=\"46.800000000000004\" fill=\"#cfe4f4\"/></g><circle cx=\"270.8\" cy=\"258\" r=\"78.0\" fill=\"#fdfdfa\"/><circle cx=\"380\" cy=\"206.0\" r=\"98.8\" fill=\"#fdfdfa\"/><circle cx=\"489.2\" cy=\"258\" r=\"78.0\" fill=\"#fdfdfa\"/><rect x=\"224.0\" y=\"242.4\" width=\"312.0\" height=\"93.60000000000001\" rx=\"46.800000000000004\" fill=\"#fdfdfa\"/><circle cx=\"344\" cy=\"246\" r=\"9\" fill=\"#4a3226\"/><circle cx=\"416\" cy=\"246\" r=\"9\" fill=\"#4a3226\"/><circle cx=\"347\" cy=\"243\" r=\"3\" fill=\"#fdfdfa\"/><circle cx=\"419\" cy=\"243\" r=\"3\" fill=\"#fdfdfa\"/><path d=\"M 356 274 Q 380 292 404 274\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"320\" cy=\"264\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"440\" cy=\"264\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.8\"/>","鸟":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 0 400 Q 168 374 330 352 Q 480 318 648 268\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"28\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 540 297 Q 566 258 588 228\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"16\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 452 328 Q 468 300 478 278\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"13\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"rotate(-30 470 218)\"><ellipse cx=\"470\" cy=\"218\" rx=\"46\" ry=\"16\" fill=\"#4a97c9\"/></g><circle cx=\"404.68\" cy=\"265.02\" r=\"78\" fill=\"#4a97c9\"/><circle cx=\"398.44\" cy=\"254.88\" r=\"75.66\" fill=\"#5fa8d8\"/><ellipse cx=\"400\" cy=\"286\" rx=\"48\" ry=\"50\" fill=\"#a8d4ef\"/><g transform=\"rotate(-16 366 262)\"><ellipse cx=\"366\" cy=\"262\" rx=\"27\" ry=\"46\" fill=\"#4a97c9\"/></g><circle cx=\"384\" cy=\"182\" r=\"12\" fill=\"#5fa8d8\"/><circle cx=\"406\" cy=\"176\" r=\"14\" fill=\"#4a97c9\"/><rect x=\"366\" y=\"310\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#e8a13c\"/><line x1=\"372\" y1=\"342\" x2=\"360\" y2=\"350\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"372\" y1=\"342\" x2=\"382\" y2=\"349\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><rect x=\"418\" y=\"298\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#e8a13c\"/><line x1=\"424\" y1=\"330\" x2=\"412\" y2=\"338\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"424\" y1=\"330\" x2=\"434\" y2=\"337\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><ellipse cx=\"372\" cy=\"238\" rx=\"10\" ry=\"12.0\" fill=\"#4a3226\"/><circle cx=\"369.0\" cy=\"233.8\" r=\"3.0\" fill=\"#fdfdfa\"/><ellipse cx=\"428\" cy=\"238\" rx=\"10\" ry=\"12.0\" fill=\"#4a3226\"/><circle cx=\"425.0\" cy=\"233.8\" r=\"3.0\" fill=\"#fdfdfa\"/><polygon points=\"400,252 426,264 400,276 374,264\" fill=\"#f2b53c\"/><circle cx=\"344\" cy=\"270\" r=\"10\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"456\" cy=\"270\" r=\"10\" fill=\"#f5a58c\" opacity=\"0.75\"/>","鱼":"<path d=\"M 46 185 Q 116 169 190 185 Q 264 201 338 185 Q 412 169 486 185 Q 560 201 634 185 Q 678 193 714 185 L 714 480 L 46 480 Z\" fill=\"#b7dff2\"/><path d=\"M 108 203 Q 136 191 164 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 332 203 Q 360 191 388 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 556 203 Q 584 191 612 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"512\" cy=\"242\" r=\"10\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"538\" cy=\"214\" r=\"12\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"514\" cy=\"192\" r=\"7\" fill=\"#fdfdfa\" opacity=\"0.85\"/><path d=\"M 486 300 Q 548 250 564 266 Q 540 300 564 334 Q 548 350 486 300 Z\" fill=\"#e2744e\"/><path d=\"M 352 222 Q 374 160 426 190 Q 400 206 388 226 Z\" fill=\"#e2744e\"/><ellipse cx=\"387.2\" cy=\"307.65\" rx=\"120\" ry=\"85\" fill=\"#e2744e\"/><ellipse cx=\"377.6\" cy=\"296.6\" rx=\"116.39999999999999\" ry=\"82.45\" fill=\"#f0876f\"/><g transform=\"rotate(-24 352 324)\"><ellipse cx=\"352\" cy=\"324\" rx=\"30\" ry=\"16\" fill=\"#e2744e\"/></g><path d=\"M 318 268 Q 340 254 362 268\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 362 268 Q 384 254 406 268\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 340 306 Q 362 292 384 306\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 384 306 Q 406 292 428 306\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"262\" cy=\"304\" rx=\"10\" ry=\"7\" fill=\"#e2744e\"/><ellipse cx=\"298\" cy=\"274\" rx=\"11\" ry=\"13\" fill=\"#4a3226\"/><circle cx=\"294\" cy=\"269\" r=\"4\" fill=\"#fdfdfa\"/><circle cx=\"300\" cy=\"320\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.7\"/>","马":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 545 296 Q 594 328 582 394\" fill=\"none\" stroke=\"#8a5a33\" stroke-width=\"22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"462\" y=\"378\" width=\"28\" height=\"58\" rx=\"12\" fill=\"#c08d5c\"/><rect x=\"462\" y=\"420\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><rect x=\"506\" y=\"378\" width=\"28\" height=\"58\" rx=\"12\" fill=\"#c08d5c\"/><rect x=\"506\" y=\"420\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><ellipse cx=\"426.52\" cy=\"326.1\" rx=\"142\" ry=\"90\" fill=\"#c08d5c\"/><ellipse cx=\"415.16\" cy=\"314.4\" rx=\"137.74\" ry=\"87.3\" fill=\"#d9a577\"/><path d=\"M 322 292 Q 306 212 268 178\" fill=\"none\" stroke=\"#d9a577\" stroke-width=\"62\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"291\" cy=\"135\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"286\" cy=\"128\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"311\" cy=\"165\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"306\" cy=\"158\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"329\" cy=\"199\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"324\" cy=\"192\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"343\" cy=\"233\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"338\" cy=\"226\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"355\" cy=\"267\" r=\"22\" fill=\"#8a5a33\"/><circle cx=\"350\" cy=\"260\" r=\"22\" fill=\"#8a5a33\"/><circle cx=\"249\" cy=\"141\" r=\"20\" fill=\"#8a5a33\"/><path d=\"M 262 134 Q 254 104 272 106 Q 286 112 284 142 Z\" fill=\"#d9a577\"/><g transform=\"rotate(-10 250 182)\"><ellipse cx=\"250\" cy=\"182\" rx=\"62\" ry=\"46\" fill=\"#c08d5c\"/><ellipse cx=\"248\" cy=\"180\" rx=\"60\" ry=\"44\" fill=\"#d9a577\"/></g><ellipse cx=\"212\" cy=\"208\" rx=\"38\" ry=\"28\" fill=\"#e9c79b\"/><circle cx=\"198\" cy=\"212\" r=\"5\" fill=\"#b5875a\"/><path d=\"M 204 228 Q 214 234.5 224 228\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"236\" cy=\"166\" rx=\"10\" ry=\"12\" fill=\"#4a3226\"/><circle cx=\"233.0\" cy=\"161.8\" r=\"3.0\" fill=\"#fdfdfa\"/><ellipse cx=\"260\" cy=\"166\" rx=\"10\" ry=\"12\" fill=\"#4a3226\"/><circle cx=\"257.0\" cy=\"161.8\" r=\"3.0\" fill=\"#fdfdfa\"/><circle cx=\"272\" cy=\"206\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.7\"/><rect x=\"318\" y=\"384\" width=\"28\" height=\"54\" rx=\"12\" fill=\"#d9a577\"/><rect x=\"318\" y=\"422\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><rect x=\"366\" y=\"384\" width=\"28\" height=\"54\" rx=\"12\" fill=\"#d9a577\"/><rect x=\"366\" y=\"422\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/>","羊":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"324\" y=\"396\" width=\"28\" height=\"46\" rx=\"13\" fill=\"#d0a878\"/><rect x=\"408\" y=\"396\" width=\"28\" height=\"46\" rx=\"13\" fill=\"#d0a878\"/><circle cx=\"301\" cy=\"298\" r=\"62\" fill=\"#e0d0b0\"/><circle cx=\"295\" cy=\"290\" r=\"62\" fill=\"#f4e8cf\"/><circle cx=\"386\" cy=\"260\" r=\"70\" fill=\"#e0d0b0\"/><circle cx=\"380\" cy=\"252\" r=\"70\" fill=\"#f4e8cf\"/><circle cx=\"471\" cy=\"298\" r=\"62\" fill=\"#e0d0b0\"/><circle cx=\"465\" cy=\"290\" r=\"62\" fill=\"#f4e8cf\"/><circle cx=\"311\" cy=\"360\" r=\"60\" fill=\"#e0d0b0\"/><circle cx=\"305\" cy=\"352\" r=\"60\" fill=\"#f4e8cf\"/><circle cx=\"461\" cy=\"360\" r=\"60\" fill=\"#e0d0b0\"/><circle cx=\"455\" cy=\"352\" r=\"60\" fill=\"#f4e8cf\"/><circle cx=\"386\" cy=\"338\" r=\"78\" fill=\"#e0d0b0\"/><circle cx=\"380\" cy=\"330\" r=\"78\" fill=\"#f4e8cf\"/><ellipse cx=\"308\" cy=\"312\" rx=\"30\" ry=\"17\" fill=\"#d0a878\"/><ellipse cx=\"452\" cy=\"312\" rx=\"30\" ry=\"17\" fill=\"#d0a878\"/><circle cx=\"380\" cy=\"300\" r=\"66\" fill=\"#e9c79b\"/><circle cx=\"344\" cy=\"252\" r=\"26\" fill=\"#f4e8cf\"/><circle cx=\"380\" cy=\"242\" r=\"26\" fill=\"#f4e8cf\"/><circle cx=\"416\" cy=\"252\" r=\"26\" fill=\"#f4e8cf\"/><ellipse cx=\"356\" cy=\"294\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"352.7\" cy=\"289.38\" r=\"3.3\" fill=\"#fdfdfa\"/><ellipse cx=\"404\" cy=\"294\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"400.7\" cy=\"289.38\" r=\"3.3\" fill=\"#fdfdfa\"/><path d=\"M 362 326 Q 380 337.7 398 326\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"326\" cy=\"320\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"434\" cy=\"320\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/>","牛":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 512 380 Q 556 384 560 428\" fill=\"none\" stroke=\"#e8dcc8\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"561\" cy=\"432\" r=\"12\" fill=\"#a9743f\"/><path d=\"M 342 134 Q 306 130 292 106 Q 286 96 294 90\" fill=\"none\" stroke=\"#e6d3a8\" stroke-width=\"24\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 338 126 Q 310 122 300 104 Q 296 97 301 93\" fill=\"none\" stroke=\"#f2e6c8\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 418 134 Q 454 130 468 106 Q 474 96 466 90\" fill=\"none\" stroke=\"#e6d3a8\" stroke-width=\"24\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 422 126 Q 450 122 460 104 Q 464 97 459 93\" fill=\"none\" stroke=\"#f2e6c8\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"296\" cy=\"162\" rx=\"32\" ry=\"18\" fill=\"#fbf6ea\"/><ellipse cx=\"296\" cy=\"163\" rx=\"18\" ry=\"10\" fill=\"#f2bfa8\"/><ellipse cx=\"464\" cy=\"162\" rx=\"32\" ry=\"18\" fill=\"#fbf6ea\"/><ellipse cx=\"464\" cy=\"163\" rx=\"18\" ry=\"10\" fill=\"#f2bfa8\"/><circle cx=\"385.52\" cy=\"216.28\" r=\"92\" fill=\"#e8dcc8\"/><circle cx=\"378.16\" cy=\"204.32\" r=\"89.24\" fill=\"#fbf6ea\"/><ellipse cx=\"388.4\" cy=\"379.92\" rx=\"140\" ry=\"88\" fill=\"#e8dcc8\"/><ellipse cx=\"377.2\" cy=\"368.48\" rx=\"135.79999999999998\" ry=\"85.36\" fill=\"#fbf6ea\"/><ellipse cx=\"302\" cy=\"348\" rx=\"34\" ry=\"26\" fill=\"#a9743f\"/><ellipse cx=\"458\" cy=\"396\" rx=\"30\" ry=\"24\" fill=\"#a9743f\"/><ellipse cx=\"420\" cy=\"330\" rx=\"22\" ry=\"17\" fill=\"#a9743f\"/><ellipse cx=\"330\" cy=\"420\" rx=\"20\" ry=\"15\" fill=\"#a9743f\"/><ellipse cx=\"332\" cy=\"152\" rx=\"30\" ry=\"20\" fill=\"#a9743f\"/><ellipse cx=\"380\" cy=\"250\" rx=\"56\" ry=\"36\" fill=\"#ddd6c8\"/><ellipse cx=\"362\" cy=\"250\" rx=\"7\" ry=\"10\" fill=\"#a89c8a\"/><ellipse cx=\"398\" cy=\"250\" rx=\"7\" ry=\"10\" fill=\"#a89c8a\"/><path d=\"M 368 272 Q 380 279.8 392 272\" fill=\"none\" stroke=\"#8f8676\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"344\" cy=\"196\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"340.7\" cy=\"191.38\" r=\"3.3\" fill=\"#fdfdfa\"/><ellipse cx=\"416\" cy=\"196\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"412.7\" cy=\"191.38\" r=\"3.3\" fill=\"#fdfdfa\"/><circle cx=\"310\" cy=\"232\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"450\" cy=\"232\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><ellipse cx=\"286\" cy=\"424\" rx=\"24\" ry=\"16\" fill=\"#e8dcc8\"/><ellipse cx=\"474\" cy=\"424\" rx=\"24\" ry=\"16\" fill=\"#e8dcc8\"/><ellipse cx=\"318\" cy=\"432\" rx=\"28\" ry=\"18\" fill=\"#fbf6ea\"/><line x1=\"308.2\" y1=\"425.7\" x2=\"308.2\" y2=\"437.4\" stroke=\"#e8dcc8\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"326.4\" y1=\"425.7\" x2=\"326.4\" y2=\"437.4\" stroke=\"#e8dcc8\" stroke-width=\"4\" stroke-linecap=\"round\"/><ellipse cx=\"442\" cy=\"432\" rx=\"28\" ry=\"18\" fill=\"#fbf6ea\"/><line x1=\"432.2\" y1=\"425.7\" x2=\"432.2\" y2=\"437.4\" stroke=\"#e8dcc8\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"450.4\" y1=\"425.7\" x2=\"450.4\" y2=\"437.4\" stroke=\"#e8dcc8\" stroke-width=\"4\" stroke-linecap=\"round\"/>","兔":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><g transform=\"rotate(-10 342 108)\"><ellipse cx=\"342\" cy=\"108\" rx=\"27\" ry=\"86\" fill=\"#efe4d4\"/><ellipse cx=\"342\" cy=\"108\" rx=\"27\" ry=\"86\" fill=\"#fdfdfa\"/><ellipse cx=\"342\" cy=\"116\" rx=\"15\" ry=\"66\" fill=\"#f8c9c9\"/></g><g transform=\"rotate(10 418 108)\"><ellipse cx=\"418\" cy=\"108\" rx=\"27\" ry=\"86\" fill=\"#efe4d4\"/><ellipse cx=\"418\" cy=\"108\" rx=\"27\" ry=\"86\" fill=\"#fdfdfa\"/><ellipse cx=\"418\" cy=\"116\" rx=\"15\" ry=\"66\" fill=\"#f8c9c9\"/></g><circle cx=\"517\" cy=\"395\" r=\"26\" fill=\"#efe4d4\"/><circle cx=\"512\" cy=\"390\" r=\"26\" fill=\"#fdfdfa\"/><ellipse cx=\"387.56\" cy=\"381.56\" rx=\"126\" ry=\"84\" fill=\"#efe4d4\"/><ellipse cx=\"377.48\" cy=\"370.64\" rx=\"122.22\" ry=\"81.48\" fill=\"#fdfdfa\"/><ellipse cx=\"380\" cy=\"398\" rx=\"68\" ry=\"46\" fill=\"#f7efdf\"/><circle cx=\"385.64\" cy=\"230.46\" r=\"94\" fill=\"#efe4d4\"/><circle cx=\"378.12\" cy=\"218.24\" r=\"91.17999999999999\" fill=\"#fdfdfa\"/><ellipse cx=\"346\" cy=\"210\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"342.7\" cy=\"205.38\" r=\"3.3\" fill=\"#fdfdfa\"/><ellipse cx=\"414\" cy=\"210\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"410.7\" cy=\"205.38\" r=\"3.3\" fill=\"#fdfdfa\"/><path d=\"M 372 240 Q 380 236 388 240 Q 384 250 380 251 Q 376 250 372 240 Z\" fill=\"#f0876f\"/><path d=\"M 380 253 Q 381 258.5 369 259.82\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 253 Q 379 258.5 391 259.82\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"312\" cy=\"246\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"448\" cy=\"246\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><ellipse cx=\"320\" cy=\"430\" rx=\"32\" ry=\"18\" fill=\"#fdfdfa\"/><line x1=\"308.8\" y1=\"423.7\" x2=\"308.8\" y2=\"435.4\" stroke=\"#efe4d4\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"329.6\" y1=\"423.7\" x2=\"329.6\" y2=\"435.4\" stroke=\"#efe4d4\" stroke-width=\"4\" stroke-linecap=\"round\"/><ellipse cx=\"440\" cy=\"430\" rx=\"32\" ry=\"18\" fill=\"#fdfdfa\"/><line x1=\"428.8\" y1=\"423.7\" x2=\"428.8\" y2=\"435.4\" stroke=\"#efe4d4\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"449.6\" y1=\"423.7\" x2=\"449.6\" y2=\"435.4\" stroke=\"#efe4d4\" stroke-width=\"4\" stroke-linecap=\"round\"/>"};
+    const ACCENT = "#3e9486";
+    const TINT = "#dee8dc";
+    const TITLE = "象形字 · 看图猜字";
+    const SUB = "字是从图画变来的——先猜一猜，再翻开";
+    const INK = "#4a3226", MUTED = "#8d7d73", CREAM = "#fdf8ec";
+    const SONG = "'Songti SC','STSong','SimSun',serif";
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, revealed: qs.get("reveal") === "1" };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function glyphPath(ch, cx, cy, s) {
+      const g = GLYPHS[ch];
+      if (!g) return "";
+      return `<path d="${g.d}" transform="translate(${(cx - s * g.bx).toFixed(2)},${(cy + s * g.by).toFixed(2)}) scale(${s},${-s})" fill="${INK}"/>`;
+    }
+
+    function txt(x, y, size, fill, content, weight = 600, family = SONG, ls = 0, anchor = "middle") {
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}" fill="${fill}" font-family="${family}"${ls ? ` letter-spacing="${ls}"` : ""}>${content}</text>`;
+    }
+
+    function band(x, y, w, h, rx, fill) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`; }
+
+    function wrapLines(s, width) {
+      s = s.trim();
+      const lines = [];
+      while (s.length > width) {
+        let cut = width;
+        while (cut < s.length && /[，。；！？、～]/.test(s[cut])) cut++;
+        lines.push(s.slice(0, cut));
+        s = s.slice(cut).trim();
+      }
+      if (s) lines.push(s);
+      return lines;
+    }
+
+    function frame() {
+      return `<rect x="10" y="10" width="780" height="980" rx="42" fill="${CREAM}" stroke="${ACCENT}" stroke-width="10"/>`;
+    }
+
+    // ---------- 象形字：看图猜字 ----------
+    function cardPic(c, revealed) {
+      let s = frame();
+      s += `<g transform="translate(20,84)">${ART[c.key]}</g>`;
+      if (!revealed) {
+        s += band(96, 600, 608, 156, 34, TINT);
+        s += txt(400, 668, 46, INK, "这是哪个字呀？", 700);
+        s += txt(400, 718, 27, MUTED, "想一想，再点下面的按钮翻开", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += txt(400, 630, 30, ACCENT, `${esc(c.pinyin)} · ${esc(c.tone)}`, 700, "system-ui,-apple-system,sans-serif");
+        s += glyphPath(c.char, 400, 758, 0.24);
+        s += band(110, 878, 580, 84, 26, TINT);
+        const lines = wrapLines(c.story, 14);
+        if (lines.length === 1) s += txt(400, 930, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 912, 27, INK, esc(lines[0]), 600); s += txt(400, 946, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 会意字：拼字魔法 ----------
+    function cardMagic(c, revealed) {
+      let s = frame();
+      const n = c.parts.length;
+      const tileW = n === 2 ? 196 : 150, gap = 42;
+      const x0 = 400 - (n * tileW + (n - 1) * gap) / 2;
+      c.parts.forEach((p, i) => {
+        const tx = x0 + i * (tileW + gap);
+        s += band(tx, 82, tileW, 214, 30, TINT);
+        s += glyphPath(p[0], tx + tileW / 2, 166, n === 2 ? 0.15 : 0.115);
+        s += txt(tx + tileW / 2, 264, 25, MUTED, esc(p[1]), 500, "system-ui,-apple-system,sans-serif");
+        if (i < n - 1) s += txt(tx + tileW + gap / 2, 208, 62, ACCENT, "＋", 800);
+      });
+      s += band(140, 316, 520, 66, 33, TINT);
+      s += txt(400, 359, 33, INK, "拼在一起，是什么字？", 700);
+      s += band(96, 408, 608, 546, 36, "#fbf3e2");
+      if (!revealed) {
+        s += txt(400, 706, 150, "#dccfae", "？", 800);
+        s += txt(400, 836, 29, MUTED, "先猜一猜，再点「变！」", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += `<g transform="translate(58,440) scale(0.9)">${ART[c.key]}</g>`;
+        s += `<circle cx="656" cy="522" r="104" fill="${CREAM}" stroke="${ACCENT}" stroke-width="8"/>`;
+        s += glyphPath(c.result, 656, 528, 0.175);
+        s += txt(656, 658, 27, ACCENT, esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif");
+        s += band(92, 890, 616, 84, 26, TINT);
+        const lines = wrapLines(c.story, 15);
+        if (lines.length === 1) s += txt(400, 942, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 924, 27, INK, esc(lines[0]), 600); s += txt(400, 958, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 部首家族：找朋友 ----------
+    function cardFamily(c) {
+      let s = frame();
+      s += `<g transform="translate(28,54) scale(0.5)">${ART[c.key]}</g>`;
+      s += `<circle cx="588" cy="176" r="118" fill="#f7dfa0"/><circle cx="588" cy="176" r="100" fill="#fdf3cf"/>`;
+      s += glyphPath(c.radical, 588, 182, 0.21);
+      s += txt(400, 372, 50, ACCENT, esc(c.name), 800);
+      s += txt(400, 428, 29, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif");
+      const n = c.members.length;
+      const cols = Math.min(4, Math.ceil(n / 2)), rows = Math.ceil(n / cols);
+      const cellW = 680 / cols, cellH = 400 / rows;
+      const gs = cols >= 4 ? 0.135 : (cols === 3 ? 0.15 : 0.15);
+      c.members.forEach((m, i) => {
+        const row = Math.floor(i / cols), col = i % cols;
+        const rowN = row === rows - 1 ? n - (rows - 1) * cols : cols;
+        const cx = 60 + cellW * col + cellW / 2 + (680 - rowN * cellW) / 2;
+        const cy = 470 + row * cellH;
+        s += band(cx - cellW / 2 + 8, cy + 8, cellW - 16, cellH - 16, 22, TINT);
+        s += glyphPath(m[0], cx, cy + cellH / 2 - 12, gs);
+        s += txt(cx, cy + cellH - 16, 24, "#6b5a4e", esc(m[1]), 500, "system-ui,-apple-system,sans-serif");
+      });
+      s += band(90, 894, 620, 72, 24, TINT);
+      const q = wrapLines(c.tips[2][1], 20);
+      if (q.length === 1) s += txt(400, 938, 26, INK, esc(q[0]), 500);
+      else { s += txt(400, 922, 23, INK, esc(q[0]), 500); s += txt(400, 952, 23, INK, esc(q[1]), 500); }
+      return s;
+    }
+
+    // ---------- 韵语与声音游戏 ----------
+    function cardVerse(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.lines.forEach((line, i) => {
+        const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+        const y = 210 + i * 96;
+        if (m) {
+          s += txt(400, y, 58, INK, esc(m[1]) + `<tspan fill="${ACCENT}">${esc(m[2])}</tspan>` + esc(m[3]), 700, SONG, 5);
+        } else {
+          s += txt(400, y, 58, INK, esc(line), 700, SONG, 5);
+        }
+      });
+      s += `<g transform="translate(210,668) scale(0.5)">${ART[c.key]}</g>`;
+      s += txt(400, 948, 26, MUTED, "句尾的字，结尾声音很像哦", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardGame(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.steps.forEach((st, i) => {
+        const y = 196 + i * 78;
+        s += `<circle cx="152" cy="${y - 11}" r="23" fill="${ACCENT}"/>`;
+        s += txt(152, y - 2, 25, "#fff", String(i + 1), 700, "system-ui,-apple-system,sans-serif");
+        s += txt(192, y, 32, INK, esc(st), 600, SONG, 1, "start");
+      });
+      s += `<g transform="translate(202,472) scale(0.52)">${ART[c.key]}</g>`;
+      s += band(255, 774, 290, 56, 28, TINT);
+      s += txt(400, 811, 26, "#6b5a4e", "和爸爸妈妈一起玩", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardSVG(card, revealed) {
+      const inner = KIND === "pic" ? cardPic(card, revealed)
+        : KIND === "magic" ? cardMagic(card, revealed)
+        : KIND === "family" ? cardFamily(card)
+        : card.type === "verse" ? cardVerse(card)
+        : cardGame(card);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${esc(card.key)}" class="card-svg">${inner}</svg>`;
+    }
+
+    const LEADS = {
+      pic: "先让孩子看图猜一猜，再翻开验证；翻开前别提示。",
+      magic: "先遮着答案让孩子猜，再点「变！」揭晓；猜错也是好机会。",
+      family: "这一套是讲解卡：先认部首，再把家族成员读一遍。",
+      shengyin: "这一套玩声音：重点是耳朵和嘴巴，不要求认字。",
+    };
+
+    function tipsHTML(card) {
+      let h = `<div class="lead">${LEADS[KIND] || ""}</div>`;
+      (card.tips || []).forEach((row) => {
+        h += `<div class="tip-row"><span class="tip-tag">${esc(row[0])}</span><span>${esc(row[1])}</span></div>`;
+      });
+      return h;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const primaryBtn = document.getElementById("primaryBtn");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+    const hasPrimary = KIND === "pic" || KIND === "magic";
+    const multiGroup = GROUPS.length > 1;
+
+    const PRIMARY_LABEL = { pic: ["翻开字", "藏起字"], magic: ["变！", "收起来"] };
+
+    function render() {
+      if (mode === "deck" && deskActive) return renderDesk();
+      const { c, i } = deck[state.i];
+      const shown = mode === "grid" ? true : state.revealed;
+      cardWrap.innerHTML = cardSVG(c, shown);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      if (hasPrimary) {
+        const [on, off] = PRIMARY_LABEL[KIND];
+        primaryBtn.textContent = state.revealed ? off : on;
+        primaryBtn.setAttribute("aria-pressed", String(state.revealed));
+      }
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+      if (mode === "deck") saveLastPos();
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      state.revealed = false;
+      closeTips();
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; state.revealed = false; closeTips(); render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click，按钮动作直接绑 touchend。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    bindTap(toggleTips, () => {
+      const open = tips.hidden;
+      if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
+      else closeTips();
+      toggleTips.setAttribute("aria-pressed", String(open));
+    });
+    if (multiGroup) groupBtn.addEventListener("click", openSheet);
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    const edgeSwipe = (x) => x < 28 || x > innerWidth - 28;   // 屏幕左右边缘是系统返回手势区，不当翻页
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      if (edgeSwipe(t.clientX)) { barTouch = null; return; }
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup && multiGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      if (edgeSwipe(e.touches[0].clientX)) { touchX = null; return; }   // 边缘滑动多为系统返回/退出，不翻页
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    document.getElementById("head").innerHTML =
+      `<span class="t">${esc(TITLE)}</span><span class="s">${esc(SUB)}</span>`;
+
+    // ════════     // 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。
+    const DECK_META = (() => {
+      const m = { pic: ["xiangxing", "象形字 · 看图猜字"], magic: ["huiyi", "会意字 · 拼字魔法"],
+                  family: ["bushou", "部首家族 · 找朋友"], shengyin: ["yunyu", "韵语与声音游戏"] }[KIND];
+      return m ? { id: m[0], url: m[0] + ".html", name: m[1] } : null;
+    })();
+    let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {           // 停留满 1.5s 才算"正在看"：误触滑走不覆盖记录
+        if (mode !== "deck" || !DECK_META || deck.length !== CARDS.length) return;
+        const { c, i } = deck[state.i];
+        const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
+        const inGroup = CARDS.filter((x) => x.g === c.g).length;
+        const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
+        try {
+          localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+
+    // ════════ 宽屏三栏版（≥960px；手机竖屏/窄竖屏走原布局，零改动） ════════
+    const deskMQ = window.matchMedia("(min-width: 960px), (min-width: 880px) and (hover: hover) and (pointer: fine)");
+    let deskActive = false;
+    function updateDeskMode() {
+      if (mode !== "deck") return;
+      const want = deskMQ.matches;
+      if (want === deskActive) return;
+      deskActive = want;
+      document.getElementById("desk").hidden = !want;
+      document.body.classList.toggle("desk-on", want);
+      if (want) cardWrap.innerHTML = "";
+    }
+    const dEl = (id) => document.getElementById(id);
+    function artSVG(key, vb) {
+      return `<svg viewBox="0 0 ${vb || "760 480"}" preserveAspectRatio="xMidYMid meet" aria-label="插画">${ART[key] || ""}</svg>`;
+    }
+    function glyphSVG(ch, size, s) {
+      const vb = size;
+      return `<svg viewBox="0 0 ${vb} ${vb}">${glyphPath(ch, vb / 2, vb / 2 + s * 40, s)}</svg>`;
+    }
+    function boardSVG(inner) {
+      return `<svg viewBox="0 0 600 600"><rect x="6" y="6" width="588" height="588" rx="36" fill="#fffdf3" stroke="#e3d3a8" stroke-width="4"/>${inner}</svg>`;
+    }
+    const qMark = () => boardSVG(txt(300, 392, 170, "#dccfae", "？", 800) + txt(300, 520, 26, "#b0a49a", "点一下揭晓", 500, "system-ui,-apple-system,sans-serif"));
+
+    function deskLeftHTML(c, shown) {
+      if (KIND === "pic") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill ${shown ? "" : "q"}">${shown ? esc(c.story) : "这是哪个字呀？想一想，再点中间翻开"}</div>`;
+      }
+      if (KIND === "magic") {
+        const tiles = c.parts.map((p) =>
+          `<div class="part-tile">${glyphSVG(p[0], 120, 0.095)}<div class="pl">${esc(p[1])}</div></div>`)
+          .join(`<div class="parts-plus">＋</div>`);
+        const below = shown
+          ? `<div class="art-area">${artSVG(c.key)}</div>`
+          : `<div class="art-area">${qMark()}</div>`;
+        return `<div class="parts-row">${tiles}</div>${below}
+          <div class="desk-pill q">${shown ? esc(c.story) : "拼在一起，是什么字？"}</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill">${esc(c.name)} · ${esc(c.meaning)}</div>`;
+      }
+      return `<div class="art-area">${artSVG(c.key)}</div>`;
+    }
+
+    function deskCenterHTML(c, shown) {
+      if (KIND === "pic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击卡片${state.revealed ? "藏起" : "翻开"}</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin) + " · " + esc(c.tone), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.char, 300, 350, 0.34))}</div><div class="hint">点击卡片藏起</div>`;
+      }
+      if (KIND === "magic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击「变！」揭晓答案</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.result, 300, 350, 0.30))}</div><div class="hint">点击卡片收起来</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="board">${boardSVG(
+          `<circle cx="300" cy="300" r="196" fill="#f7dfa0"/><circle cx="300" cy="300" r="168" fill="#fdf3cf"/>` +
+          glyphPath(c.radical, 300, 312, 0.30) +
+          txt(300, 552, 40, "#b0772f", esc(c.name), 800) +
+          txt(300, 596, 24, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif"))}</div>`;
+      }
+      if (c.type === "verse") {
+        const lines = c.lines.map((line) => {
+          const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+          return m ? `<div class="vl">${esc(m[1])}<b>${esc(m[2])}</b>${esc(m[3])}</div>` : `<div class="vl">${esc(line)}</div>`;
+        }).join("");
+        return `<div class="verse-box"><div class="vt">${esc(c.title)}</div>${lines}</div>`;
+      }
+      const steps = c.steps.map((st, i) =>
+        `<div class="step-row"><div class="step-n">${i + 1}</div><div class="step-t">${esc(st)}</div></div>`).join("");
+      return `<div class="steps-box"><div class="vt">${esc(c.title)}</div>${steps}</div>`;
+    }
+
+    function deskPanelHTML(c) {
+      const shown = state.revealed;
+      let head = "";
+      if (KIND === "pic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.char) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "magic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.result) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "family") head = `<div class="desk-head"><span class="zi">${esc(c.radical)}</span><span class="meta">${esc(c.name)}</span></div>`;
+      else head = `<div class="desk-head"><span class="zi">${esc(c.title)}</span><span class="meta">${esc(GROUPS[c.g].name)}</span></div>`;
+      let members = "";
+      if (KIND === "family") {
+        members = `<div class="mgrid">` + c.members.map((m) =>
+          `<div class="mcell"><span class="mc">${esc(m[0])}</span><span class="mw">${esc(m[1])}</span></div>`).join("") + `</div>`;
+      }
+      let story = "";
+      if ((KIND === "pic" || KIND === "magic") && shown) story = "";
+      return head + tipsHTML(c) + members;
+    }
+
+    function deskPos() {
+      const { c, i } = deck[state.i];
+      return CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+    }
+    function deskInGroup() { return CARDS.filter((x) => x.g === deck[state.i].c.g).length; }
+
+    function deskLabel(c) {
+      if (KIND === "pic") return c.char;
+      if (KIND === "magic") return c.result;
+      if (KIND === "family") return c.radical;
+      return { label: c.title, wide: true };
+    }
+
+    function renderDesk() {
+      const { c } = deck[state.i];
+      const shown = state.revealed;
+      dEl("deskTitle").innerHTML = `${esc(TITLE)}<span class="s">${esc(SUB)}</span>`;
+      if (multiGroup) {
+        dEl("deskChips").hidden = false;
+        dEl("deskChips").innerHTML = GROUPS.map((g, gi) =>
+          `<button class="dchip${gi === c.g ? " active" : ""}" data-g="${gi}">${esc(g.name)}</button>`).join("");
+      }
+      const st = dEl("deskState");
+      if (hasPrimary) {
+        st.hidden = false;
+        st.textContent = shown ? (KIND === "pic" ? "藏起字" : "收起来") : (KIND === "pic" ? "翻开字" : "变！");
+      } else st.hidden = true;
+      dEl("deskLeft").innerHTML = deskLeftHTML(c, shown);
+      dEl("deskCenter").innerHTML = deskCenterHTML(c, shown);
+      dEl("deskPanel").innerHTML = deskPanelHTML(c);
+      dEl("deskFilm").innerHTML = deck.map((d, i) => {
+        if (d.c.g !== c.g) return "";
+        const L = deskLabel(d.c);
+        const wide = typeof L === "object";
+        return `<button class="mini${i === state.i ? " active" : ""}${wide ? " wide" : ""}" data-i="${i}">${esc(wide ? L.label : L)}</button>`;
+      }).join("");
+      dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
+      const act = document.querySelector("#deskFilm .mini.active");
+      if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      saveLastPos();
+    }
+
+    if (mode === "deck") {
+      dEl("deskPrev").addEventListener("click", () => go(-1));
+      dEl("deskNext").addEventListener("click", () => go(1));
+      dEl("deskFilm").addEventListener("click", (e) => {
+        const b = e.target.closest(".mini");
+        if (b) { state.i = Number(b.dataset.i); state.revealed = false; render(); }
+      });
+      dEl("deskChips").addEventListener("click", (e) => {
+        const b = e.target.closest(".dchip");
+        if (b) jumpTo(Number(b.dataset.g));
+      });
+      dEl("deskCenter").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      dEl("deskState").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      if (window.matchMedia) deskMQ.addEventListener("change", () => { updateDeskMode(); render(); });
+    }
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub" && DECK_META) {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && deck.length === CARDS.length && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      updateDeskMode();
+      render();
+      if (qs.get("tips") === "1") {
+        tips.innerHTML = tipsHTML(deck[state.i].c);
+        tips.hidden = false;
+        toggleTips.setAttribute("aria-pressed", "true");
+      }
+      if (qs.get("sheet") === "1") openSheet();
+      if (!multiGroup) { groupBtn.style.display = "none"; }
+      if (!hasPrimary) { primaryBtn.style.display = "none"; }
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c, true)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      render();
+    }
+  </script>
+</body>
+</html>

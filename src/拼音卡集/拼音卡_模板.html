@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#fdf8ec">
+  <link rel="icon" href="data:,">
+  <title>__TITLE__</title>
+  <style>
+    :root {
+      --accent: __ACCENT__; --accent-dark: #28796e; --ink: #4a3226; --muted: #84766e;
+      --cream: #fdf8ec; --paper: #fffdf7; --line: #eadfca; --mint: #dff3ef;
+      --danger: #cf5a4a; --shadow: 0 14px 36px rgba(79,58,39,.10);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { color: var(--ink); background: var(--cream); font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+    button { color: inherit; font: inherit; border: 0; cursor: pointer; touch-action: manipulation; }
+    button:focus-visible { outline: 4px solid rgba(62,148,134,.3); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    .app { height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; }
+    .topbar { min-height: 64px; padding: 10px max(14px,env(safe-area-inset-left)) 8px max(14px,env(safe-area-inset-right));
+      display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: rgba(253,248,236,.95); }
+    .brand { min-width: 0; flex: 1; }
+    .brand h1 { margin: 0; font-size: clamp(20px,2.2vw,30px); line-height: 1.15; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn { min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 16px; background: #fff; border: 1px solid var(--line); font-weight: 700; }
+    .icon-btn.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+    .group-tabs { display: flex; gap: 8px; padding: 8px max(12px,env(safe-area-inset-left)); overflow-x: auto;
+      border-bottom: 1px solid var(--line); scrollbar-width: none; background: #fffaf0; }
+    .group-tabs::-webkit-scrollbar { display: none; }
+    .group-tab { flex: 0 0 auto; padding: 9px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--muted); font-weight: 700; }
+    .group-tab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+    .stage { min-height: 0; padding: 12px; }
+    .mobile-stage { width: 100%; height: 100%; }
+    .mobile-card { position: relative; height: 100%; max-width: 640px; margin: auto; padding: 12px; display: grid;
+      grid-template-rows: auto minmax(120px,1.2fr) minmax(120px,.9fr) auto; gap: 10px; overflow: hidden;
+      background: var(--paper); border: 2px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); }
+    .card-head { min-height: 38px; display: flex; align-items: center; gap: 8px; }
+    .badge { padding: 6px 10px; border-radius: 999px; background: #fbefc5; color: #765f2a; font-size: 13px; font-weight: 800; }
+    .card-title { min-width: 0; flex: 1; text-align: center; font-size: 20px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .replay { width: 40px; height: 40px; border-radius: 14px; color: #fff; background: var(--accent); font-size: 19px; }
+    .art-box { min-height: 0; display: grid; place-items: center; overflow: hidden; border-radius: 22px; background: #fffaf0; }
+    .art-box > svg { width: 100%; height: 100%; max-height: 310px; }
+    .focus-box { min-height: 0; display: grid; place-items: center; padding: 8px; border-radius: 22px; background: #fff; border: 1px solid var(--line); overflow: hidden; }
+    .grid-svg { width: min(100%,520px); height: 100%; max-height: 220px; }
+    .cue-box { padding: 10px 12px; border-radius: 18px; background: var(--mint); text-align: center; }
+    .cue { font-size: clamp(18px,4.5vw,26px); font-weight: 900; line-height: 1.25; }
+    .tip { margin-top: 4px; color: var(--muted); font-size: clamp(13px,3.3vw,17px); line-height: 1.4; }
+
+    .mode-switch { display: flex; gap: 6px; margin-left: auto; }
+    .mode-btn { padding: 7px 11px; border-radius: 12px; background: #f3eee2; color: var(--muted); font-size: 13px; font-weight: 800; }
+    .mode-btn.active { color: #fff; background: var(--accent); }
+    .quiz { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .quiz-choice { min-height: 78px; display: grid; place-items: center; border-radius: 18px; background: #fffaf0; border: 3px solid var(--line); }
+    .quiz-choice svg { width: 100%; height: 72px; }
+    .quiz-choice.wrong { border-color: var(--danger); animation: shake .25s linear 2; }
+    .quiz-choice.right { border-color: var(--accent); background: var(--mint); }
+    @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+    .tone-road { width: min(100%,520px); height: 100%; max-height: 210px; }
+    .tone-vowels { font-size: clamp(28px,8vw,54px); font-weight: 900; color: var(--accent); letter-spacing: .08em; text-align: center; }
+    .examples { width: 100%; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .example { min-width: 0; padding: 7px; border-radius: 14px; background: #fffaf0; text-align: center; }
+    .example .py { color: var(--accent); font-weight: 900; }
+    .example .zi { font-size: 22px; font-weight: 900; }
+    .example svg { width: 100%; height: 72px; }
+
+    .contrast-grid { width: 100%; display: grid; grid-template-columns: repeat(var(--cols,2),minmax(0,1fr)); gap: 8px; }
+    .contrast-item { padding: 8px 4px; border-radius: 16px; background: #fffaf0; border: 2px solid var(--line); }
+    .contrast-item svg { width: 100%; height: 105px; }
+    .contrast-prompt { display: grid; place-items: center; gap: 8px; text-align: center; }
+    .contrast-prompt .compare-mark { width: 74px; height: 74px; display: grid; place-items: center; border-radius: 24px;
+      color: #fff; background: var(--accent); font-size: 42px; font-weight: 900; }
+    .contrast-prompt strong { font-size: clamp(26px,5vw,42px); }
+    .contrast-prompt span { color: var(--muted); font-weight: 700; }
+
+    .bottom-nav { min-height: 68px; padding: 8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+      display: grid; grid-template-columns: 54px minmax(0,1fr) 54px; gap: 10px; border-top: 1px solid var(--line); background: #fffaf0; }
+    .nav-arrow { border-radius: 18px; color: #fff; background: var(--accent); font-size: 26px; font-weight: 900; }
+    .progress-btn { min-width: 0; padding: 7px 12px; border-radius: 18px; background: #fff; border: 1px solid var(--line); }
+    .progress-btn strong, .progress-btn span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .progress-btn strong { font-size: 16px; }
+    .progress-btn span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .desktop-stage, .film { display: none; }
+
+    .gate { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(53,42,32,.48); backdrop-filter: blur(8px); }
+    .gate-panel { width: min(420px,100%); padding: 28px; border-radius: 30px; background: var(--paper); box-shadow: 0 24px 70px rgba(0,0,0,.24); text-align: center; }
+    .gate-icon { width: 86px; height: 86px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 28px; background: var(--mint); font-size: 42px; }
+    .gate h2 { margin: 0; font-size: 28px; }
+    .gate p { margin: 10px 0 20px; color: var(--muted); line-height: 1.65; }
+    .start-btn { width: 100%; min-height: 56px; border-radius: 18px; color: #fff; background: var(--accent); font-size: 19px; font-weight: 900; }
+
+    .sheet { position: fixed; z-index: 40; inset: 0; display: grid; align-items: end; background: rgba(53,42,32,.42); }
+    .sheet-panel { max-height: min(76dvh,720px); padding: 16px max(14px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+      overflow: auto; border-radius: 28px 28px 0 0; background: var(--paper); }
+    .sheet-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sheet-head h2 { flex: 1; margin: 0; font-size: 20px; }
+    .close-btn { width: 42px; height: 42px; border-radius: 14px; background: #f2ecdf; font-size: 22px; }
+    .sheet-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+    .sheet-item { min-height: 58px; padding: 5px; border-radius: 14px; background: #fffaf0; border: 2px solid var(--line); font-weight: 900; overflow: hidden; }
+    .sheet-item.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+    .desktop-panel { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; border: 2px solid var(--line); border-radius: 28px; background: var(--paper); box-shadow: var(--shadow); }
+    .panel-head { min-height: 52px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+    .panel-head strong { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panel-body { min-height: 0; flex: 1; padding: 14px; display: grid; place-items: center; overflow: hidden; }
+    .panel-body.art > svg { width: 100%; height: 100%; }
+    .panel-foot { min-height: 86px; padding: 12px 14px; border-top: 1px solid var(--line); background: #fffaf0; }
+    .panel-foot .cue { font-size: 21px; }
+    .info-list { width: 100%; align-self: stretch; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+    .info-row { padding: 12px; border-radius: 16px; background: #fffaf0; line-height: 1.55; }
+    .info-row b { display: block; margin-bottom: 3px; color: var(--accent-dark); }
+
+    @media (min-width: 960px) {
+      .app { grid-template-rows: auto auto minmax(0,1fr) auto; }
+      .topbar { min-height: 72px; padding-inline: 22px; }
+      .group-tabs { justify-content: center; padding: 9px 20px; }
+      .stage { padding: 16px 20px 10px; }
+      .mobile-stage { display: none; }
+      .desktop-stage { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(250px,.9fr) minmax(360px,1.15fr) minmax(260px,.8fr); gap: 14px; }
+      .bottom-nav { display: none; }
+      .film { min-height: 78px; padding: 8px 20px 12px; display: flex; gap: 8px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
+      .film-item { flex: 0 0 auto; min-width: 58px; height: 52px; padding: 4px 9px; border-radius: 14px; background: #fff; border: 2px solid var(--line); font-weight: 900; }
+      .film-item.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+      .sheet-grid { grid-template-columns: repeat(8,minmax(0,1fr)); }
+    }
+    @media (max-height: 690px) and (max-width: 959px) {
+      .topbar { min-height: 54px; padding-block: 6px; }
+      .brand p { display: none; }
+      .group-tabs { padding-block: 5px; }
+      .group-tab { padding-block: 7px; }
+      .stage { padding: 7px 10px; }
+      .mobile-card { gap: 6px; padding: 9px; border-radius: 22px; }
+      .art-box > svg { max-height: 230px; }
+      .cue-box { padding-block: 6px; }
+      .bottom-nav { min-height: 60px; padding-block: 6px; }
+    }
+    @media (max-width: 360px) { .mobile-card .badge { display: none; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto !important; } }
+    .cf { position: fixed; top: -18px; width: 12px; height: 18px; border-radius: 3px; z-index: 9998;
+          pointer-events: none; animation: cfall 2.3s ease-in forwards; }
+    @keyframes cfall { to { transform: translateY(108vh) rotate(560deg); } }
+  </style>
+</head>
+<body>
+  <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="gate-panel">
+      <div class="gate-icon">🔊</div>
+      <h2 id="gateTitle">准备好就开始</h2>
+      <p>点一次开启声音。之后每翻到一张新卡，都会自动读出来；随时可以静音或重播。</p>
+      <button class="start-btn" id="startBtn">开始学习</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><h1>__TITLE__</h1><p>__SUB__</p></div>
+      <div class="top-actions"><button class="icon-btn on" id="soundBtn" aria-pressed="true" aria-label="关闭自动发声">🔊 <span>自动</span></button></div>
+    </header>
+    <nav class="group-tabs" id="groupTabs" aria-label="卡片分类"></nav>
+    <main class="stage">
+      <section class="mobile-stage" id="mobileStage" aria-live="polite"></section>
+      <section class="desktop-stage" id="desktopStage" aria-live="polite"></section>
+    </main>
+    <nav class="bottom-nav" aria-label="翻卡">
+      <button class="nav-arrow" id="prevBtn" aria-label="上一张">‹</button>
+      <button class="progress-btn" id="progressBtn"><strong id="progressMain"></strong><span id="progressSub"></span></button>
+      <button class="nav-arrow" id="nextBtn" aria-label="下一张">›</button>
+    </nav>
+    <div class="film" id="film" aria-label="当前分类卡片"></div>
+  </div>
+
+  <div class="sheet" id="sheet" hidden>
+    <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-head"><h2 id="sheetTitle"></h2><button class="close-btn" id="closeSheet" aria-label="关闭">×</button></div>
+      <div class="sheet-grid" id="sheetGrid"></div>
+    </section>
+  </div>
+
+  <script>
+    const KIND = "__KIND__";
+    const CARDS = __CARDS__;
+    const GROUPS = __GROUPS__;
+    const STROKES = __STROKES__;
+    const ACCENT = "__ACCENT__";
+    const state = { i: 0, mode: "learn", revealed: false, sound: true, started: false };
+    // 音频版本号：改动 audio/ 后必须 +1，否则浏览器会继续播放缓存里的旧音频
+    const AUDIO_VERSION = "20261031e";
+    const audioCache = new Map();
+    let playing = null;
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const current = () => CARDS[state.i];
+    const groupCards = (g) => CARDS.map((c,i) => ({c,i})).filter((x) => x.c.g === g);
+    const groupPos = () => groupCards(current().g).findIndex((x) => x.i === state.i) + 1;
+    const shortGroup = (name) => name.replace(/\s+\d+$/,"").replace("完整拼音表","完整表");
+
+    function gridLines(x, width=100) {
+      return [10,50,90,130].map((y,k) => `<line x1="${x+2}" y1="${y}" x2="${x+width-2}" y2="${y}" stroke="#cbb37f" stroke-width="${k===0||k===3?2.4:1.3}" ${k===1||k===2?'stroke-dasharray="5 4"':''}/>`).join("");
+    }
+    function glyph(letter, x=0) {
+      return (STROKES[letter] || []).map((st) => `<path d="${st.d}" transform="translate(${x} 0)" fill="none" stroke="#4a3226" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
+    }
+    function flattenParts(parts) {
+      const out = [];
+      (parts || []).forEach((p) => {
+        if (STROKES[p]) out.push(p);
+        else Array.from(p).forEach((ch) => { if (STROKES[ch]) out.push(ch); });
+      });
+      return out;
+    }
+    function partsOf(c) {
+      if (c.combo) return flattenParts(c.combo);
+      if (c.parts) return flattenParts(c.parts);
+      return flattenParts(Array.from(c.letter || c.sound || c.final || ""));
+    }
+    function gridSVG(parts, className="grid-svg") {
+      parts = flattenParts(parts);
+      const gap = 8, width = Math.max(100, parts.length*100+(parts.length-1)*gap);
+      return `<svg class="${className}" viewBox="0 0 ${width} 140" preserveAspectRatio="xMidYMid meet" role="img">${parts.map((p,i) => { const x=i*(100+gap); return gridLines(x)+glyph(p,x); }).join("")}</svg>`;
+    }
+    function artSVG(art, cls="") { return `<svg class="${cls}" viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet" role="img">${art || ""}</svg>`; }
+    function labelOf(c) { return c.letter || c.sound || c.label || c.final || c.zi || "卡片"; }
+    function kindOf(c) {
+      const names = { initial:"声母", spelling:"y / w 书写字母", final:"单韵母", compound_final:"复韵母", special_final:"特殊韵母",
+        front_nasal:"前鼻韵母", back_nasal:"后鼻韵母", whole:"整体认读", tone:"声调", contrast:"易混对照" };
+      return c.type === "tone" ? "声调" : c.type === "contrast" ? "易混对照" : names[c.kind] || (c.type === "match" ? "首音配对" : "拼音卡");
+    }
+    function cueOf(c) {
+      if (c.type === "tone" || c.type === "contrast") return c.label;
+      if (c.type === "match") return c.hint || `看图找 ${c.letter}`;
+      if (c.type === "spell") return `韵母 ${c.final}`;
+      return c.jue || labelOf(c);
+    }
+    function tipOf(c) {
+      if (c.type === "tone" || c.type === "contrast") return c.tip;
+      if (c.type === "match") return `${c.zi}（${c.py}）`;
+      if (c.type === "spell") return c.rule || "前音轻短后音重，两音相连猛一碰";
+      return c.tip || "看清字形，跟着声音读。";
+    }
+    function audioOf(c) { return c.audio || (c.letter ? `L_${c.letter.replace("ü","v")}` : null); }
+
+    function playAudio(name) {
+      if (!state.started || !state.sound || !name) return;
+      try {
+        if (playing) { playing.pause(); playing.currentTime = 0; }
+        const a = audioCache.get(name) || new Audio(`audio/${encodeURIComponent(name)}.m4a?v=${AUDIO_VERSION}`);
+        audioCache.set(name,a); playing = a; a.currentTime = 0;
+        a.play().catch(() => {});
+      } catch (_) {}
+    }
+    function playCurrent() { playAudio(audioOf(current())); }
+
+    function roadSVG(c) {
+      const paths = { 1:"M70 102 L430 102", 2:"M70 142 L430 54", 3:"M70 56 Q220 156 270 132 Q350 90 430 54", 4:"M70 50 L430 146", 0:"M80 102 L420 102" };
+      const dash = c.tone === 0 ? 'stroke-dasharray="14 14"' : "";
+      const car = c.tone === 0 ? [250,82] : c.tone === 1 ? [180,82] : c.tone === 2 ? [230,90] : c.tone === 3 ? [260,112] : [230,86];
+      return `<svg class="tone-road" viewBox="0 0 500 190" role="img" aria-label="${esc(c.label)}">
+        <path d="${paths[c.tone]}" fill="none" stroke="#c05a4a" stroke-width="15" stroke-linecap="round" ${dash}/>
+        <g transform="translate(${car[0]} ${car[1]})"><rect x="-29" y="-22" width="58" height="27" rx="9" fill="${ACCENT}"/><rect x="-15" y="-34" width="30" height="16" rx="6" fill="${ACCENT}"/><circle cx="-15" cy="8" r="8" fill="#4a3226"/><circle cx="16" cy="8" r="8" fill="#4a3226"/></g>
+        <text x="250" y="184" text-anchor="middle" font-size="24" font-weight="800" fill="#7c6d62">${esc(c.tip)}</text></svg>`;
+    }
+    function examplesHTML(c) {
+      return `<div class="examples">${(c.words || []).map((w) => `<div class="example">${artSVG(w.art || "")}<div class="py">${esc(w.sy)}</div><div class="zi">${esc(w.zi)}</div></div>`).join("")}</div>`;
+    }
+    function contrastHTML(c) {
+      const cols = c.items.length > 2 ? c.items.length : 2;
+      return `<div class="contrast-grid" style="--cols:${cols}">${c.items.map((x) => `<div class="contrast-item">${gridSVG(flattenParts([x]))}<div style="text-align:center;font-weight:900">${esc(x)}</div></div>`).join("")}</div>`;
+    }
+    function choicePool(c) {
+      const same = groupCards(c.g).map((x) => x.c).filter((x) => ["letter","sound"].includes(x.type));
+      const correct = labelOf(c), out = [correct];
+      for (let step=1; out.length<4 && step<same.length+4; step++) {
+        const pick = labelOf(same[(groupPos()-1+step*5)%same.length]);
+        if (!out.includes(pick)) out.push(pick);
+      }
+      return out.sort((a,b) => ((a.charCodeAt(0)+state.i*7)%11)-((b.charCodeAt(0)+state.i*7)%11));
+    }
+    function quizHTML(c) {
+      if (state.revealed) return gridSVG(partsOf(c));
+      return `<div class="quiz">${choicePool(c).map((x) => `<button class="quiz-choice" data-choice="${esc(x)}">${gridSVG(flattenParts([x]))}</button>`).join("")}</div>`;
+    }
+    function modeHTML(c) {
+      if (!["letter","sound"].includes(c.type)) return "";
+      return `<div class="mode-switch"><button class="mode-btn ${state.mode==="learn"?"active":""}" data-mode="learn">学习</button><button class="mode-btn ${state.mode==="quiz"?"active":""}" data-mode="quiz">听音找字</button></div>`;
+    }
+    function mainFocus(c) {
+      if (c.type === "tone") return `<div><div class="tone-vowels">${esc(c.vowels)}</div>${examplesHTML(c)}</div>`;
+      if (c.type === "contrast") return contrastHTML(c);
+      if (c.type === "spell") return gridSVG([c.final]);
+      if (state.mode === "quiz" && ["letter","sound"].includes(c.type)) return quizHTML(c);
+      return gridSVG(partsOf(c));
+    }
+    function mainArt(c) {
+      if (c.type === "tone") return roadSVG(c);
+      if (c.type === "contrast") return `<div class="contrast-prompt"><div class="compare-mark">↔</div><strong>${esc(c.label)}</strong><span>先看字形，再听发音</span></div>`;
+      return artSVG(c.art || "");
+    }
+    function infoRows(c) {
+      const rows = [["这是什么",`${kindOf(c)} · ${labelOf(c)}`],["认形提示",cueOf(c)],["发音提示",tipOf(c)]];
+      if (c.type === "letter") {
+        const names = partsOf(c).map((p) => `${p}：${(STROKES[p]||[]).map((s,i) => `第${i+1}笔${s.n}`).join("，")}`).join("；");
+        rows.push(["规范字形",names]);
+      }
+      if (c.type === "sound" && c.kind === "whole") rows.push(["注意","整体认读音节直接读，不拆开拼。"]);
+      if (c.type === "tone" && c.tone === 0) rows.push(["注意","轻声不是固定的第五个调值，必须放进词语里听。"]);
+      rows.push(["操作","翻到新卡会自动发声；点 🔊 可以重播。"]);
+      return rows.map(([a,b]) => `<div class="info-row"><b>${esc(a)}</b>${esc(b)}</div>`).join("");
+    }
+
+    function renderMobile(c) {
+      $("mobileStage").innerHTML = `<article class="mobile-card">
+        <div class="card-head"><span class="badge">${esc(kindOf(c))}</span><div class="card-title">${esc(labelOf(c))}</div>${modeHTML(c)}<button class="replay" data-replay aria-label="重播">🔊</button></div>
+        <div class="art-box">${mainArt(c)}</div>
+        <div class="focus-box">${mainFocus(c)}</div>
+        <div class="cue-box"><div class="cue">${esc(cueOf(c))}</div><div class="tip">${esc(tipOf(c))}</div></div>
+      </article>`;
+    }
+    function renderDesktop(c) {
+      $("desktopStage").innerHTML = `<section class="desktop-panel">
+        <div class="panel-head"><span class="badge">${esc(kindOf(c))}</span><strong>${esc(labelOf(c))}</strong><button class="replay" data-replay aria-label="重播">🔊</button></div>
+        <div class="panel-body art">${mainArt(c)}</div><div class="panel-foot"><div class="cue">${esc(cueOf(c))}</div><div class="tip">${esc(tipOf(c))}</div></div>
+      </section><section class="desktop-panel">
+        <div class="panel-head"><strong>${state.mode==="quiz"?"听声音，找出正确答案":"规范字形"}</strong>${modeHTML(c)}</div>
+        <div class="panel-body">${mainFocus(c)}</div>
+      </section><aside class="desktop-panel">
+        <div class="panel-head"><strong>家长提示</strong></div><div class="panel-body"><div class="info-list">${infoRows(c)}</div></div>
+      </aside>`;
+    }
+    function renderGroups(c) {
+      $("groupTabs").innerHTML = GROUPS.map((g,i) => `<button class="group-tab ${i===c.g?"active":""}" data-group="${i}">${esc(shortGroup(g.name))}</button>`).join("");
+      const active = $("groupTabs").querySelector(".active");
+      if (active) requestAnimationFrame(() => active.scrollIntoView({block:"nearest",inline:"center"}));
+    }
+    function renderFilm(c) {
+      $("film").innerHTML = groupCards(c.g).map(({c:x,i}) => `<button class="film-item ${i===state.i?"active":""}" data-index="${i}">${esc(labelOf(x))}</button>`).join("");
+      const active = $("film").querySelector(".active");
+      if (active) requestAnimationFrame(() => active.scrollIntoView({block:"nearest",inline:"center"}));
+    }
+    function renderPicker(c) {
+      $("sheetTitle").textContent = GROUPS[c.g].name;
+      $("sheetGrid").innerHTML = groupCards(c.g).map(({c:x,i}) => `<button class="sheet-item ${i===state.i?"active":""}" data-index="${i}">${esc(labelOf(x))}</button>`).join("");
+    }
+    function render(speak=false) {
+      const c = current();
+      renderGroups(c); renderMobile(c); renderDesktop(c); renderFilm(c); renderPicker(c);
+      const total = groupCards(c.g).length;
+      $("progressMain").textContent = `${groupPos()} / ${total} · ${labelOf(c)}`;
+      $("progressSub").textContent = `${GROUPS[c.g].name} · 点这里选卡`;
+      $("soundBtn").classList.toggle("on",state.sound);
+      $("soundBtn").setAttribute("aria-pressed",String(state.sound));
+      $("soundBtn").innerHTML = state.sound ? "🔊 <span>自动</span>" : "🔇 <span>静音</span>";
+      if (speak) playCurrent();
+    }
+    function selectIndex(i, speak=true) {
+      state.i = (i + CARDS.length) % CARDS.length; state.revealed = false;
+      if (!["letter","sound"].includes(current().type)) state.mode = "learn";
+      render(speak); saveLastPos();
+    }
+    function move(delta) { selectIndex(state.i + delta,true); }
+    function jumpGroup(g) { const at=CARDS.findIndex((c)=>c.g===g); if(at>=0) selectIndex(at,true); }
+    function openSheet() { $("sheet").hidden=false; const a=$("sheetGrid").querySelector(".active"); if(a) requestAnimationFrame(()=>a.scrollIntoView({block:"center"})); }
+    function closeSheet() { $("sheet").hidden=true; }
+
+    var AC = null;
+    function playCheer() {
+      try {
+        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === "suspended") AC.resume();
+        const now = AC.currentTime;
+        [523, 659, 784, 1047].forEach((f, i) => {           // 上行琶音：答对旋律
+          const o = AC.createOscillator(), g = AC.createGain();
+          o.type = "triangle"; o.frequency.value = f;
+          g.gain.setValueAtTime(0.001, now + i * 0.09);
+          g.gain.exponentialRampToValueAtTime(0.22, now + i * 0.09 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+          o.connect(g).connect(AC.destination);
+          o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.25);
+        });
+        for (let b = 0; b < 3; b++) {                        // 三波噪声：鼓掌
+          const t0 = now + 0.18 + b * 0.2;
+          const buf = AC.createBuffer(1, Math.floor(AC.sampleRate * 0.22), AC.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.7);
+          const src = AC.createBufferSource(); src.buffer = buf;
+          const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1600 + b * 500; bp.Q.value = 0.7;
+          const g = AC.createGain();
+          g.gain.setValueAtTime(0.3, t0);
+          g.gain.exponentialRampToValueAtTime(0.01, t0 + 0.22);
+          src.connect(bp); bp.connect(g); g.connect(AC.destination);
+          src.start(t0);
+        }
+      } catch (e) {}
+    }
+    function confetti() {
+      const colors = ["#e8663c", "#f2b53c", "#4fae9f", "#5fa8d8", "#f5a58c", "#7fae70"];
+      for (let i = 0; i < 30; i++) {
+        const s = document.createElement("div");
+        s.className = "cf";
+        s.style.left = (Math.random() * 100) + "vw";
+        s.style.background = colors[i % colors.length];
+        s.style.animationDelay = (Math.random() * 0.4) + "s";
+        s.style.transform = `rotate(${Math.floor(Math.random() * 360)}deg)`;
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 2800);
+      }
+    }
+    function celebrate() { confetti(); playCheer(); }
+
+    function actionClick(e) {
+      if (e.target.closest("[data-replay]")) { playCurrent(); return; }
+      const mode=e.target.closest("[data-mode]");
+      if(mode) { state.mode=mode.dataset.mode; state.revealed=false; render(state.mode==="quiz"); return; }
+      const choice=e.target.closest("[data-choice]");
+      if(choice) {
+        const ok=choice.dataset.choice===labelOf(current());
+        choice.classList.add(ok?"right":"wrong");
+        if(ok) { state.revealed=true; celebrate(); playCurrent(); setTimeout(()=>render(false),900); }
+      }
+    }
+    $("mobileStage").addEventListener("click",actionClick);
+    $("desktopStage").addEventListener("click",actionClick);
+    $("groupTabs").addEventListener("click",(e)=>{const b=e.target.closest("[data-group]"); if(b) jumpGroup(Number(b.dataset.group));});
+    $("film").addEventListener("click",(e)=>{const b=e.target.closest("[data-index]"); if(b) selectIndex(Number(b.dataset.index),true);});
+    $("sheetGrid").addEventListener("click",(e)=>{const b=e.target.closest("[data-index]"); if(b){selectIndex(Number(b.dataset.index),true); closeSheet();}});
+    $("prevBtn").addEventListener("click",()=>move(-1));
+    $("nextBtn").addEventListener("click",()=>move(1));
+    $("progressBtn").addEventListener("click",openSheet);
+    $("closeSheet").addEventListener("click",closeSheet);
+    $("sheet").addEventListener("click",(e)=>{if(e.target===$("sheet")) closeSheet();});
+    $("soundBtn").addEventListener("click",()=>{state.sound=!state.sound; if(!state.sound&&playing) playing.pause(); render(false); if(state.sound) playCurrent();});
+    $("startBtn").addEventListener("click",()=>{state.started=true; state.sound=true; $("gate").hidden=true; render(false); playCurrent();});
+    document.addEventListener("keydown",(e)=>{if(e.key==="ArrowLeft")move(-1); if(e.key==="ArrowRight")move(1); if(e.key==="Escape")closeSheet();});
+
+    let px=null,py=null;
+    $("mobileStage").addEventListener("pointerdown",(e)=>{px=e.clientX;py=e.clientY;},{passive:true});
+    $("mobileStage").addEventListener("pointerup",(e)=>{if(px==null)return;const dx=e.clientX-px,dy=e.clientY-py;px=py=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.35)move(dx<0?1:-1);},{passive:true});
+
+    const params=new URLSearchParams(location.search);
+    const requestedGroup=params.get("group");
+    if(requestedGroup){const g=GROUPS.findIndex((x)=>x.id===requestedGroup),i=CARDS.findIndex((x)=>x.g===g);if(i>=0)state.i=i;}
+    const n=Number(params.get("n"));if(Number.isInteger(n)&&n>=1&&n<=CARDS.length)state.i=n-1;
+    render(false);
+  </script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>识字卡片 · 422字</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: #f2c14e;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 16px;
+    }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; cursor: default; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 108px) * 0.8));
+      width: min(96vw, calc((100svh - 108px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+    body.tips-open .card-svg {
+      width: min(96vw, calc((100dvh - 104px - 32dvh) * 0.8));
+      width: min(96vw, calc((100svh - 104px - 32svh) * 0.8));
+    }
+    .card-svg.hidden-art .art, .card-svg.hidden-art .sent { display: none; }
+    /* 笔画模式：藏插画、显逐笔动画层 */
+    .strokes-layer { display: none; }
+    body.stroke-mode .card-svg .art { display: none; }
+    body.stroke-mode .card-svg .strokes-layer { display: block; }
+
+    /* 底部工具栏：3 个按钮 + 左右滑手势（滑=翻卡，组名按钮滑=切组） */
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, border-color 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); }
+    .group-btn {
+      flex: 0 0 auto;
+      display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff;
+      border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; flex: 0 0 auto; }
+    .counter { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 分组抽屉 */
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+    .tip-row b { color: #b0541f; }
+
+    body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 40px; }
+    body.static .card-svg { width: 720px; filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 30px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 360px)); gap: 26px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 360px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="识字卡片">
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="toggleImg" class="pill" aria-pressed="false">显示笔画</button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+  </main>
+
+  <script>
+    const CARDS = __CARDS__;
+    const GROUPS = __GROUPS__;
+    const GLYPHS = __GLYPHS__;
+    const ART = __ART__;
+    const SCALE = __SCALE__;
+    const PAIR_SCALE = __PAIR_SCALE__;
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, dispMode: "img", tipsOpen: false };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+    const fromParam = parseInt(qs.get("from"), 10);
+    if (fromParam > 0 && fromParam < deck.length) deck = deck.slice(fromParam);
+
+    function glyphPath(ch, cx, s) {
+      const g = GLYPHS[ch];
+      const tx = cx - s * g.bx;
+      const ty = 162 + s * g.by;
+      return `<path d="${g.d}" transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s},${-s})" fill="#4a3226"/>`;
+    }
+
+    function cardSVG(card) {
+      const hidden = state.imgHidden && mode === "deck" ? " hidden-art" : "";
+      const label = card.pair ? card.pair.join("") : card.char;
+      const chars = card.pair
+        ? card.pair.map((ch, i) => glyphPath(ch, i === 0 ? 240 : 560, PAIR_SCALE)).join("")
+        : glyphPath(card.char, 400, SCALE);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${label} 字卡" class="card-svg${hidden}">
+  <rect x="10" y="10" width="780" height="980" rx="42" fill="#fdf8ec" stroke="#f2c14e" stroke-width="10"/>
+  <rect x="58" y="46" width="684" height="232" rx="34" fill="#fbf0c2"/>
+  ${chars}
+  <g class="art" transform="translate(20,306)">${ART[card.key]}</g>
+  <g class="strokes-layer" transform="translate(20,306)"></g>
+  <g class="sent">
+    <rect x="84" y="824" width="632" height="122" rx="34" fill="#d9f0ea"/>
+    <text x="400" y="887" text-anchor="middle" dominant-baseline="central" font-size="54" font-weight="600" fill="#4a3226">${card.sentence}</text>
+  </g>
+</svg>`;
+    }
+
+    function tipsHTML(card) {
+      return `<div class="lead">先指大字读一遍，再顺着画面说句子，等孩子回应。</div>
+<div class="tip-row"><span class="tip-tag">读音</span><span><b>${card.pinyin}</b>（${card.tone}）</span></div>
+<div class="tip-row"><span class="tip-tag">怎么说</span><span>${card.say}</span></div>
+<div class="tip-row"><span class="tip-tag">怎么聊</span><span>${card.chat}</span></div>
+<div class="tip-row"><span class="tip-tag">生活里</span><span>${card.life}</span></div>`;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const toggleImg = document.getElementById("toggleImg");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+
+    function render() {
+      const { c, i } = deck[state.i];
+      cardWrap.innerHTML = cardSVG(c);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      const strokeMode = state.dispMode === "strokes";
+      document.body.classList.toggle("stroke-mode", strokeMode);
+      toggleImg.textContent = strokeMode ? "显示图片" : "显示笔画";
+      toggleImg.setAttribute("aria-pressed", String(strokeMode));
+      if (strokeMode) startStrokes(c); else stopStrokes();
+      // 解说是全局开关：开=跟随当前卡刷新内容，关=保持关闭，翻页/跳组都不改变状态
+      if (state.tipsOpen) {
+        tips.innerHTML = tipsHTML(c);
+        tips.hidden = false;
+        document.body.classList.add("tips-open");
+      } else {
+        tips.hidden = true;
+        document.body.classList.remove("tips-open");
+      }
+      toggleTips.setAttribute("aria-pressed", String(state.tipsOpen));
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      document.body.classList.remove("tips-open");
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+    // 保留给需要立即收起且不触发 render 的场景；常规开关走 state.tipsOpen + render()
+
+    // ---------- 逐笔动画：标准笔顺（hanzi-writer-data 中线数据，粗圆头线逐笔描画，写完循环） ----------
+    /* 数据编码：每笔 [x0,y0,dx1,dy1,...]，坐标为 1024 坐标系的 1/8 量化值，解码累加后 ×8 还原。
+       节奏：一笔约 1 秒（描 620ms + 顿 400ms），全字写完停 1.6 秒擦掉重写，适合 4 岁跟读。 */
+    const STROKES_DATA = __STROKES__;
+    const STROKE_TIME = { draw: 620, gap: 400, charGap: 650, hold: 1600 };
+    let animGen = 0;
+    function stopStrokes() { animGen++; }
+    function decodeChar(flatStrokes) {
+      return flatStrokes.map((flat) => {
+        const pts = []; let x = flat[0] * 8, y = flat[1] * 8;
+        pts.push([x, y]);
+        for (let k = 2; k < flat.length; k += 2) { x += flat[k] * 8; y += flat[k + 1] * 8; pts.push([x, y]); }
+        return pts;
+      });
+    }
+    function startStrokes(card) {
+      const gen = ++animGen;
+      const layer = document.querySelector(".card-svg .strokes-layer");
+      if (!layer) return;
+      const chars = card.pair || [card.char];
+      if (chars.some((ch) => !STROKES_DATA[ch])) return;  // 缺笔顺数据则保留插画（当前 422/422 全覆盖）
+      const multi = chars.length > 1;
+      const decoded = chars.map((ch) => decodeChar(STROKES_DATA[ch]));
+      function makePath(pts) {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", "M " + pts.map((q) => q[0] + " " + q[1]).join(" L "));
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "#4a3226");
+        p.setAttribute("stroke-width", "92");
+        p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round");
+        p.setAttribute("pathLength", "1");
+        p.style.strokeDasharray = "1 1.06";
+        p.style.strokeDashoffset = "1";
+        return p;
+      }
+      function play() {
+        if (gen !== animGen) return;
+        layer.innerHTML = chars.map((ch, i) => {
+          const s = multi ? 0.34 : 0.46, w = 1024 * s;
+          const tx = multi ? (i === 0 ? 220 : 540) - w / 2 : (760 - w) / 2;
+          // 笔顺数据 Y 轴朝上（原点左下），这里翻转 Y：y -> ty+w-s*y
+          return `<g transform="translate(${tx} ${(500 - w) / 2 + w}) scale(${s} ${-s})"></g>`;
+        }).join("");
+        setTimeout(() => step(0, 0), 350);                 // 落笔前稍作停顿
+      }
+      function step(ci, si) {
+        if (gen !== animGen) return;
+        if (ci >= chars.length) {                          // 整卡写完：停一会，擦掉重写循环
+          setTimeout(() => { if (gen === animGen) play(); }, STROKE_TIME.hold);
+          return;
+        }
+        if (si >= decoded[ci].length) {                    // 当前字写完 → 下一个字
+          setTimeout(() => step(ci + 1, 0), STROKE_TIME.charGap);
+          return;
+        }
+        const p = makePath(decoded[ci][si]);
+        layer.children[ci].appendChild(p);
+        p.getBoundingClientRect();                         // 强制回流，确保初始隐藏态生效
+        p.style.transition = `stroke-dashoffset ${STROKE_TIME.draw}ms ease-in-out`;
+        p.style.strokeDashoffset = "0";
+        setTimeout(() => step(ci, si + 1), STROKE_TIME.draw + STROKE_TIME.gap);
+      }
+      play();
+    }
+
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click（短按失灵、长按有效）。
+    // 所以按钮动作直接绑 touchend，并 preventDefault 防止合成 click 二次触发；click 保留给鼠标/键盘。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    bindTap(toggleImg, () => { state.dispMode = state.dispMode === "img" ? "strokes" : "img"; render(); });
+    bindTap(toggleTips, () => { state.tipsOpen = !state.tipsOpen; render(); });
+    groupBtn.addEventListener("click", openSheet);  // 桌面点击；触屏走底栏手势（轻点/左右滑）
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    // 底栏手势：左右滑=翻上一张/下一张；组名按钮左右滑=切换分组；轻点组名=分组列表
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      if (qs.get("tips") === "1") state.tipsOpen = true;
+      render();
+      if (qs.get("sheet") === "1") openSheet();
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      if (qs.get("hide") === "1") state.imgHidden = true;
+      render();
+    }
+  </script>
+</body>
+</html>

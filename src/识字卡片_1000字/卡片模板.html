@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>识字卡片 · 422 字（402 卡）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: #f2c14e;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 16px;
+    }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; cursor: default; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 108px) * 0.8));
+      width: min(96vw, calc((100svh - 108px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+    body.tips-open .card-svg {
+      width: min(96vw, calc((100dvh - 104px - 32dvh) * 0.8));
+      width: min(96vw, calc((100svh - 104px - 32svh) * 0.8));
+    }
+    .card-svg.hidden-art .art, .card-svg.hidden-art .sent { display: none; }
+    /* 笔画模式：藏插画、显逐笔动画层 */
+    .strokes-layer { display: none; }
+    body.stroke-mode .card-svg .art { display: none; }
+    body.stroke-mode .card-svg .strokes-layer { display: block; }
+
+    /* 底部工具栏：3 个按钮 + 左右滑手势（滑=翻卡，组名按钮滑=切组） */
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, border-color 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); }
+    .group-btn {
+      flex: 0 0 auto;
+      display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff;
+      border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; flex: 0 0 auto; }
+    .counter { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 分组抽屉 */
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+    .tip-row b { color: #b0541f; }
+
+    body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 40px; }
+    body.static .card-svg { width: 720px; filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 30px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 360px)); gap: 26px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 360px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+
+    /* ════════ 电脑版（≥1024px，JS matchMedia 切换 body.desk-on）：三栏字卡台 ════════ */
+    #desk { flex: 1; min-height: 0; display: flex; flex-direction: column;
+            --daccent: #3e9486; --dbtn: #dff4f1; --dbtnh: #c5ebe7; }
+    #desk[hidden] { display: none; }
+    body.desk-on .stage, body.desk-on .bar, body.desk-on .tips { display: none; }
+    body.desk-on .gallery { padding: 0; }
+    .desk-top { flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+                padding: 10px 20px; border-bottom: 2px solid #f3e7cd; background: #fbf3dd; }
+    .desk-top h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+    .desk-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 2px; }
+    .dchip { border: 0; border-radius: 999px; background: var(--dbtn); color: #2f6b60;
+             padding: 6px 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .dchip:hover { background: var(--dbtnh); }
+    .dchip.active { background: var(--daccent); color: #fff; font-weight: 600; }
+    .desk-switches { display: flex; gap: 8px; }
+    .desk-switches .pill { background: var(--dbtn); color: #2f6b60; font-size: 13px; padding: 6px 12px; }
+    .desk-switches .pill[aria-pressed="true"] { background: var(--daccent); color: #fff; }
+    .desk-main { flex: 1; min-height: 0; display: grid; gap: 16px; padding: 14px 18px;
+                 grid-template-columns: minmax(340px, 30vw) minmax(300px, 1fr) minmax(260px, 22vw); }
+    @media (min-width: 1440px) {
+      .desk-main { grid-template-columns: minmax(430px, 35vw) 1fr minmax(300px, 24vw); }
+    }
+    body.desk-art-off .desk-main { grid-template-columns: minmax(300px, 1fr) minmax(260px, 22vw); }
+    body.desk-tips-off .desk-main { grid-template-columns: minmax(340px, 30vw) minmax(300px, 1fr); }
+    @media (min-width: 1440px) {
+      body.desk-art-off .desk-main { grid-template-columns: 1fr minmax(300px, 24vw); }
+      body.desk-tips-off .desk-main { grid-template-columns: minmax(430px, 35vw) 1fr; }
+    }
+    body.desk-art-off .desk-main > .zone:nth-child(1) { display: none; }
+    body.desk-tips-off .desk-main > .zone:nth-child(3) { display: none; }
+    .desk-main .zone { min-height: 0; }
+    .card-box { height: 100%; display: flex; flex-direction: column;
+                background: #fff9ea; border: 2px solid #f3e7cd; border-radius: 22px; padding: 14px; }
+    .art-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .art-area svg { width: 100%; height: 100%; }
+    .sent-pill { flex: 0 0 auto; margin: 10px 8px 4px; background: #d9f0ea; border-radius: 18px;
+                 padding: 10px 12px; text-align: center; font-size: 19px; font-weight: 600; line-height: 1.5; }
+    .zone.center .card-box { align-items: center; justify-content: center; }
+    .board { position: relative; width: min(100%, 64vh); aspect-ratio: 1; cursor: pointer; }
+    .board svg { width: 100%; height: 100%; display: block; }
+    .replay { position: absolute; right: 10px; bottom: 10px; border: 0; border-radius: 999px;
+              background: var(--dbtn); color: #2f6b60; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .replay:hover { background: var(--dbtnh); }
+    .desk-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px; }
+    .desk-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .desk-head .zi { font-size: 44px; font-weight: 700; line-height: 1; }
+    .desk-head .meta { color: var(--muted); font-size: 14px; }
+    .desk-panel .lead { font-size: 13px; color: var(--muted); margin: 0 0 12px;
+                        border-bottom: 1px dashed #e8d9b8; padding-bottom: 10px; }
+    .desk-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+                 padding: 10px 20px 14px; border-top: 2px solid #f3e7cd; background: #fbf3dd; }
+    .nav-btn { border: 0; border-radius: 999px; background: var(--daccent); color: #fff;
+               width: 44px; height: 44px; font-size: 20px; cursor: pointer; flex: 0 0 auto; }
+    .nav-btn:hover { filter: brightness(1.08); }
+    .film { flex: 1; display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px; }
+    .mini { flex: 0 0 auto; width: 46px; height: 52px; border: 2px solid transparent; border-radius: 12px;
+            background: var(--dbtn); color: var(--ink); font-family: "Songti SC", "STSong", serif;
+            font-size: 26px; cursor: pointer; }
+    .mini:hover { background: var(--dbtnh); }
+    .mini.active { border-color: var(--daccent); background: #fff; font-weight: 700; }
+    .mini.pair { font-size: 16px; letter-spacing: -1px; }
+    #desk .counter { font-size: 14px; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="识字卡片1000">
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="toggleImg" class="pill" aria-pressed="false">显示笔画</button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+    <div id="desk" hidden>
+      <header class="desk-top">
+        <h1>识字卡片 · 1000 字</h1>
+        <nav class="desk-chips" id="deskChips" aria-label="分组导航"></nav>
+        <div class="desk-switches">
+          <button class="pill" id="deskLoop" aria-pressed="true">循环书写</button>
+          <button class="pill" id="deskArt" aria-pressed="true">插画</button>
+          <button class="pill" id="deskTips" aria-pressed="true">讲解</button>
+        </div>
+      </header>
+      <section class="desk-main">
+        <div class="zone"><div class="card-box">
+          <div class="art-area"><svg id="deskArtSvg" viewBox="0 0 744 510" preserveAspectRatio="xMidYMid meet" aria-label="插画"></svg></div>
+          <div class="sent-pill" id="deskSent"></div>
+        </div></div>
+        <div class="zone center"><div class="card-box">
+          <div class="board" id="deskBoard" title="点一下重写"><svg id="deskBoardSvg" viewBox="0 0 600 600" aria-label="米字格笔顺"></svg><button class="replay" id="deskReplay">↻ 重写</button></div>
+        </div></div>
+        <div class="zone"><div class="card-box"><div class="desk-panel" id="deskPanel"></div></div></div>
+      </section>
+      <footer class="desk-foot">
+        <button class="nav-btn" id="deskPrev" aria-label="上一张">←</button>
+        <div class="film" id="deskFilm" aria-label="组内卡片"></div>
+        <span class="counter" id="deskCounter"></span>
+        <button class="nav-btn" id="deskNext" aria-label="下一张">→</button>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    const CARDS = __CARDS__;
+    const GROUPS = __GROUPS__;
+    const GLYPHS = __GLYPHS__;
+    const ART = __ART__;
+    const SCALE = __SCALE__;
+    const PAIR_SCALE = __PAIR_SCALE__;
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, dispMode: "img", tipsOpen: false };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+    const fromParam = parseInt(qs.get("from"), 10);
+    if (fromParam > 0 && fromParam < deck.length) deck = deck.slice(fromParam);
+
+    function glyphPath(ch, cx, s) {
+      const g = GLYPHS[ch];
+      const tx = cx - s * g.bx;
+      const ty = 162 + s * g.by;
+      return `<path d="${g.d}" transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s},${-s})" fill="#4a3226"/>`;
+    }
+
+    function cardSVG(card) {
+      const hidden = state.imgHidden && mode === "deck" ? " hidden-art" : "";
+      const label = card.pair ? card.pair.join("") : card.char;
+      const chars = card.pair
+        ? card.pair.map((ch, i) => glyphPath(ch, i === 0 ? 240 : 560, PAIR_SCALE)).join("")
+        : glyphPath(card.char, 400, SCALE);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${label} 字卡" class="card-svg${hidden}">
+  <rect x="10" y="10" width="780" height="980" rx="42" fill="#fdf8ec" stroke="#f2c14e" stroke-width="10"/>
+  <rect x="58" y="46" width="684" height="232" rx="34" fill="#fbf0c2"/>
+  ${chars}
+  <g class="art" transform="translate(20,306)">${ART[card.key]}</g>
+  <g class="strokes-layer" transform="translate(20,306)"></g>
+  <g class="sent">
+    <rect x="84" y="824" width="632" height="122" rx="34" fill="#d9f0ea"/>
+    <text x="400" y="887" text-anchor="middle" dominant-baseline="central" font-size="54" font-weight="600" fill="#4a3226">${card.sentence}</text>
+  </g>
+</svg>`;
+    }
+
+    function tipsHTML(card) {
+      return `<div class="lead">先指大字读一遍，再顺着画面说句子，等孩子回应。</div>
+<div class="tip-row"><span class="tip-tag">读音</span><span><b>${card.pinyin}</b>（${card.tone}）</span></div>
+<div class="tip-row"><span class="tip-tag">怎么说</span><span>${card.say}</span></div>
+<div class="tip-row"><span class="tip-tag">怎么聊</span><span>${card.chat}</span></div>
+<div class="tip-row"><span class="tip-tag">生活里</span><span>${card.life}</span></div>`;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const toggleImg = document.getElementById("toggleImg");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+
+    /* 记住上次看到的位置：任何入口都记录；停留 1.5s 才写入（误触滑走不覆盖）。 */
+    const DECK_META = { id: "shizi-1000", url: "shizi-1000.html", name: "识字卡片 · 1000 字全集" };
+    let posSkipFirst = true;
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {
+        try {
+          const { c, i } = deck[state.i];
+          const inGroup = CARDS.filter((x) => x.g === c.g).length;
+          const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+          const label = c.pair ? c.pair.join("") : c.char;
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: GROUPS[c.g].name + " · " + label, pos: pos + "/" + inGroup, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+
+    function render() {
+      if (mode === "deck" && deskActive) return renderDesk();
+      const { c, i } = deck[state.i];
+      cardWrap.innerHTML = cardSVG(c);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      const strokeMode = state.dispMode === "strokes";
+      document.body.classList.toggle("stroke-mode", strokeMode);
+      toggleImg.textContent = strokeMode ? "显示图片" : "显示笔画";
+      toggleImg.setAttribute("aria-pressed", String(strokeMode));
+      if (strokeMode) startStrokes(c); else stopStrokes();
+      // 解说是全局开关：开=跟随当前卡刷新内容，关=保持关闭，翻页/跳组都不改变状态
+      if (state.tipsOpen) {
+        tips.innerHTML = tipsHTML(c);
+        tips.hidden = false;
+        document.body.classList.add("tips-open");
+      } else {
+        tips.hidden = true;
+        document.body.classList.remove("tips-open");
+      }
+      toggleTips.setAttribute("aria-pressed", String(state.tipsOpen));
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+      saveLastPos();
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      document.body.classList.remove("tips-open");
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+    // 保留给需要立即收起且不触发 render 的场景；常规开关走 state.tipsOpen + render()
+
+    // ---------- 逐笔动画：标准笔顺（hanzi-writer-data 中线数据，粗圆头线逐笔描画，写完循环） ----------
+    /* 数据编码：每笔 [x0,y0,dx1,dy1,...]，坐标为 1024 坐标系的 1/8 量化值，解码累加后 ×8 还原。
+       节奏：一笔约 1 秒（描 620ms + 顿 400ms），全字写完停 1.6 秒擦掉重写，适合 4 岁跟读。 */
+    const STROKES_DATA = __STROKES__;
+    const STROKE_TIME = { draw: 620, gap: 400, charGap: 650, hold: 1600 };
+    let animGen = 0;
+    function stopStrokes() { animGen++; }
+    function decodeChar(flatStrokes) {
+      return flatStrokes.map((flat) => {
+        const pts = []; let x = flat[0] * 8, y = flat[1] * 8;
+        pts.push([x, y]);
+        for (let k = 2; k < flat.length; k += 2) { x += flat[k] * 8; y += flat[k + 1] * 8; pts.push([x, y]); }
+        return pts;
+      });
+    }
+    // 笔顺坐标拟合：422 字中线实测包络 x 32..1000 / y −80..864（名义域 0..1024 并不占满，y 还会越界），
+    // 加半笔宽(83/2)后按 x −9.5..1041.5 / y −121.5..905.5 等比缩放 97% 填充并居中到格子。
+    // 若调整笔画宽度，需按新包络重算 s/cx/cy。（1000字包络实测 cy=396）
+    const STROKE_FIT = { s: 0.97 / 1051, cx: 516, cy: 396 };
+    function inkHolder(x, y, size) {
+      const s = STROKE_FIT.s * size;
+      return `translate(${(x + size / 2 - s * STROKE_FIT.cx).toFixed(1)} ${(y + size / 2 + s * STROKE_FIT.cy).toFixed(1)}) scale(${s.toFixed(4)} ${-s})`;
+    }
+    function startStrokes(card) {
+      const gen = ++animGen;
+      const layer = document.querySelector(".card-svg .strokes-layer");
+      if (!layer) return;
+      const chars = card.pair || [card.char];
+      if (chars.some((ch) => !STROKES_DATA[ch])) return;  // 缺笔顺数据则保留插画（当前 422/422 全覆盖）
+      const multi = chars.length > 1;
+      const decoded = chars.map((ch) => decodeChar(STROKES_DATA[ch]));
+      function makePath(pts) {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", "M " + pts.map((q) => q[0] + " " + q[1]).join(" L "));
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "#4a3226");
+        p.setAttribute("stroke-width", "83");
+        p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round");
+        p.setAttribute("pathLength", "1");
+        p.style.strokeDasharray = "1 1.06";
+        p.style.strokeDashoffset = "1";
+        return p;
+      }
+      function play() {
+        if (gen !== animGen) return;
+        layer.innerHTML = multi
+          ? `<g transform="${inkHolder(30, 85, 330)}"></g><g transform="${inkHolder(400, 85, 330)}"></g>`
+          : `<g transform="${inkHolder(138, 8, 484)}"></g>`;
+        setTimeout(() => step(0, 0), 350);                 // 落笔前稍作停顿
+      }
+      function step(ci, si) {
+        if (gen !== animGen) return;
+        if (ci >= chars.length) {                          // 整卡写完：停一会，擦掉重写循环
+          setTimeout(() => { if (gen === animGen) play(); }, STROKE_TIME.hold);
+          return;
+        }
+        if (si >= decoded[ci].length) {                    // 当前字写完 → 下一个字
+          setTimeout(() => step(ci + 1, 0), STROKE_TIME.charGap);
+          return;
+        }
+        const p = makePath(decoded[ci][si]);
+        layer.children[ci].appendChild(p);
+        p.getBoundingClientRect();                         // 强制回流，确保初始隐藏态生效
+        p.style.transition = `stroke-dashoffset ${STROKE_TIME.draw}ms ease-in-out`;
+        p.style.strokeDashoffset = "0";
+        setTimeout(() => step(ci, si + 1), STROKE_TIME.draw + STROKE_TIME.gap);
+      }
+      play();
+    }
+
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click（短按失灵、长按有效）。
+    // 所以按钮动作直接绑 touchend，并 preventDefault 防止合成 click 二次触发；click 保留给鼠标/键盘。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    bindTap(toggleImg, () => { state.dispMode = state.dispMode === "img" ? "strokes" : "img"; render(); });
+    bindTap(toggleTips, () => { state.tipsOpen = !state.tipsOpen; render(); });
+    groupBtn.addEventListener("click", openSheet);  // 桌面点击；触屏走底栏手势（轻点/左右滑）
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    // 底栏手势：左右滑=翻上一张/下一张；组名按钮左右滑=切换分组；轻点组名=分组列表
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    // ════════ 电脑版三栏字卡台（≥1024px；CSS 类 body.desk-on 由 matchMedia 驱动，手机端逻辑零改动） ════════
+    const deskMQ = window.matchMedia("(min-width: 960px)");
+    let deskActive = false;
+    const deskState = { loop: true };
+    let deskGen = 0;
+    function stopDeskStrokes() { deskGen++; }
+    function updateDeskMode() {
+      if (mode !== "deck") return;
+      const want = deskMQ.matches;
+      if (want === deskActive) return;
+      deskActive = want;
+      document.getElementById("desk").hidden = !want;
+      document.body.classList.toggle("desk-on", want);
+      if (want) { stopStrokes(); cardWrap.innerHTML = ""; } else stopDeskStrokes();
+    }
+    function groupStats() {
+      const { c, i } = deck[state.i];
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      return { pos, inGroup };
+    }
+    function deskBoardSVG(card) {
+      const cells = card.pair
+        ? [{ x: 36, y: 168, size: 264 }, { x: 300, y: 168, size: 264 }]
+        : [{ x: 44, y: 44, size: 512 }];
+      let s = '<rect x="6" y="6" width="588" height="588" rx="36" fill="#fffdf3" stroke="#e3d3a8" stroke-width="4"/>';
+      cells.forEach((cell, ci) => {
+        const { x, y, size } = cell;
+        const cxm = x + size / 2, cym = y + size / 2, e = 10;
+        s += `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fffef9" stroke="#cbb37f" stroke-width="5"/>`
+          + `<g stroke="#dcc690" stroke-width="2.5" stroke-dasharray="12 10" fill="none">`
+          + `<line x1="${x + e}" y1="${cym}" x2="${x + size - e}" y2="${cym}"/>`
+          + `<line x1="${cxm}" y1="${y + e}" x2="${cxm}" y2="${y + size - e}"/>`
+          + `<line x1="${x + e}" y1="${y + e}" x2="${x + size - e}" y2="${y + size - e}"/>`
+          + `<line x1="${x + e}" y1="${y + size - e}" x2="${x + size - e}" y2="${y + e}"/></g>`
+          + `<g class="desk-ink" transform="${inkHolder(x, y, size)}"></g>`;
+      });
+      return s;
+    }
+    function deskWrite(card) {
+      const gen = ++deskGen;
+      const svg = document.getElementById("deskBoardSvg");
+      svg.innerHTML = deskBoardSVG(card);
+      const chars = card.pair || [card.char];
+      if (chars.some((ch) => !STROKES_DATA[ch])) return;   // 兜底：空米字格（当前 422/422 全覆盖）
+      const layers = svg.querySelectorAll(".desk-ink");
+      const decoded = chars.map((ch) => decodeChar(STROKES_DATA[ch]));
+      function step(ci, si) {
+        if (gen !== deskGen) return;
+        if (ci >= chars.length) {                          // 整卡写完：循环模式停一会重写
+          if (deskState.loop) setTimeout(() => { if (gen === deskGen) deskWrite(card); }, STROKE_TIME.hold);
+          return;
+        }
+        if (si >= decoded[ci].length) { setTimeout(() => step(ci + 1, 0), STROKE_TIME.charGap); return; }
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", "M " + decoded[ci][si].map((q) => q[0] + " " + q[1]).join(" L "));
+        p.setAttribute("fill", "none"); p.setAttribute("stroke", "#4a3226");
+        p.setAttribute("stroke-width", "83"); p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round"); p.setAttribute("pathLength", "1");
+        p.style.strokeDasharray = "1 1.06"; p.style.strokeDashoffset = "1";
+        layers[ci].appendChild(p);
+        p.getBoundingClientRect();
+        p.style.transition = `stroke-dashoffset ${STROKE_TIME.draw}ms ease-in-out`;
+        p.style.strokeDashoffset = "0";
+        setTimeout(() => step(ci, si + 1), STROKE_TIME.draw + STROKE_TIME.gap);
+      }
+      setTimeout(() => step(0, 0), 350);
+    }
+    function renderDesk() {
+      const { c } = deck[state.i];
+      const { pos, inGroup } = groupStats();
+      document.getElementById("deskArtSvg").innerHTML = ART[c.key] || "";
+      document.getElementById("deskSent").textContent = c.sentence;
+      const label = c.pair ? c.pair.join("") : c.char;
+      document.getElementById("deskPanel").innerHTML =
+        `<div class="desk-head"><span class="zi">${label}</span><span class="meta">${GROUPS[c.g].name} · 第 ${pos} / ${inGroup} 卡</span></div>` + tipsHTML(c);
+      document.getElementById("deskChips").innerHTML = GROUPS.map((g, gi) =>
+        `<button class="dchip${gi === c.g ? " active" : ""}" data-g="${gi}">${g.name}</button>`).join("");
+      document.getElementById("deskFilm").innerHTML = deck.map((d, i) => d.c.g !== c.g ? "" :
+        `<button class="mini${i === state.i ? " active" : ""}${d.c.pair ? " pair" : ""}" data-i="${i}">${d.c.pair ? d.c.pair.join("") : d.c.char}</button>`).join("");
+      document.getElementById("deskCounter").textContent = `${pos} / ${inGroup} · ${GROUPS[c.g].name}`;
+      const act = document.querySelector("#deskFilm .mini.active");
+      if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      deskWrite(c);
+      saveLastPos();
+    }
+    if (mode === "deck") {
+      document.getElementById("deskPrev").addEventListener("click", () => go(-1));
+      document.getElementById("deskNext").addEventListener("click", () => go(1));
+      document.getElementById("deskFilm").addEventListener("click", (e) => {
+        const b = e.target.closest(".mini");
+        if (b) { state.i = Number(b.dataset.i); render(); }
+      });
+      document.getElementById("deskChips").addEventListener("click", (e) => {
+        const b = e.target.closest(".dchip");
+        if (b) jumpTo(Number(b.dataset.g));
+      });
+      document.getElementById("deskBoard").addEventListener("click", () => deskWrite(deck[state.i].c));
+      document.getElementById("deskReplay").addEventListener("click", (e) => { e.stopPropagation(); deskWrite(deck[state.i].c); });
+      const dLoop = document.getElementById("deskLoop");
+      dLoop.addEventListener("click", () => {
+        deskState.loop = !deskState.loop;
+        dLoop.setAttribute("aria-pressed", String(deskState.loop));
+        dLoop.textContent = deskState.loop ? "循环书写" : "写一遍";
+        if (deskState.loop) deskWrite(deck[state.i].c);
+      });
+      const dArt = document.getElementById("deskArt");
+      dArt.addEventListener("click", () => {
+        const on = document.body.classList.toggle("desk-art-off");
+        dArt.setAttribute("aria-pressed", String(!on));
+      });
+      const dTips = document.getElementById("deskTips");
+      dTips.addEventListener("click", () => {
+        const on = document.body.classList.toggle("desk-tips-off");
+        dTips.setAttribute("aria-pressed", String(!on));
+      });
+      if (window.matchMedia) deskMQ.addEventListener("change", () => { updateDeskMode(); render(); });
+    }
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      if (qs.get("tips") === "1") state.tipsOpen = true;
+      updateDeskMode();
+      render();
+      if (qs.get("sheet") === "1") openSheet();
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      if (qs.get("hide") === "1") state.imgHidden = true;
+      render();
+    }
+  </script>
+</body>
+</html>

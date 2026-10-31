@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>韵语与声音游戏</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: #4a97c9;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 10px;
+    }
+    .head { flex: 0 0 auto; text-align: center; padding: 2px 0 4px; }
+    .head .t { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .head .s { font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 128px) * 0.8));
+      width: min(96vw, calc((100svh - 128px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .primary { flex: 0 0 auto; padding: 10px 22px; font-size: 15px; font-weight: 600;
+      background: var(--accent); color: #fff; }
+    .group-btn {
+      flex: 0 0 auto; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff; border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; }
+    .counter { color: var(--muted); font-size: 13px; }
+
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; color: #fff; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+
+    body.static .head, body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 24px; }
+    body.static .card-svg { width: min(92vw, 640px); filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 24px; }
+    body.grid .head { margin-bottom: 14px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 320px)); gap: 22px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 320px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+
+    /* ════════ 宽屏版（≥960px，JS matchMedia 切 body.desk-on；横屏平板/电脑/横屏大手机） ════════ */
+    #desk { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #desk[hidden] { display: none; }
+    body.desk-on .head, body.desk-on .stage, body.desk-on .bar, body.desk-on .tips { display: none; }
+    body.desk-on .gallery { padding: 0; }
+    .desk-top { flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+                padding: 10px 20px; border-bottom: 2px solid #f3e7cd; background: #fbf3dd; }
+    .desk-top h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+    .desk-top h1 .s { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+    .desk-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 2px; }
+    .dchip { border: 0; border-radius: 999px; background: var(--button); color: #2f6b60;
+             padding: 6px 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .dchip:hover { background: var(--button-hover); }
+    .dchip.active { background: var(--accent); color: #fff; font-weight: 600; }
+    .desk-state { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+                  padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .desk-main { flex: 1; min-height: 0; display: grid; gap: 16px; padding: 14px 18px;
+                 grid-template-columns: minmax(320px, 30vw) minmax(300px, 1fr) minmax(280px, 24vw); }
+    @media (min-width: 1440px) {
+      .desk-main { grid-template-columns: minmax(400px, 34vw) 1fr minmax(300px, 24vw); }
+    }
+    /* 880–959 的鼠标桌面：三栏压缩版 */
+    @media (hover: hover) and (pointer: fine) and (min-width: 880px) and (max-width: 959.98px) {
+      .desk-main { grid-template-columns: minmax(300px, 30vw) minmax(240px, 1fr) minmax(240px, 22vw); gap: 12px; padding: 10px 12px; }
+    }
+    .desk-main .zone { min-height: 0; }
+    .card-box { height: 100%; display: flex; flex-direction: column; background: #fff9ea;
+                border: 2px solid #f3e7cd; border-radius: 22px; padding: 14px; overflow: hidden; }
+    .art-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .art-area svg { width: 100%; height: 100%; }
+    .desk-pill { flex: 0 0 auto; margin: 10px 8px 4px; background: #d9f0ea; border-radius: 16px;
+                 padding: 9px 12px; text-align: center; font-size: 17px; font-weight: 600; line-height: 1.5; }
+    .desk-pill.q { background: #fbf0c2; font-weight: 500; color: #6b5a4e; font-size: 15px; }
+    .desk-center { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                   align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .desk-center .board { position: relative; width: min(100%, 62vh); aspect-ratio: 1; }
+    .desk-center .board svg { width: 100%; height: 100%; display: block; }
+    .desk-center .hint { font-size: 13px; color: var(--muted); }
+    .parts-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 0 10px; }
+    .part-tile { background: #fbf3e2; border-radius: 16px; padding: 10px 12px; text-align: center; }
+    .part-tile svg { width: 84px; height: 84px; display: block; }
+    .part-tile .pl { font-size: 13px; color: #6b5a4e; margin-top: 4px; }
+    .parts-plus { font-size: 34px; color: var(--accent); font-weight: 800; }
+    .verse-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 align-items: center; justify-content: center; gap: 4px; overflow: auto; }
+    .verse-box .vt { font-size: 30px; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
+    .verse-box .vl { font-size: clamp(22px, 3.4vh, 34px); font-family: 'Songti SC','STSong','SimSun',serif;
+                     font-weight: 700; letter-spacing: 0.12em; line-height: 1.7; }
+    .verse-box .vl b { color: var(--accent); }
+    .steps-box { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+                 justify-content: center; gap: 14px; padding: 0 12px; overflow: auto; }
+    .step-row { display: flex; gap: 14px; align-items: baseline; }
+    .step-n { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px; background: var(--accent);
+              color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .step-t { font-size: clamp(18px, 2.6vh, 24px); font-family: 'Songti SC','STSong','SimSun',serif; font-weight: 600; }
+    .steps-box .vt { text-align: center; font-size: 28px; color: var(--accent); font-weight: 800; margin-bottom: 4px; }
+    .desk-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px; }
+    .desk-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .desk-head .zi { font-size: 42px; font-weight: 700; line-height: 1; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .desk-head .meta { color: var(--muted); font-size: 14px; }
+    .mgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+    .mcell { background: #fbf3e2; border-radius: 12px; padding: 8px 10px; display: flex; align-items: baseline; gap: 8px; }
+    .mcell .mc { font-size: 30px; font-weight: 700; font-family: 'Songti SC','STSong','SimSun',serif; }
+    .mcell .mw { font-size: 13px; color: #6b5a4e; }
+    .desk-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+                 padding: 10px 20px 14px; border-top: 2px solid #f3e7cd; background: #fbf3dd; }
+    .nav-btn { border: 0; border-radius: 999px; background: var(--accent); color: #fff;
+               width: 44px; height: 44px; font-size: 20px; cursor: pointer; flex: 0 0 auto; }
+    .nav-btn:hover { filter: brightness(1.08); }
+    .film { flex: 1; display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px; }
+    .mini { flex: 0 0 auto; width: 46px; height: 52px; border: 2px solid transparent; border-radius: 12px;
+            background: var(--button); color: var(--ink); font-family: 'Songti SC','STSong','SimSun',serif;
+            font-size: 26px; cursor: pointer; }
+    .mini:hover { background: var(--button-hover); }
+    .mini.active { border-color: var(--accent); background: #fff; font-weight: 700; }
+    .mini.wide { width: auto; min-width: 46px; padding: 0 10px; font-size: 15px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; letter-spacing: 0.05em; }
+    #desk .counter { font-size: 14px; white-space: nowrap; }
+    /* 鼠标桌面窗口过窄（如缩放过大）：提示如何展开三栏 */
+    .narrow-hint { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                   z-index: 60; background: #fbeecb; color: #6b5a4e; border: 1.5px solid #ead9ac;
+                   border-radius: 999px; padding: 7px 14px; font-size: 13px; gap: 10px;
+                   align-items: center; max-width: 92vw; }
+    .narrow-hint .nh-x { cursor: pointer; color: #8d7d73; padding: 0 2px; }
+    @media (hover: hover) and (pointer: fine) and (min-width: 700px) and (max-width: 879.98px) {
+      body:not(.desk-on) .narrow-hint { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="汉语启蒙卡集">
+    <header class="head" id="head"></header>
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="primaryBtn" class="primary"></button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+    <div id="desk" hidden>
+      <header class="desk-top">
+        <h1 id="deskTitle"></h1>
+        <nav class="desk-chips" id="deskChips" hidden></nav>
+        <button class="desk-state" id="deskState" hidden></button>
+      </header>
+      <section class="desk-main">
+        <div class="zone"><div class="card-box" id="deskLeft"></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-center" id="deskCenter"></div></div></div>
+        <div class="zone"><div class="card-box"><div class="desk-panel" id="deskPanel"></div></div></div>
+      </section>
+      <footer class="desk-foot">
+        <button class="nav-btn" id="deskPrev" aria-label="上一张">←</button>
+        <div class="film" id="deskFilm" aria-label="组内卡片"></div>
+        <span class="counter" id="deskCounter"></span>
+        <button class="nav-btn" id="deskNext" aria-label="下一张">→</button>
+      </footer>
+    </div>
+      <div class="narrow-hint" id="narrowHint"><span>窗口有点窄～拉宽窗口，或按 ⌘0 恢复缩放，可展开完整三栏视图</span><span class="nh-x" onclick="this.parentNode.remove()">✕</span></div>
+  </main>
+
+  <script>
+    const KIND = "shengyin";
+    const CARDS = [{"type":"verse","key":"起得早","title":"起得早","lines":["小宝宝，起得早，","太阳对你笑，","小鸟枝头叫，","拍手跳得高。"],"art_src":"seed:日","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","早、笑、叫、高——结尾都翘着念。"]],"g":0},{"type":"verse","key":"爱花花","title":"爱花花","lines":["小娃娃，爱花花，","提水浇浇它，","花开红又大。"],"art_src":"zhiwu:花","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","花、它、大——嘴巴张得一样大。"]],"g":0},{"type":"verse","key":"小鱼游","title":"小鱼游","lines":["小鱼小鱼游游游，","摇摇尾巴点点头，","东游游来西游游，","快快乐乐不回头。"],"art_src":"dongwu:鱼","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","游、头、游、头——全押在 ou 上。"]],"g":0},{"type":"verse","key":"小鸟叫","title":"小鸟叫","lines":["小鸟轻轻叫，","跳上小木桥，","桥下鱼儿跳，","你我拍手笑。"],"art_src":"dongwu:鸟","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","叫、桥、跳、笑——都是 iao 的音。"]],"g":0},{"type":"verse","key":"数数歌","title":"数数歌","lines":["一二三四五，","上山打老虎，","老虎不在家，","碰到小松鼠。"],"art_src":"dongwu:虎","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","五、虎、鼠——传统数数歌，念熟了数数也顺了。"]],"g":0},{"type":"verse","key":"拍手歌","title":"拍手歌","lines":["你拍一，我拍一，","一个小孩坐飞机；","你拍四，我拍四，","四个小孩写大字。"],"art_src":"seed:手","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","一边拍手一边念，节奏对了才算赢。"]],"g":0},{"type":"verse","key":"小雨点","title":"小雨点","lines":["小雨点，往下跳，","跳进田里，","禾苗弯弯笑。"],"art_src":"tianwen:雨","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","跳、笑——下雨天可以再念一遍。"]],"g":0},{"type":"verse","key":"睡着了","title":"睡着了","lines":["月亮弯弯挂天上，","照着宝宝小木床，","小鸟不叫了，","宝宝睡着了。"],"art_src":"tianwen:月","tips":[["怎么玩","大人念一句，孩子接句尾的那个字"],["打节奏","一个字拍一下手，一句拍一遍"],["找韵脚","上、床——睡前轻轻念，声音越来越小。"]],"g":0},{"type":"game","key":"声调小火车","title":"声调小火车","steps":["听着：妈——麻——马——骂","做手势：一声手放平，二声往上升","三声拐个弯，四声往下降","再来听：妈妈骑马，马慢，妈妈骂马"],"art_src":"调火车","tips":[["怎么玩","家长念四个音，孩子做手势；不认字母也能玩。"]],"g":1},{"type":"game","key":"押韵找朋友","title":"押韵找朋友","steps":["家长说：猫","孩子找一个结尾像的：高、跑、包","轮换：孩子出题，家长来接","连成一句：小猫跳得高"],"art_src":"dongwu:猫","tips":[["怎么玩","只要结尾听起来一样，就是押韵好朋友。"]],"g":1},{"type":"game","key":"双胞胎听一听","title":"双胞胎听一听","steps":["家长念：妈（mā）——马（mǎ）","孩子听：一样吗？哪里不一样？","升级：是（shì）——十（shí）","听对了就击掌"],"art_src":"rencheng:妈","tips":[["怎么玩","一对一对念，让孩子当小裁判。"]],"g":1},{"type":"game","key":"数拍子","title":"数拍子","steps":["念一句：小宝宝，起得早","一起拍手：一个字拍一下","换一个长句子再拍","越拍越顺，最后加速"],"art_src":"wupin:球","tips":[["怎么玩","拍的是节奏，练的是句子的耳朵。"]],"g":1},{"type":"game","key":"开头的朋友","title":"开头的朋友","steps":["嘴巴一闭就出 m：妈、马、猫、米","再想三个 m 开头的词","换一个：嘴巴一笑就出 b——爸、包、杯","数数谁找得多"],"art_src":"dongwu:马","tips":[["怎么玩","玩的是“开头的音”，就是以后的声母。"]],"g":1},{"type":"game","key":"悄悄话","title":"悄悄话","steps":["爸爸悄悄念一句韵语给妈妈","妈妈传给孩子","孩子大声说出来","传对了全家击掌"],"art_src":"rencheng:朋","tips":[["怎么玩","用本套的韵语做传话内容，逼着耳朵认真听。"]],"g":1}];
+    const GROUPS = [{"id":"yy","name":"韵语念一念"},{"id":"sy","name":"声音玩一玩"}];
+    const GLYPHS = {};
+    const ART = {"起得早":"<g >\n    <g stroke=\"#f2a72e\" stroke-width=\"18\" stroke-linecap=\"round\">\n      <line x1=\"210\" y1=\"340\" x2=\"166\" y2=\"340\"/>\n      <line x1=\"235\" y1=\"257\" x2=\"197\" y2=\"234\"/>\n      <line x1=\"296\" y1=\"196\" x2=\"273\" y2=\"158\"/>\n      <line x1=\"380\" y1=\"172\" x2=\"380\" y2=\"126\"/>\n      <line x1=\"464\" y1=\"196\" x2=\"487\" y2=\"158\"/>\n      <line x1=\"525\" y1=\"257\" x2=\"563\" y2=\"234\"/>\n      <line x1=\"550\" y1=\"340\" x2=\"594\" y2=\"340\"/>\n    </g>\n    <circle cx=\"380\" cy=\"340\" r=\"130\" fill=\"#f7ae35\"/>\n    <circle cx=\"366\" cy=\"324\" r=\"92\" fill=\"#f9c95e\" opacity=\"0.85\"/>\n    <path d=\"M 40 462 Q 380 322 720 462 L 720 480 L 40 480 Z\" fill=\"#a9cf8e\"/>\n  </g>","爱花花":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 380 446 Q 386 390 380 330\" fill=\"none\" stroke=\"#5e8a50\" stroke-width=\"13\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"translate(380,396) rotate(-155)\"><path d=\"M 0 0 Q 36.96 -30 88 0 Q 36.96 30 0 0 Z\" fill=\"#7fae70\"/><line x1=\"10\" y1=\"0\" x2=\"76\" y2=\"0\" stroke=\"#d4e8b0\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g><g transform=\"translate(382,416) rotate(-28)\"><path d=\"M 0 0 Q 33.6 -27 80 0 Q 33.6 27 0 0 Z\" fill=\"#9cc98a\"/><line x1=\"10\" y1=\"0\" x2=\"68\" y2=\"0\" stroke=\"#d4e8b0\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g><circle cx=\"380.0\" cy=\"158.0\" r=\"52.08\" fill=\"#f0876f\"/><circle cx=\"459.8887473687929\" cy=\"216.04257247250442\" r=\"52.08\" fill=\"#f0876f\"/><circle cx=\"429.3739611925677\" cy=\"309.9574275274956\" r=\"52.08\" fill=\"#f0876f\"/><circle cx=\"330.6260388074323\" cy=\"309.9574275274956\" r=\"52.08\" fill=\"#f0876f\"/><circle cx=\"300.1112526312071\" cy=\"216.04257247250442\" r=\"52.08\" fill=\"#f0876f\"/><circle cx=\"380\" cy=\"242\" r=\"42.0\" fill=\"#f7ae35\"/><circle cx=\"380\" cy=\"242\" r=\"20\" fill=\"#f9c95e\" opacity=\"0.9\"/>","小鱼游":"<path d=\"M 46 185 Q 116 169 190 185 Q 264 201 338 185 Q 412 169 486 185 Q 560 201 634 185 Q 678 193 714 185 L 714 480 L 46 480 Z\" fill=\"#b7dff2\"/><path d=\"M 108 203 Q 136 191 164 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 332 203 Q 360 191 388 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 556 203 Q 584 191 612 203\" fill=\"none\" stroke=\"#e9f6fc\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"512\" cy=\"242\" r=\"10\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"538\" cy=\"214\" r=\"12\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"514\" cy=\"192\" r=\"7\" fill=\"#fdfdfa\" opacity=\"0.85\"/><path d=\"M 486 300 Q 548 250 564 266 Q 540 300 564 334 Q 548 350 486 300 Z\" fill=\"#e2744e\"/><path d=\"M 352 222 Q 374 160 426 190 Q 400 206 388 226 Z\" fill=\"#e2744e\"/><ellipse cx=\"387.2\" cy=\"307.65\" rx=\"120\" ry=\"85\" fill=\"#e2744e\"/><ellipse cx=\"377.6\" cy=\"296.6\" rx=\"116.39999999999999\" ry=\"82.45\" fill=\"#f0876f\"/><g transform=\"rotate(-24 352 324)\"><ellipse cx=\"352\" cy=\"324\" rx=\"30\" ry=\"16\" fill=\"#e2744e\"/></g><path d=\"M 318 268 Q 340 254 362 268\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 362 268 Q 384 254 406 268\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 340 306 Q 362 292 384 306\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 384 306 Q 406 292 428 306\" fill=\"none\" stroke=\"#f6a58f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"262\" cy=\"304\" rx=\"10\" ry=\"7\" fill=\"#e2744e\"/><ellipse cx=\"298\" cy=\"274\" rx=\"11\" ry=\"13\" fill=\"#4a3226\"/><circle cx=\"294\" cy=\"269\" r=\"4\" fill=\"#fdfdfa\"/><circle cx=\"300\" cy=\"320\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.7\"/>","小鸟叫":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 0 400 Q 168 374 330 352 Q 480 318 648 268\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"28\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 540 297 Q 566 258 588 228\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"16\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 452 328 Q 468 300 478 278\" fill=\"none\" stroke=\"#c89058\" stroke-width=\"13\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"rotate(-30 470 218)\"><ellipse cx=\"470\" cy=\"218\" rx=\"46\" ry=\"16\" fill=\"#4a97c9\"/></g><circle cx=\"404.68\" cy=\"265.02\" r=\"78\" fill=\"#4a97c9\"/><circle cx=\"398.44\" cy=\"254.88\" r=\"75.66\" fill=\"#5fa8d8\"/><ellipse cx=\"400\" cy=\"286\" rx=\"48\" ry=\"50\" fill=\"#a8d4ef\"/><g transform=\"rotate(-16 366 262)\"><ellipse cx=\"366\" cy=\"262\" rx=\"27\" ry=\"46\" fill=\"#4a97c9\"/></g><circle cx=\"384\" cy=\"182\" r=\"12\" fill=\"#5fa8d8\"/><circle cx=\"406\" cy=\"176\" r=\"14\" fill=\"#4a97c9\"/><rect x=\"366\" y=\"310\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#e8a13c\"/><line x1=\"372\" y1=\"342\" x2=\"360\" y2=\"350\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"372\" y1=\"342\" x2=\"382\" y2=\"349\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><rect x=\"418\" y=\"298\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#e8a13c\"/><line x1=\"424\" y1=\"330\" x2=\"412\" y2=\"338\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><line x1=\"424\" y1=\"330\" x2=\"434\" y2=\"337\" stroke=\"#e8a13c\" stroke-width=\"6\" stroke-linecap=\"round\"/><ellipse cx=\"372\" cy=\"238\" rx=\"10\" ry=\"12.0\" fill=\"#4a3226\"/><circle cx=\"369.0\" cy=\"233.8\" r=\"3.0\" fill=\"#fdfdfa\"/><ellipse cx=\"428\" cy=\"238\" rx=\"10\" ry=\"12.0\" fill=\"#4a3226\"/><circle cx=\"425.0\" cy=\"233.8\" r=\"3.0\" fill=\"#fdfdfa\"/><polygon points=\"400,252 426,264 400,276 374,264\" fill=\"#f2b53c\"/><circle cx=\"344\" cy=\"270\" r=\"10\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"456\" cy=\"270\" r=\"10\" fill=\"#f5a58c\" opacity=\"0.75\"/>","数数歌":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 528 398 Q 604 396 608 320 Q 610 276 570 276\" fill=\"none\" stroke=\"#e2682a\" stroke-width=\"24\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"translate(586 378) rotate(-44)\"><rect x=\"-6\" y=\"-16\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#4a3226\"/></g><g transform=\"translate(604 295) rotate(66)\"><rect x=\"-6\" y=\"-16\" width=\"12\" height=\"32\" rx=\"6\" fill=\"#4a3226\"/></g><circle cx=\"572\" cy=\"276\" r=\"13\" fill=\"#e2682a\"/><path d=\"M 296 160 Q 278 104 308 98 Q 332 104 336 156 Z\" fill=\"#c95418\"/><path d=\"M 305 144 Q 296 112 312 108 Q 322 114 323 142 Z\" fill=\"#4a3226\"/><path d=\"M 464 160 Q 482 104 452 98 Q 428 104 424 156 Z\" fill=\"#c95418\"/><path d=\"M 455 144 Q 464 112 448 108 Q 438 114 437 142 Z\" fill=\"#4a3226\"/><ellipse cx=\"389.0\" cy=\"389.2\" rx=\"150\" ry=\"80\" fill=\"#c95418\"/><ellipse cx=\"377.0\" cy=\"378.8\" rx=\"145.5\" ry=\"77.6\" fill=\"#e2682a\"/><ellipse cx=\"380\" cy=\"402\" rx=\"78\" ry=\"44\" fill=\"#fdfdfa\"/><ellipse cx=\"304\" cy=\"444\" rx=\"33\" ry=\"18\" fill=\"#e2682a\"/><line x1=\"292.45\" y1=\"437.7\" x2=\"292.45\" y2=\"449.4\" stroke=\"#c95418\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"313.9\" y1=\"437.7\" x2=\"313.9\" y2=\"449.4\" stroke=\"#c95418\" stroke-width=\"4\" stroke-linecap=\"round\"/><ellipse cx=\"456\" cy=\"444\" rx=\"33\" ry=\"18\" fill=\"#e2682a\"/><line x1=\"444.45\" y1=\"437.7\" x2=\"444.45\" y2=\"449.4\" stroke=\"#c95418\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"465.9\" y1=\"437.7\" x2=\"465.9\" y2=\"449.4\" stroke=\"#c95418\" stroke-width=\"4\" stroke-linecap=\"round\"/><circle cx=\"386.12\" cy=\"229.18\" r=\"102\" fill=\"#c95418\"/><circle cx=\"377.96\" cy=\"215.92\" r=\"98.94\" fill=\"#e2682a\"/><line x1=\"354\" y1=\"138\" x2=\"406\" y2=\"138\" stroke=\"#4a3226\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"346\" y1=\"155\" x2=\"414\" y2=\"155\" stroke=\"#4a3226\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"356\" y1=\"172\" x2=\"404\" y2=\"172\" stroke=\"#4a3226\" stroke-width=\"10\" stroke-linecap=\"round\"/><line x1=\"380\" y1=\"126\" x2=\"380\" y2=\"176\" stroke=\"#4a3226\" stroke-width=\"9\" stroke-linecap=\"round\"/><path d=\"M 306 318 Q 328 326 346 320\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 454 318 Q 432 326 414 320\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 252 344 Q 278 352 290 368\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 240 388 Q 264 392 278 404\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 260 428 Q 280 432 294 440\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 508 344 Q 482 352 470 368\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 520 388 Q 496 392 482 404\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 500 428 Q 480 432 466 440\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"380\" cy=\"272\" rx=\"50\" ry=\"34\" fill=\"#fdfdfa\"/><polygon points=\"368,258 392,258 380,272\" fill=\"#8a5a33\"/><path d=\"M 380 274 Q 381 280.0 368 281.44\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 274 Q 379 280.0 392 281.44\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"344\" cy=\"196\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"340.7\" cy=\"191.38\" r=\"3.3\" fill=\"#fdfdfa\"/><ellipse cx=\"416\" cy=\"196\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"412.7\" cy=\"191.38\" r=\"3.3\" fill=\"#fdfdfa\"/><circle cx=\"302\" cy=\"238\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"458\" cy=\"238\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/>","拍手歌":"<g >\n    <defs>\n      <g id=\"hand-seed\">\n        <rect x=\"-50\" y=\"-52\" width=\"100\" height=\"124\" rx=\"36\" fill=\"#f7c49c\"/>\n        <rect x=\"-50\" y=\"-102\" width=\"28\" height=\"76\" rx=\"14\" fill=\"#f7c49c\" transform=\"rotate(-8 -36 -30)\"/>\n        <rect x=\"-16\" y=\"-112\" width=\"30\" height=\"86\" rx=\"15\" fill=\"#f7c49c\" transform=\"rotate(-2 -1 -30)\"/>\n        <rect x=\"18\" y=\"-106\" width=\"29\" height=\"80\" rx=\"14.5\" fill=\"#f7c49c\" transform=\"rotate(5 32 -30)\"/>\n        <rect x=\"52\" y=\"-86\" width=\"25\" height=\"62\" rx=\"12.5\" fill=\"#f7c49c\" transform=\"rotate(12 64 -30)\"/>\n        <rect x=\"-86\" y=\"-34\" width=\"34\" height=\"88\" rx=\"17\" fill=\"#f7c49c\" transform=\"rotate(-30 -52 20)\"/>\n        <ellipse cx=\"0\" cy=\"46\" rx=\"38\" ry=\"20\" fill=\"#eeb28a\" opacity=\"0.3\"/>\n        <rect x=\"-50\" y=\"64\" width=\"100\" height=\"56\" rx=\"20\" fill=\"#f2b03c\"/>\n        <rect x=\"-50\" y=\"64\" width=\"100\" height=\"18\" rx=\"9\" fill=\"#e8a13c\"/>\n      </g>\n    </defs>\n    <ellipse cx=\"380\" cy=\"452\" rx=\"238\" ry=\"20\" fill=\"#c8e6d8\"/>\n    <use href=\"#hand-seed\" transform=\"translate(265,302) scale(-1,1)\"/>\n    <use href=\"#hand-seed\" transform=\"translate(495,294)\"/>\n  </g>","小雨点":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><ellipse cx=\"380\" cy=\"424\" rx=\"118\" ry=\"20\" fill=\"#a5d9f0\"/><ellipse cx=\"380\" cy=\"420\" rx=\"92\" ry=\"14\" fill=\"#bfe4f6\"/><path d=\"M 300 412 Q 318 394 336 410\" fill=\"none\" stroke=\"#9fd3ee\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 428 410 Q 446 392 464 408\" fill=\"none\" stroke=\"#9fd3ee\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"268\" cy=\"396\" r=\"6\" fill=\"#9fd3ee\"/><circle cx=\"490\" cy=\"400\" r=\"7\" fill=\"#9fd3ee\"/><circle cx=\"352\" cy=\"384\" r=\"5\" fill=\"#9fd3ee\"/><line x1=\"296\" y1=\"218\" x2=\"268\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"344\" y1=\"224\" x2=\"318\" y2=\"344\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"392\" y1=\"218\" x2=\"364\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"440\" y1=\"224\" x2=\"414\" y2=\"344\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"486\" y1=\"218\" x2=\"458\" y2=\"330\" stroke=\"#79c2e6\" stroke-width=\"7\" stroke-linecap=\"round\"/><path d=\"M 300 357 Q 309.35 370.75 300 379 Q 290.65 370.75 300 357 Z\" fill=\"#79c2e6\"/><path d=\"M 452 363 Q 461.35 376.75 452 385 Q 442.65 376.75 452 363 Z\" fill=\"#79c2e6\"/><circle cx=\"300.2\" cy=\"168\" r=\"57.0\" fill=\"#7a828d\"/><circle cx=\"380\" cy=\"130.0\" r=\"72.2\" fill=\"#7a828d\"/><circle cx=\"459.8\" cy=\"168\" r=\"57.0\" fill=\"#7a828d\"/><rect x=\"266.0\" y=\"156.6\" width=\"228.0\" height=\"68.39999999999999\" rx=\"34.199999999999996\" fill=\"#7a828d\"/><circle cx=\"300.2\" cy=\"152\" r=\"57.0\" fill=\"#9098a3\"/><circle cx=\"380\" cy=\"114.0\" r=\"72.2\" fill=\"#9098a3\"/><circle cx=\"459.8\" cy=\"152\" r=\"57.0\" fill=\"#9098a3\"/><rect x=\"266.0\" y=\"140.6\" width=\"228.0\" height=\"68.39999999999999\" rx=\"34.199999999999996\" fill=\"#9098a3\"/>","睡着了":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"70\" y=\"48\" width=\"620\" height=\"372\" rx=\"36\" fill=\"#2e4d74\"/><path d=\"M 380 128 A 122 122 0 1 1 380 372 A 175 175 0 0 0 380 128 Z\" fill=\"#f2b53c\"/><path d=\"M 443 238 Q 455 248 467 238\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 444 288 Q 456 298 468 288\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"476\" cy=\"262\" r=\"9\" fill=\"#f5a58c\" opacity=\"0.75\"/>","声调小火车":"<ellipse cx=\"380\" cy=\"452\" rx=\"300\" ry=\"20\" fill=\"#c8e6d8\"/><line x1=\"85\" y1=\"122\" x2=\"305\" y2=\"122\" stroke=\"#e8663c\" stroke-width=\"14\" stroke-linecap=\"round\"/><line x1=\"455\" y1=\"184\" x2=\"675\" y2=\"74\" stroke=\"#d99a2b\" stroke-width=\"14\" stroke-linecap=\"round\"/><path d=\"M 85 276 Q 195 394 305 276\" fill=\"none\" stroke=\"#4fae9f\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"455\" y1=\"276\" x2=\"675\" y2=\"386\" stroke=\"#5fa8d8\" stroke-width=\"14\" stroke-linecap=\"round\"/><g transform=\"translate(195,90) rotate(0)\"><rect x=\"-45\" y=\"-34\" width=\"90\" height=\"58\" rx=\"14\" fill=\"#e8663c\"/><rect x=\"-28\" y=\"-24\" width=\"34\" height=\"24\" rx=\"8\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"-26\" cy=\"24\" r=\"13\" fill=\"#d4552f\"/><circle cx=\"26\" cy=\"24\" r=\"13\" fill=\"#d4552f\"/><circle cx=\"-26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/><circle cx=\"26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/></g><g transform=\"translate(565,94) rotate(-27)\"><rect x=\"-45\" y=\"-34\" width=\"90\" height=\"58\" rx=\"14\" fill=\"#f2b53c\"/><rect x=\"-28\" y=\"-24\" width=\"34\" height=\"24\" rx=\"8\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"-26\" cy=\"24\" r=\"13\" fill=\"#c98f1f\"/><circle cx=\"26\" cy=\"24\" r=\"13\" fill=\"#c98f1f\"/><circle cx=\"-26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/><circle cx=\"26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/></g><g transform=\"translate(195,300) rotate(0)\"><rect x=\"-45\" y=\"-34\" width=\"90\" height=\"58\" rx=\"14\" fill=\"#4fae9f\"/><rect x=\"-28\" y=\"-24\" width=\"34\" height=\"24\" rx=\"8\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"-26\" cy=\"24\" r=\"13\" fill=\"#3e9486\"/><circle cx=\"26\" cy=\"24\" r=\"13\" fill=\"#3e9486\"/><circle cx=\"-26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/><circle cx=\"26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/></g><g transform=\"translate(565,297) rotate(27)\"><rect x=\"-45\" y=\"-34\" width=\"90\" height=\"58\" rx=\"14\" fill=\"#5fa8d8\"/><rect x=\"-28\" y=\"-24\" width=\"34\" height=\"24\" rx=\"8\" fill=\"#fdfdfa\" opacity=\"0.85\"/><circle cx=\"-26\" cy=\"24\" r=\"13\" fill=\"#4a97c9\"/><circle cx=\"26\" cy=\"24\" r=\"13\" fill=\"#4a97c9\"/><circle cx=\"-26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/><circle cx=\"26\" cy=\"24\" r=\"5\" fill=\"#4a3226\" opacity=\"0.6\"/></g>","押韵找朋友":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 492 396 Q 560 384 556 320 Q 553 282 520 286\" fill=\"none\" stroke=\"#f5a044\" stroke-width=\"30\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 314 152 Q 288 84 318 76 Q 348 84 354 144 Z\" fill=\"#f5a044\"/><path d=\"M 322 140 Q 306 96 322 92 Q 338 96 342 134 Z\" fill=\"#f8c9c9\"/><path d=\"M 446 152 Q 472 84 442 76 Q 412 84 406 144 Z\" fill=\"#f5a044\"/><path d=\"M 438 140 Q 454 96 438 92 Q 422 96 418 134 Z\" fill=\"#f8c9c9\"/><ellipse cx=\"387.92\" cy=\"375.74\" rx=\"132\" ry=\"86\" fill=\"#dd8a2e\"/><ellipse cx=\"377.36\" cy=\"364.56\" rx=\"128.04\" ry=\"83.42\" fill=\"#f5a044\"/><ellipse cx=\"380\" cy=\"392\" rx=\"76\" ry=\"50\" fill=\"#fbe9cf\"/><ellipse cx=\"318\" cy=\"428\" rx=\"32\" ry=\"18\" fill=\"#f5a044\"/><line x1=\"306.8\" y1=\"421.7\" x2=\"306.8\" y2=\"433.4\" stroke=\"#dd8a2e\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"327.6\" y1=\"421.7\" x2=\"327.6\" y2=\"433.4\" stroke=\"#dd8a2e\" stroke-width=\"4\" stroke-linecap=\"round\"/><ellipse cx=\"442\" cy=\"428\" rx=\"32\" ry=\"18\" fill=\"#f5a044\"/><line x1=\"430.8\" y1=\"421.7\" x2=\"430.8\" y2=\"433.4\" stroke=\"#dd8a2e\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"451.6\" y1=\"421.7\" x2=\"451.6\" y2=\"433.4\" stroke=\"#dd8a2e\" stroke-width=\"4\" stroke-linecap=\"round\"/><circle cx=\"385.76\" cy=\"223.64\" r=\"96\" fill=\"#dd8a2e\"/><circle cx=\"378.08\" cy=\"211.16\" r=\"93.12\" fill=\"#f5a044\"/><path d=\"M 356 140 Q 359 126 366 120\" fill=\"none\" stroke=\"#dd8a2e\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 142 L 380 122\" fill=\"none\" stroke=\"#dd8a2e\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 404 140 Q 401 126 394 120\" fill=\"none\" stroke=\"#dd8a2e\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"344\" cy=\"208\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"340.7\" cy=\"203.38\" r=\"3.3\" fill=\"#fdfdfa\"/><ellipse cx=\"416\" cy=\"208\" rx=\"11\" ry=\"13.2\" fill=\"#4a3226\"/><circle cx=\"412.7\" cy=\"203.38\" r=\"3.3\" fill=\"#fdfdfa\"/><circle cx=\"312\" cy=\"244\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><circle cx=\"448\" cy=\"244\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.75\"/><path d=\"M 371 234 Q 380 229 389 234 Q 385 247 380 248 Q 375 247 371 234 Z\" fill=\"#e87f8f\"/><path d=\"M 380 252 Q 381 258.0 368 259.44\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 380 252 Q 379 258.0 392 259.44\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"292\" y1=\"212\" x2=\"218\" y2=\"202\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"468\" y1=\"212\" x2=\"542\" y2=\"202\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"292\" y1=\"228\" x2=\"218\" y2=\"228\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"468\" y1=\"228\" x2=\"542\" y2=\"228\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"292\" y1=\"244\" x2=\"218\" y2=\"254\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"468\" y1=\"244\" x2=\"542\" y2=\"254\" stroke=\"#b5762a\" stroke-width=\"5\" stroke-linecap=\"round\"/>","双胞胎听一听":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 299 200 Q 295 125 380 123 Q 465 125 461 200 L 453 341 Q 446 356 431 347 L 329 347 Q 314 356 307 341 Z\" fill=\"#5a3d2b\"/><rect x=\"348.5\" y=\"336.7\" width=\"27.3\" height=\"88.2\" rx=\"12.600000000000001\" fill=\"#4a97c9\"/><rect x=\"384.2\" y=\"336.7\" width=\"27.3\" height=\"88.2\" rx=\"12.600000000000001\" fill=\"#4a97c9\"/><ellipse cx=\"362.15\" cy=\"441.7\" rx=\"22.05\" ry=\"10.5\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"397.85\" cy=\"441.7\" rx=\"22.05\" ry=\"10.5\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 321.2 271.6 Q 319.1 353.5 338.0 355.59999999999997 L 422.0 355.59999999999997 Q 440.9 353.5 438.8 271.6 Q 380 254.8 321.2 271.6 Z\" fill=\"#f5a58c\"/><line x1=\"333.8\" y1=\"277.90000000000003\" x2=\"312.8\" y2=\"353.5\" stroke=\"#f8cba4\" stroke-width=\"31.5\" stroke-linecap=\"round\"/><circle cx=\"312.8\" cy=\"353.5\" r=\"13.65\" fill=\"#f8cba4\"/><line x1=\"426.2\" y1=\"277.90000000000003\" x2=\"447.2\" y2=\"353.5\" stroke=\"#f8cba4\" stroke-width=\"31.5\" stroke-linecap=\"round\"/><circle cx=\"447.2\" cy=\"353.5\" r=\"13.65\" fill=\"#f8cba4\"/><circle cx=\"319.1\" cy=\"208.60000000000002\" r=\"11.55\" fill=\"#f8cba4\"/><circle cx=\"440.9\" cy=\"208.60000000000002\" r=\"11.55\" fill=\"#f8cba4\"/><circle cx=\"380\" cy=\"198.10000000000002\" r=\"65.10000000000001\" fill=\"#f8cba4\"/><path d=\"M 316.202 175.31500000000003 Q 321.40999999999997 121.282 380 125.188 Q 438.59000000000003 121.282 443.798 175.31500000000003 Q 415.805 164.24800000000002 380 170.758 Q 344.195 164.24800000000002 316.202 175.31500000000003 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"356.9\" cy=\"189.70000000000002\" rx=\"10.5\" ry=\"13.65\" fill=\"#4a3226\"/><circle cx=\"356.9\" cy=\"185.71\" r=\"3.57\" fill=\"#fdfdfa\"/><ellipse cx=\"403.1\" cy=\"189.70000000000002\" rx=\"10.5\" ry=\"13.65\" fill=\"#4a3226\"/><circle cx=\"403.1\" cy=\"185.71\" r=\"3.57\" fill=\"#fdfdfa\"/><path d=\"M 342.2 164.24800000000002 Q 356.9 157.73800000000003 371.6 162.94600000000003\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"6.300000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 388.4 162.94600000000003 Q 403.1 157.73800000000003 417.8 164.24800000000002\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"6.300000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 359.0 225.40000000000003 Q 380 242.20000000000005 401.0 225.40000000000003\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"7.3500000000000005\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"333.8\" cy=\"212.8\" r=\"11.55\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"426.2\" cy=\"212.8\" r=\"11.55\" fill=\"#f5a58c\" opacity=\"0.8\"/><path d=\"M 336 282 Q 312 330 352 370\" fill=\"none\" stroke=\"#f8cba4\" stroke-width=\"26\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"rotate(12 390 350)\"><rect x=\"295\" y=\"322\" width=\"190\" height=\"60\" rx=\"30\" fill=\"#f7e6b8\"/><line x1=\"368\" y1=\"326\" x2=\"358\" y2=\"374\" stroke=\"#ead9a0\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"410\" y1=\"326\" x2=\"400\" y2=\"374\" stroke=\"#ead9a0\" stroke-width=\"5\" stroke-linecap=\"round\"/></g><circle cx=\"318\" cy=\"316\" r=\"27\" fill=\"#f8cba4\"/><path d=\"M 291 308 Q 295 286 318 285 Q 341 286 345 308 Q 333 298 318 299 Q 303 298 291 308 Z\" fill=\"#5a3d2b\"/><path d=\"M 306 320 Q 311 325 316 320\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 322 320 Q 327 325 332 320\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 310 334 Q 318 340 326 334\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"332\" cy=\"331\" rx=\"6\" ry=\"4.5\" fill=\"#f0876f\"/><circle cx=\"300\" cy=\"330\" r=\"7\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"334\" cy=\"330\" r=\"7\" fill=\"#f5a58c\" opacity=\"0.8\"/><path d=\"M 424 282 Q 454 330 438 374\" fill=\"none\" stroke=\"#f8cba4\" stroke-width=\"26\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"432\" cy=\"380\" r=\"13\" fill=\"#f8cba4\"/>","数拍子":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><ellipse cx=\"380\" cy=\"444\" rx=\"152\" ry=\"13\" fill=\"#4a3226\" opacity=\"0.08\"/><circle cx=\"386.5\" cy=\"326.4\" r=\"130\" fill=\"#3e9486\"/><circle cx=\"376.1\" cy=\"309.5\" r=\"124.14999999999999\" fill=\"#4fae9f\"/><circle cx=\"335.8\" cy=\"274.4\" r=\"31.2\" fill=\"#7cc8bb\" opacity=\"0.9\"/>","开头的朋友":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><path d=\"M 545 296 Q 594 328 582 394\" fill=\"none\" stroke=\"#8a5a33\" stroke-width=\"22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"462\" y=\"378\" width=\"28\" height=\"58\" rx=\"12\" fill=\"#c08d5c\"/><rect x=\"462\" y=\"420\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><rect x=\"506\" y=\"378\" width=\"28\" height=\"58\" rx=\"12\" fill=\"#c08d5c\"/><rect x=\"506\" y=\"420\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><ellipse cx=\"426.52\" cy=\"326.1\" rx=\"142\" ry=\"90\" fill=\"#c08d5c\"/><ellipse cx=\"415.16\" cy=\"314.4\" rx=\"137.74\" ry=\"87.3\" fill=\"#d9a577\"/><path d=\"M 322 292 Q 306 212 268 178\" fill=\"none\" stroke=\"#d9a577\" stroke-width=\"62\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"291\" cy=\"135\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"286\" cy=\"128\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"311\" cy=\"165\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"306\" cy=\"158\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"329\" cy=\"199\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"324\" cy=\"192\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"343\" cy=\"233\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"338\" cy=\"226\" r=\"24\" fill=\"#8a5a33\"/><circle cx=\"355\" cy=\"267\" r=\"22\" fill=\"#8a5a33\"/><circle cx=\"350\" cy=\"260\" r=\"22\" fill=\"#8a5a33\"/><circle cx=\"249\" cy=\"141\" r=\"20\" fill=\"#8a5a33\"/><path d=\"M 262 134 Q 254 104 272 106 Q 286 112 284 142 Z\" fill=\"#d9a577\"/><g transform=\"rotate(-10 250 182)\"><ellipse cx=\"250\" cy=\"182\" rx=\"62\" ry=\"46\" fill=\"#c08d5c\"/><ellipse cx=\"248\" cy=\"180\" rx=\"60\" ry=\"44\" fill=\"#d9a577\"/></g><ellipse cx=\"212\" cy=\"208\" rx=\"38\" ry=\"28\" fill=\"#e9c79b\"/><circle cx=\"198\" cy=\"212\" r=\"5\" fill=\"#b5875a\"/><path d=\"M 204 228 Q 214 234.5 224 228\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"236\" cy=\"166\" rx=\"10\" ry=\"12\" fill=\"#4a3226\"/><circle cx=\"233.0\" cy=\"161.8\" r=\"3.0\" fill=\"#fdfdfa\"/><ellipse cx=\"260\" cy=\"166\" rx=\"10\" ry=\"12\" fill=\"#4a3226\"/><circle cx=\"257.0\" cy=\"161.8\" r=\"3.0\" fill=\"#fdfdfa\"/><circle cx=\"272\" cy=\"206\" r=\"12\" fill=\"#f5a58c\" opacity=\"0.7\"/><rect x=\"318\" y=\"384\" width=\"28\" height=\"54\" rx=\"12\" fill=\"#d9a577\"/><rect x=\"318\" y=\"422\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/><rect x=\"366\" y=\"384\" width=\"28\" height=\"54\" rx=\"12\" fill=\"#d9a577\"/><rect x=\"366\" y=\"422\" width=\"28\" height=\"18\" rx=\"8\" fill=\"#6b4a2e\"/>","悄悄话":"<ellipse cx=\"380\" cy=\"446\" rx=\"240\" ry=\"24\" fill=\"#c8e6d8\"/><rect x=\"238.0\" y=\"361.2\" width=\"20.8\" height=\"67.2\" rx=\"9.600000000000001\" fill=\"#4a97c9\"/><rect x=\"265.2\" y=\"361.2\" width=\"20.8\" height=\"67.2\" rx=\"9.600000000000001\" fill=\"#4a97c9\"/><ellipse cx=\"248.4\" cy=\"441.2\" rx=\"16.8\" ry=\"8.0\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"275.6\" cy=\"441.2\" rx=\"16.8\" ry=\"8.0\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 217.2 311.6 Q 215.6 374.0 230.0 375.59999999999997 L 294.0 375.59999999999997 Q 308.4 374.0 306.8 311.6 Q 262 298.8 217.2 311.6 Z\" fill=\"#e8663c\"/><line x1=\"226.8\" y1=\"316.40000000000003\" x2=\"194.8\" y2=\"260.40000000000003\" stroke=\"#f8cba4\" stroke-width=\"24.0\" stroke-linecap=\"round\"/><circle cx=\"194.8\" cy=\"260.40000000000003\" r=\"10.4\" fill=\"#f8cba4\"/><line x1=\"297.2\" y1=\"316.40000000000003\" x2=\"329.2\" y2=\"260.40000000000003\" stroke=\"#f8cba4\" stroke-width=\"24.0\" stroke-linecap=\"round\"/><circle cx=\"329.2\" cy=\"260.40000000000003\" r=\"10.4\" fill=\"#f8cba4\"/><circle cx=\"215.6\" cy=\"263.6\" r=\"8.8\" fill=\"#f8cba4\"/><circle cx=\"308.4\" cy=\"263.6\" r=\"8.8\" fill=\"#f8cba4\"/><circle cx=\"262\" cy=\"255.60000000000005\" r=\"49.6\" fill=\"#f8cba4\"/><path d=\"M 213.392 238.24000000000007 Q 217.36 197.07200000000006 262 200.04800000000006 Q 306.64 197.07200000000006 310.608 238.24000000000007 Q 289.28000000000003 229.80800000000005 262 234.76800000000006 Q 234.72 229.80800000000005 213.392 238.24000000000007 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"244.4\" cy=\"249.20000000000005\" rx=\"8.0\" ry=\"10.4\" fill=\"#4a3226\"/><circle cx=\"244.4\" cy=\"245.20000000000005\" r=\"2.72\" fill=\"#fdfdfa\"/><ellipse cx=\"279.6\" cy=\"249.20000000000005\" rx=\"8.0\" ry=\"10.4\" fill=\"#4a3226\"/><circle cx=\"279.6\" cy=\"245.20000000000005\" r=\"2.72\" fill=\"#fdfdfa\"/><path d=\"M 233.2 229.80800000000005 Q 244.4 224.84800000000004 255.6 228.81600000000006\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.800000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 268.4 228.81600000000006 Q 279.6 224.84800000000004 290.8 229.80800000000005\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.800000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 246.0 276.40000000000003 Q 262 289.20000000000005 278.0 276.40000000000003\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5.6000000000000005\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"226.8\" cy=\"266.80000000000007\" r=\"8.8\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"297.2\" cy=\"266.80000000000007\" r=\"8.8\" fill=\"#f5a58c\" opacity=\"0.8\"/><rect x=\"474.0\" y=\"361.2\" width=\"20.8\" height=\"67.2\" rx=\"9.600000000000001\" fill=\"#4a97c9\"/><rect x=\"501.2\" y=\"361.2\" width=\"20.8\" height=\"67.2\" rx=\"9.600000000000001\" fill=\"#4a97c9\"/><ellipse cx=\"484.4\" cy=\"441.2\" rx=\"16.8\" ry=\"8.0\" fill=\"#4a3226\" opacity=\"0.85\"/><ellipse cx=\"511.6\" cy=\"441.2\" rx=\"16.8\" ry=\"8.0\" fill=\"#4a3226\" opacity=\"0.85\"/><path d=\"M 453.2 311.6 Q 451.6 374.0 466.0 375.59999999999997 L 530.0 375.59999999999997 Q 544.4 374.0 542.8 311.6 Q 498 298.8 453.2 311.6 Z\" fill=\"#7fae70\"/><line x1=\"462.8\" y1=\"316.40000000000003\" x2=\"430.8\" y2=\"260.40000000000003\" stroke=\"#f8cba4\" stroke-width=\"24.0\" stroke-linecap=\"round\"/><circle cx=\"430.8\" cy=\"260.40000000000003\" r=\"10.4\" fill=\"#f8cba4\"/><line x1=\"533.2\" y1=\"316.40000000000003\" x2=\"565.2\" y2=\"260.40000000000003\" stroke=\"#f8cba4\" stroke-width=\"24.0\" stroke-linecap=\"round\"/><circle cx=\"565.2\" cy=\"260.40000000000003\" r=\"10.4\" fill=\"#f8cba4\"/><circle cx=\"451.6\" cy=\"263.6\" r=\"8.8\" fill=\"#f8cba4\"/><circle cx=\"544.4\" cy=\"263.6\" r=\"8.8\" fill=\"#f8cba4\"/><circle cx=\"498\" cy=\"255.60000000000005\" r=\"49.6\" fill=\"#f8cba4\"/><path d=\"M 449.392 238.24000000000007 Q 453.36 197.07200000000006 498 200.04800000000006 Q 542.64 197.07200000000006 546.608 238.24000000000007 Q 525.28 229.80800000000005 498 234.76800000000006 Q 470.71999999999997 229.80800000000005 449.392 238.24000000000007 Z\" fill=\"#5a3d2b\"/><ellipse cx=\"480.4\" cy=\"249.20000000000005\" rx=\"8.0\" ry=\"10.4\" fill=\"#4a3226\"/><circle cx=\"480.4\" cy=\"245.20000000000005\" r=\"2.72\" fill=\"#fdfdfa\"/><ellipse cx=\"515.6\" cy=\"249.20000000000005\" rx=\"8.0\" ry=\"10.4\" fill=\"#4a3226\"/><circle cx=\"515.6\" cy=\"245.20000000000005\" r=\"2.72\" fill=\"#fdfdfa\"/><path d=\"M 469.2 229.80800000000005 Q 480.4 224.84800000000004 491.6 228.81600000000006\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.800000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 504.4 228.81600000000006 Q 515.6 224.84800000000004 526.8 229.80800000000005\" fill=\"none\" stroke=\"#5a3d2b\" stroke-width=\"4.800000000000001\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 482.0 276.40000000000003 Q 498 289.20000000000005 514.0 276.40000000000003\" fill=\"none\" stroke=\"#4a3226\" stroke-width=\"5.6000000000000005\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"462.8\" cy=\"266.80000000000007\" r=\"8.8\" fill=\"#f5a58c\" opacity=\"0.8\"/><circle cx=\"533.2\" cy=\"266.80000000000007\" r=\"8.8\" fill=\"#f5a58c\" opacity=\"0.8\"/>"};
+    const ACCENT = "#4a97c9";
+    const TINT = "#e0e8e6";
+    const TITLE = "韵语与声音游戏";
+    const SUB = "拍手念韵语、玩声音——拼音的耳朵准备";
+    const INK = "#4a3226", MUTED = "#8d7d73", CREAM = "#fdf8ec";
+    const SONG = "'Songti SC','STSong','SimSun',serif";
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, revealed: qs.get("reveal") === "1" };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function glyphPath(ch, cx, cy, s) {
+      const g = GLYPHS[ch];
+      if (!g) return "";
+      return `<path d="${g.d}" transform="translate(${(cx - s * g.bx).toFixed(2)},${(cy + s * g.by).toFixed(2)}) scale(${s},${-s})" fill="${INK}"/>`;
+    }
+
+    function txt(x, y, size, fill, content, weight = 600, family = SONG, ls = 0, anchor = "middle") {
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}" fill="${fill}" font-family="${family}"${ls ? ` letter-spacing="${ls}"` : ""}>${content}</text>`;
+    }
+
+    function band(x, y, w, h, rx, fill) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`; }
+
+    function wrapLines(s, width) {
+      s = s.trim();
+      const lines = [];
+      while (s.length > width) {
+        let cut = width;
+        while (cut < s.length && /[，。；！？、～]/.test(s[cut])) cut++;
+        lines.push(s.slice(0, cut));
+        s = s.slice(cut).trim();
+      }
+      if (s) lines.push(s);
+      return lines;
+    }
+
+    function frame() {
+      return `<rect x="10" y="10" width="780" height="980" rx="42" fill="${CREAM}" stroke="${ACCENT}" stroke-width="10"/>`;
+    }
+
+    // ---------- 象形字：看图猜字 ----------
+    function cardPic(c, revealed) {
+      let s = frame();
+      s += `<g transform="translate(20,84)">${ART[c.key]}</g>`;
+      if (!revealed) {
+        s += band(96, 600, 608, 156, 34, TINT);
+        s += txt(400, 668, 46, INK, "这是哪个字呀？", 700);
+        s += txt(400, 718, 27, MUTED, "想一想，再点下面的按钮翻开", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += txt(400, 630, 30, ACCENT, `${esc(c.pinyin)} · ${esc(c.tone)}`, 700, "system-ui,-apple-system,sans-serif");
+        s += glyphPath(c.char, 400, 758, 0.24);
+        s += band(110, 878, 580, 84, 26, TINT);
+        const lines = wrapLines(c.story, 14);
+        if (lines.length === 1) s += txt(400, 930, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 912, 27, INK, esc(lines[0]), 600); s += txt(400, 946, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 会意字：拼字魔法 ----------
+    function cardMagic(c, revealed) {
+      let s = frame();
+      const n = c.parts.length;
+      const tileW = n === 2 ? 196 : 150, gap = 42;
+      const x0 = 400 - (n * tileW + (n - 1) * gap) / 2;
+      c.parts.forEach((p, i) => {
+        const tx = x0 + i * (tileW + gap);
+        s += band(tx, 82, tileW, 214, 30, TINT);
+        s += glyphPath(p[0], tx + tileW / 2, 166, n === 2 ? 0.15 : 0.115);
+        s += txt(tx + tileW / 2, 264, 25, MUTED, esc(p[1]), 500, "system-ui,-apple-system,sans-serif");
+        if (i < n - 1) s += txt(tx + tileW + gap / 2, 208, 62, ACCENT, "＋", 800);
+      });
+      s += band(140, 316, 520, 66, 33, TINT);
+      s += txt(400, 359, 33, INK, "拼在一起，是什么字？", 700);
+      s += band(96, 408, 608, 546, 36, "#fbf3e2");
+      if (!revealed) {
+        s += txt(400, 706, 150, "#dccfae", "？", 800);
+        s += txt(400, 836, 29, MUTED, "先猜一猜，再点「变！」", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += `<g transform="translate(58,440) scale(0.9)">${ART[c.key]}</g>`;
+        s += `<circle cx="656" cy="522" r="104" fill="${CREAM}" stroke="${ACCENT}" stroke-width="8"/>`;
+        s += glyphPath(c.result, 656, 528, 0.175);
+        s += txt(656, 658, 27, ACCENT, esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif");
+        s += band(92, 890, 616, 84, 26, TINT);
+        const lines = wrapLines(c.story, 15);
+        if (lines.length === 1) s += txt(400, 942, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 924, 27, INK, esc(lines[0]), 600); s += txt(400, 958, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 部首家族：找朋友 ----------
+    function cardFamily(c) {
+      let s = frame();
+      s += `<g transform="translate(28,54) scale(0.5)">${ART[c.key]}</g>`;
+      s += `<circle cx="588" cy="176" r="118" fill="#f7dfa0"/><circle cx="588" cy="176" r="100" fill="#fdf3cf"/>`;
+      s += glyphPath(c.radical, 588, 182, 0.21);
+      s += txt(400, 372, 50, ACCENT, esc(c.name), 800);
+      s += txt(400, 428, 29, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif");
+      const n = c.members.length;
+      const cols = Math.min(4, Math.ceil(n / 2)), rows = Math.ceil(n / cols);
+      const cellW = 680 / cols, cellH = 400 / rows;
+      const gs = cols >= 4 ? 0.135 : (cols === 3 ? 0.15 : 0.15);
+      c.members.forEach((m, i) => {
+        const row = Math.floor(i / cols), col = i % cols;
+        const rowN = row === rows - 1 ? n - (rows - 1) * cols : cols;
+        const cx = 60 + cellW * col + cellW / 2 + (680 - rowN * cellW) / 2;
+        const cy = 470 + row * cellH;
+        s += band(cx - cellW / 2 + 8, cy + 8, cellW - 16, cellH - 16, 22, TINT);
+        s += glyphPath(m[0], cx, cy + cellH / 2 - 12, gs);
+        s += txt(cx, cy + cellH - 16, 24, "#6b5a4e", esc(m[1]), 500, "system-ui,-apple-system,sans-serif");
+      });
+      s += band(90, 894, 620, 72, 24, TINT);
+      const q = wrapLines(c.tips[2][1], 20);
+      if (q.length === 1) s += txt(400, 938, 26, INK, esc(q[0]), 500);
+      else { s += txt(400, 922, 23, INK, esc(q[0]), 500); s += txt(400, 952, 23, INK, esc(q[1]), 500); }
+      return s;
+    }
+
+    // ---------- 韵语与声音游戏 ----------
+    function cardVerse(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.lines.forEach((line, i) => {
+        const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+        const y = 210 + i * 96;
+        if (m) {
+          s += txt(400, y, 58, INK, esc(m[1]) + `<tspan fill="${ACCENT}">${esc(m[2])}</tspan>` + esc(m[3]), 700, SONG, 5);
+        } else {
+          s += txt(400, y, 58, INK, esc(line), 700, SONG, 5);
+        }
+      });
+      s += `<g transform="translate(210,668) scale(0.5)">${ART[c.key]}</g>`;
+      s += txt(400, 948, 26, MUTED, "句尾的字，结尾声音很像哦", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardGame(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.steps.forEach((st, i) => {
+        const y = 196 + i * 78;
+        s += `<circle cx="152" cy="${y - 11}" r="23" fill="${ACCENT}"/>`;
+        s += txt(152, y - 2, 25, "#fff", String(i + 1), 700, "system-ui,-apple-system,sans-serif");
+        s += txt(192, y, 32, INK, esc(st), 600, SONG, 1, "start");
+      });
+      s += `<g transform="translate(202,472) scale(0.52)">${ART[c.key]}</g>`;
+      s += band(255, 774, 290, 56, 28, TINT);
+      s += txt(400, 811, 26, "#6b5a4e", "和爸爸妈妈一起玩", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardSVG(card, revealed) {
+      const inner = KIND === "pic" ? cardPic(card, revealed)
+        : KIND === "magic" ? cardMagic(card, revealed)
+        : KIND === "family" ? cardFamily(card)
+        : card.type === "verse" ? cardVerse(card)
+        : cardGame(card);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${esc(card.key)}" class="card-svg">${inner}</svg>`;
+    }
+
+    const LEADS = {
+      pic: "先让孩子看图猜一猜，再翻开验证；翻开前别提示。",
+      magic: "先遮着答案让孩子猜，再点「变！」揭晓；猜错也是好机会。",
+      family: "这一套是讲解卡：先认部首，再把家族成员读一遍。",
+      shengyin: "这一套玩声音：重点是耳朵和嘴巴，不要求认字。",
+    };
+
+    function tipsHTML(card) {
+      let h = `<div class="lead">${LEADS[KIND] || ""}</div>`;
+      (card.tips || []).forEach((row) => {
+        h += `<div class="tip-row"><span class="tip-tag">${esc(row[0])}</span><span>${esc(row[1])}</span></div>`;
+      });
+      return h;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const primaryBtn = document.getElementById("primaryBtn");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+    const hasPrimary = KIND === "pic" || KIND === "magic";
+    const multiGroup = GROUPS.length > 1;
+
+    const PRIMARY_LABEL = { pic: ["翻开字", "藏起字"], magic: ["变！", "收起来"] };
+
+    function render() {
+      if (mode === "deck" && deskActive) return renderDesk();
+      const { c, i } = deck[state.i];
+      const shown = mode === "grid" ? true : state.revealed;
+      cardWrap.innerHTML = cardSVG(c, shown);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      if (hasPrimary) {
+        const [on, off] = PRIMARY_LABEL[KIND];
+        primaryBtn.textContent = state.revealed ? off : on;
+        primaryBtn.setAttribute("aria-pressed", String(state.revealed));
+      }
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+      if (mode === "deck") saveLastPos();
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      state.revealed = false;
+      closeTips();
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; state.revealed = false; closeTips(); render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click，按钮动作直接绑 touchend。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    bindTap(toggleTips, () => {
+      const open = tips.hidden;
+      if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
+      else closeTips();
+      toggleTips.setAttribute("aria-pressed", String(open));
+    });
+    if (multiGroup) groupBtn.addEventListener("click", openSheet);
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    const edgeSwipe = (x) => x < 28 || x > innerWidth - 28;   // 屏幕左右边缘是系统返回手势区，不当翻页
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      if (edgeSwipe(t.clientX)) { barTouch = null; return; }
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup && multiGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      if (edgeSwipe(e.touches[0].clientX)) { touchX = null; return; }   // 边缘滑动多为系统返回/退出，不翻页
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    document.getElementById("head").innerHTML =
+      `<span class="t">${esc(TITLE)}</span><span class="s">${esc(SUB)}</span>`;
+
+    // ════════     // 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。
+    const DECK_META = (() => {
+      const m = { pic: ["xiangxing", "象形字 · 看图猜字"], magic: ["huiyi", "会意字 · 拼字魔法"],
+                  family: ["bushou", "部首家族 · 找朋友"], shengyin: ["yunyu", "韵语与声音游戏"] }[KIND];
+      return m ? { id: m[0], url: m[0] + ".html", name: m[1] } : null;
+    })();
+    let posSkipFirst = qs.get("from") !== "hub";   // 直连首屏不覆盖已有记录
+    let posTimer = null;
+    function saveLastPos() {
+      if (posSkipFirst) { posSkipFirst = false; return; }
+      clearTimeout(posTimer);
+      posTimer = setTimeout(() => {           // 停留满 1.5s 才算"正在看"：误触滑走不覆盖记录
+        if (mode !== "deck" || !DECK_META || deck.length !== CARDS.length) return;
+        const { c, i } = deck[state.i];
+        const label = KIND === "pic" ? c.char : KIND === "magic" ? c.result : KIND === "family" ? c.radical : c.title;
+        const inGroup = CARDS.filter((x) => x.g === c.g).length;
+        const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length + "/" + inGroup;
+        try {
+          localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+          localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: label, pos: pos, ts: Date.now() }));
+        } catch (e) {}
+      }, 1500);
+    }
+
+    // ════════ 宽屏三栏版（≥960px；手机竖屏/窄竖屏走原布局，零改动） ════════
+    const deskMQ = window.matchMedia("(min-width: 960px), (min-width: 880px) and (hover: hover) and (pointer: fine)");
+    let deskActive = false;
+    function updateDeskMode() {
+      if (mode !== "deck") return;
+      const want = deskMQ.matches;
+      if (want === deskActive) return;
+      deskActive = want;
+      document.getElementById("desk").hidden = !want;
+      document.body.classList.toggle("desk-on", want);
+      if (want) cardWrap.innerHTML = "";
+    }
+    const dEl = (id) => document.getElementById(id);
+    function artSVG(key, vb) {
+      return `<svg viewBox="0 0 ${vb || "760 480"}" preserveAspectRatio="xMidYMid meet" aria-label="插画">${ART[key] || ""}</svg>`;
+    }
+    function glyphSVG(ch, size, s) {
+      const vb = size;
+      return `<svg viewBox="0 0 ${vb} ${vb}">${glyphPath(ch, vb / 2, vb / 2 + s * 40, s)}</svg>`;
+    }
+    function boardSVG(inner) {
+      return `<svg viewBox="0 0 600 600"><rect x="6" y="6" width="588" height="588" rx="36" fill="#fffdf3" stroke="#e3d3a8" stroke-width="4"/>${inner}</svg>`;
+    }
+    const qMark = () => boardSVG(txt(300, 392, 170, "#dccfae", "？", 800) + txt(300, 520, 26, "#b0a49a", "点一下揭晓", 500, "system-ui,-apple-system,sans-serif"));
+
+    function deskLeftHTML(c, shown) {
+      if (KIND === "pic") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill ${shown ? "" : "q"}">${shown ? esc(c.story) : "这是哪个字呀？想一想，再点中间翻开"}</div>`;
+      }
+      if (KIND === "magic") {
+        const tiles = c.parts.map((p) =>
+          `<div class="part-tile">${glyphSVG(p[0], 120, 0.095)}<div class="pl">${esc(p[1])}</div></div>`)
+          .join(`<div class="parts-plus">＋</div>`);
+        const below = shown
+          ? `<div class="art-area">${artSVG(c.key)}</div>`
+          : `<div class="art-area">${qMark()}</div>`;
+        return `<div class="parts-row">${tiles}</div>${below}
+          <div class="desk-pill q">${shown ? esc(c.story) : "拼在一起，是什么字？"}</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="art-area">${artSVG(c.key)}</div>
+          <div class="desk-pill">${esc(c.name)} · ${esc(c.meaning)}</div>`;
+      }
+      return `<div class="art-area">${artSVG(c.key)}</div>`;
+    }
+
+    function deskCenterHTML(c, shown) {
+      if (KIND === "pic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击卡片${state.revealed ? "藏起" : "翻开"}</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin) + " · " + esc(c.tone), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.char, 300, 350, 0.34))}</div><div class="hint">点击卡片藏起</div>`;
+      }
+      if (KIND === "magic") {
+        if (!shown) return `<div class="board">${qMark()}</div><div class="hint">点击「变！」揭晓答案</div>`;
+        return `<div class="board">${boardSVG(
+          txt(300, 96, 34, "#3e9486", esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif") +
+          glyphPath(c.result, 300, 350, 0.30))}</div><div class="hint">点击卡片收起来</div>`;
+      }
+      if (KIND === "family") {
+        return `<div class="board">${boardSVG(
+          `<circle cx="300" cy="300" r="196" fill="#f7dfa0"/><circle cx="300" cy="300" r="168" fill="#fdf3cf"/>` +
+          glyphPath(c.radical, 300, 312, 0.30) +
+          txt(300, 552, 40, "#b0772f", esc(c.name), 800) +
+          txt(300, 596, 24, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif"))}</div>`;
+      }
+      if (c.type === "verse") {
+        const lines = c.lines.map((line) => {
+          const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+          return m ? `<div class="vl">${esc(m[1])}<b>${esc(m[2])}</b>${esc(m[3])}</div>` : `<div class="vl">${esc(line)}</div>`;
+        }).join("");
+        return `<div class="verse-box"><div class="vt">${esc(c.title)}</div>${lines}</div>`;
+      }
+      const steps = c.steps.map((st, i) =>
+        `<div class="step-row"><div class="step-n">${i + 1}</div><div class="step-t">${esc(st)}</div></div>`).join("");
+      return `<div class="steps-box"><div class="vt">${esc(c.title)}</div>${steps}</div>`;
+    }
+
+    function deskPanelHTML(c) {
+      const shown = state.revealed;
+      let head = "";
+      if (KIND === "pic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.char) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "magic") head = `<div class="desk-head"><span class="zi">${shown ? esc(c.result) : "？"}</span><span class="meta">${esc(GROUPS[c.g].name)} · 卡 ${deskPos()} / ${deskInGroup()}</span></div>`;
+      else if (KIND === "family") head = `<div class="desk-head"><span class="zi">${esc(c.radical)}</span><span class="meta">${esc(c.name)}</span></div>`;
+      else head = `<div class="desk-head"><span class="zi">${esc(c.title)}</span><span class="meta">${esc(GROUPS[c.g].name)}</span></div>`;
+      let members = "";
+      if (KIND === "family") {
+        members = `<div class="mgrid">` + c.members.map((m) =>
+          `<div class="mcell"><span class="mc">${esc(m[0])}</span><span class="mw">${esc(m[1])}</span></div>`).join("") + `</div>`;
+      }
+      let story = "";
+      if ((KIND === "pic" || KIND === "magic") && shown) story = "";
+      return head + tipsHTML(c) + members;
+    }
+
+    function deskPos() {
+      const { c, i } = deck[state.i];
+      return CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+    }
+    function deskInGroup() { return CARDS.filter((x) => x.g === deck[state.i].c.g).length; }
+
+    function deskLabel(c) {
+      if (KIND === "pic") return c.char;
+      if (KIND === "magic") return c.result;
+      if (KIND === "family") return c.radical;
+      return { label: c.title, wide: true };
+    }
+
+    function renderDesk() {
+      const { c } = deck[state.i];
+      const shown = state.revealed;
+      dEl("deskTitle").innerHTML = `${esc(TITLE)}<span class="s">${esc(SUB)}</span>`;
+      if (multiGroup) {
+        dEl("deskChips").hidden = false;
+        dEl("deskChips").innerHTML = GROUPS.map((g, gi) =>
+          `<button class="dchip${gi === c.g ? " active" : ""}" data-g="${gi}">${esc(g.name)}</button>`).join("");
+      }
+      const st = dEl("deskState");
+      if (hasPrimary) {
+        st.hidden = false;
+        st.textContent = shown ? (KIND === "pic" ? "藏起字" : "收起来") : (KIND === "pic" ? "翻开字" : "变！");
+      } else st.hidden = true;
+      dEl("deskLeft").innerHTML = deskLeftHTML(c, shown);
+      dEl("deskCenter").innerHTML = deskCenterHTML(c, shown);
+      dEl("deskPanel").innerHTML = deskPanelHTML(c);
+      dEl("deskFilm").innerHTML = deck.map((d, i) => {
+        if (d.c.g !== c.g) return "";
+        const L = deskLabel(d.c);
+        const wide = typeof L === "object";
+        return `<button class="mini${i === state.i ? " active" : ""}${wide ? " wide" : ""}" data-i="${i}">${esc(wide ? L.label : L)}</button>`;
+      }).join("");
+      dEl("deskCounter").textContent = `${deskPos()} / ${deskInGroup()} · ${esc(GROUPS[c.g].name)}`;
+      const act = document.querySelector("#deskFilm .mini.active");
+      if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
+      saveLastPos();
+    }
+
+    if (mode === "deck") {
+      dEl("deskPrev").addEventListener("click", () => go(-1));
+      dEl("deskNext").addEventListener("click", () => go(1));
+      dEl("deskFilm").addEventListener("click", (e) => {
+        const b = e.target.closest(".mini");
+        if (b) { state.i = Number(b.dataset.i); state.revealed = false; render(); }
+      });
+      dEl("deskChips").addEventListener("click", (e) => {
+        const b = e.target.closest(".dchip");
+        if (b) jumpTo(Number(b.dataset.g));
+      });
+      dEl("deskCenter").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      dEl("deskState").addEventListener("click", () => { if (hasPrimary) { state.revealed = !state.revealed; render(); } });
+      if (window.matchMedia) deskMQ.addEventListener("change", () => { updateDeskMode(); render(); });
+    }
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub" && DECK_META) {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && deck.length === CARDS.length && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      updateDeskMode();
+      render();
+      if (qs.get("tips") === "1") {
+        tips.innerHTML = tipsHTML(deck[state.i].c);
+        tips.hidden = false;
+        toggleTips.setAttribute("aria-pressed", "true");
+      }
+      if (qs.get("sheet") === "1") openSheet();
+      if (!multiGroup) { groupBtn.style.display = "none"; }
+      if (!hasPrimary) { primaryBtn.style.display = "none"; }
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c, true)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      render();
+    }
+  </script>
+</body>
+</html>

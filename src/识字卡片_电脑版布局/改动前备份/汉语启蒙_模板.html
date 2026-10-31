@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf8ec">
+  <title>__TITLE__</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #fdf8ec;
+      --ink: #4a3226;
+      --muted: #8d7d73;
+      --accent: __ACCENT__;
+      --button: #dff4f1;
+      --button-hover: #c5ebe7;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--page); }
+    body { color: var(--ink); font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    .gallery {
+      width: 100%; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column;
+      padding: max(6px, env(safe-area-inset-top)) 8px 10px;
+    }
+    .head { flex: 0 0 auto; text-align: center; padding: 2px 0 4px; }
+    .head .t { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .head .s { font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .stage { min-height: 0; flex: 1; display: grid; place-items: center; }
+
+    .card-svg {
+      display: block;
+      width: min(96vw, calc((100dvh - 128px) * 0.8));
+      width: min(96vw, calc((100svh - 128px) * 0.8));
+      aspect-ratio: 800 / 1000; height: auto;
+      filter: drop-shadow(0 10px 24px rgba(112, 83, 49, 0.16));
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    .bar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      touch-action: pan-y;
+    }
+    button {
+      border: 0; border-radius: 999px; background: var(--button); color: var(--ink);
+      font: inherit; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+      transition: background 160ms ease, transform 140ms ease;
+    }
+    button:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.94); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .pill { flex: 0 0 auto; padding: 9px 13px; font-size: 14px; background: #fbeecb; }
+    .pill[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .primary { flex: 0 0 auto; padding: 10px 22px; font-size: 15px; font-weight: 600;
+      background: var(--accent); color: #fff; }
+    .group-btn {
+      flex: 0 0 auto; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+      padding: 9px 12px; font-size: 14px; background: #fff; border: 1.5px solid #ead9ac;
+    }
+    .group-btn.flash { background: #fdeaa0; border-color: var(--accent); }
+    .group-btn .caret { color: var(--muted); font-size: 11px; }
+    .counter { color: var(--muted); font-size: 13px; }
+
+    .sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+    .sheet-wrap[hidden] { display: none; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(74, 50, 38, 0.35); }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      max-height: 62dvh; overflow: auto;
+      background: var(--page); border-radius: 22px 22px 0 0;
+      padding: 14px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 30px rgba(112, 83, 49, 0.25);
+    }
+    .sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .sheet-grid .chip {
+      border: 1.5px solid #ead9ac; background: #fff; color: var(--ink);
+      border-radius: 14px; padding: 10px 6px; font-size: 14.5px; text-align: center;
+      font-family: inherit; cursor: pointer; touch-action: manipulation;
+    }
+    .sheet-grid .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; color: #fff; }
+
+    .tips {
+      flex: 0 0 auto; max-height: 30dvh; overflow: auto;
+      margin: 0 4px 6px; padding: 12px 16px;
+      background: #ffffff; border: 1.5px solid #f0dfb6; border-radius: 18px;
+      font-size: 15px; line-height: 1.75;
+    }
+    .tips .lead { color: var(--muted); font-size: 13.5px; margin-bottom: 6px; }
+    .tip-row { display: flex; gap: 8px; align-items: baseline; }
+    .tip-tag { flex: 0 0 auto; color: #a07b33; font-size: 12.5px; background: #fbf0c2; border-radius: 8px; padding: 1px 8px; }
+
+    body.static .head, body.static .bar, body.static .tips { display: none; }
+    body.static .gallery { padding: 24px; }
+    body.static .card-svg { width: min(92vw, 640px); filter: none; }
+
+    body.grid { overflow: auto; }
+    body.grid .gallery { height: auto; min-height: 100dvh; display: block; padding: 24px; }
+    body.grid .head { margin-bottom: 14px; }
+    body.grid .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 320px)); gap: 22px; justify-content: center; padding: 0; }
+    body.grid .card-svg { width: 100%; max-width: 320px; filter: none; }
+    body.grid .bar, body.grid .tips { display: none; }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="汉语启蒙卡集">
+    <header class="head" id="head"></header>
+    <section class="stage" id="stage"><div id="cardWrap"></div></section>
+    <section id="tips" class="tips" hidden></section>
+    <nav class="bar" id="bar">
+      <button id="primaryBtn" class="primary"></button>
+      <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
+        <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
+      </button>
+      <button id="toggleTips" class="pill" aria-pressed="false">提示</button>
+    </nav>
+    <div id="sheetWrap" class="sheet-wrap" hidden>
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
+    </div>
+  </main>
+
+  <script>
+    const KIND = "__KIND__";
+    const CARDS = __CARDS__;
+    const GROUPS = __GROUPS__;
+    const GLYPHS = __GLYPHS__;
+    const ART = __ART__;
+    const ACCENT = "__ACCENT__";
+    const TINT = "__TINT__";
+    const TITLE = "__TITLE__";
+    const SUB = "__SUB__";
+    const INK = "#4a3226", MUTED = "#8d7d73", CREAM = "#fdf8ec";
+    const SONG = "'Songti SC','STSong','SimSun',serif";
+
+    const qs = new URLSearchParams(location.search);
+    const gridAll = qs.has("grid");
+    const groupParam = qs.get("group");
+    const mode = gridAll ? "grid" : (qs.has("n") ? "static" : "deck");
+    const state = { i: 0, revealed: qs.get("reveal") === "1" };
+
+    let deck = CARDS.map((c, i) => ({ c, i }));
+    if (groupParam) {
+      const gi = GROUPS.findIndex((g) => g.id === groupParam);
+      if (gi >= 0) deck = deck.filter((d) => d.c.g === gi);
+    }
+
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function glyphPath(ch, cx, cy, s) {
+      const g = GLYPHS[ch];
+      if (!g) return "";
+      return `<path d="${g.d}" transform="translate(${(cx - s * g.bx).toFixed(2)},${(cy + s * g.by).toFixed(2)}) scale(${s},${-s})" fill="${INK}"/>`;
+    }
+
+    function txt(x, y, size, fill, content, weight = 600, family = SONG, ls = 0, anchor = "middle") {
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}" fill="${fill}" font-family="${family}"${ls ? ` letter-spacing="${ls}"` : ""}>${content}</text>`;
+    }
+
+    function band(x, y, w, h, rx, fill) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`; }
+
+    function wrapLines(s, width) {
+      s = s.trim();
+      const lines = [];
+      while (s.length > width) {
+        let cut = width;
+        while (cut < s.length && /[，。；！？、～]/.test(s[cut])) cut++;
+        lines.push(s.slice(0, cut));
+        s = s.slice(cut).trim();
+      }
+      if (s) lines.push(s);
+      return lines;
+    }
+
+    function frame() {
+      return `<rect x="10" y="10" width="780" height="980" rx="42" fill="${CREAM}" stroke="${ACCENT}" stroke-width="10"/>`;
+    }
+
+    // ---------- 象形字：看图猜字 ----------
+    function cardPic(c, revealed) {
+      let s = frame();
+      s += `<g transform="translate(20,84)">${ART[c.key]}</g>`;
+      if (!revealed) {
+        s += band(96, 600, 608, 156, 34, TINT);
+        s += txt(400, 668, 46, INK, "这是哪个字呀？", 700);
+        s += txt(400, 718, 27, MUTED, "想一想，再点下面的按钮翻开", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += txt(400, 630, 30, ACCENT, `${esc(c.pinyin)} · ${esc(c.tone)}`, 700, "system-ui,-apple-system,sans-serif");
+        s += glyphPath(c.char, 400, 758, 0.24);
+        s += band(110, 878, 580, 84, 26, TINT);
+        const lines = wrapLines(c.story, 14);
+        if (lines.length === 1) s += txt(400, 930, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 912, 27, INK, esc(lines[0]), 600); s += txt(400, 946, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 会意字：拼字魔法 ----------
+    function cardMagic(c, revealed) {
+      let s = frame();
+      const n = c.parts.length;
+      const tileW = n === 2 ? 196 : 150, gap = 42;
+      const x0 = 400 - (n * tileW + (n - 1) * gap) / 2;
+      c.parts.forEach((p, i) => {
+        const tx = x0 + i * (tileW + gap);
+        s += band(tx, 82, tileW, 214, 30, TINT);
+        s += glyphPath(p[0], tx + tileW / 2, 166, n === 2 ? 0.15 : 0.115);
+        s += txt(tx + tileW / 2, 264, 25, MUTED, esc(p[1]), 500, "system-ui,-apple-system,sans-serif");
+        if (i < n - 1) s += txt(tx + tileW + gap / 2, 208, 62, ACCENT, "＋", 800);
+      });
+      s += band(140, 316, 520, 66, 33, TINT);
+      s += txt(400, 359, 33, INK, "拼在一起，是什么字？", 700);
+      s += band(96, 408, 608, 546, 36, "#fbf3e2");
+      if (!revealed) {
+        s += txt(400, 706, 150, "#dccfae", "？", 800);
+        s += txt(400, 836, 29, MUTED, "先猜一猜，再点「变！」", 500, "system-ui,-apple-system,sans-serif");
+      } else {
+        s += `<g transform="translate(58,440) scale(0.9)">${ART[c.key]}</g>`;
+        s += `<circle cx="656" cy="522" r="104" fill="${CREAM}" stroke="${ACCENT}" stroke-width="8"/>`;
+        s += glyphPath(c.result, 656, 528, 0.175);
+        s += txt(656, 658, 27, ACCENT, esc(c.pinyin), 700, "system-ui,-apple-system,sans-serif");
+        s += band(92, 890, 616, 84, 26, TINT);
+        const lines = wrapLines(c.story, 15);
+        if (lines.length === 1) s += txt(400, 942, 30, INK, esc(lines[0]), 600);
+        else { s += txt(400, 924, 27, INK, esc(lines[0]), 600); s += txt(400, 958, 27, INK, esc(lines[1]), 600); }
+      }
+      return s;
+    }
+
+    // ---------- 部首家族：找朋友 ----------
+    function cardFamily(c) {
+      let s = frame();
+      s += `<g transform="translate(28,54) scale(0.5)">${ART[c.key]}</g>`;
+      s += `<circle cx="588" cy="176" r="118" fill="#f7dfa0"/><circle cx="588" cy="176" r="100" fill="#fdf3cf"/>`;
+      s += glyphPath(c.radical, 588, 182, 0.21);
+      s += txt(400, 372, 50, ACCENT, esc(c.name), 800);
+      s += txt(400, 428, 29, "#6b5a4e", esc(c.meaning), 500, "system-ui,-apple-system,sans-serif");
+      const n = c.members.length;
+      const cols = Math.min(4, Math.ceil(n / 2)), rows = Math.ceil(n / cols);
+      const cellW = 680 / cols, cellH = 400 / rows;
+      const gs = cols >= 4 ? 0.135 : (cols === 3 ? 0.15 : 0.15);
+      c.members.forEach((m, i) => {
+        const row = Math.floor(i / cols), col = i % cols;
+        const rowN = row === rows - 1 ? n - (rows - 1) * cols : cols;
+        const cx = 60 + cellW * col + cellW / 2 + (680 - rowN * cellW) / 2;
+        const cy = 470 + row * cellH;
+        s += band(cx - cellW / 2 + 8, cy + 8, cellW - 16, cellH - 16, 22, TINT);
+        s += glyphPath(m[0], cx, cy + cellH / 2 - 12, gs);
+        s += txt(cx, cy + cellH - 16, 24, "#6b5a4e", esc(m[1]), 500, "system-ui,-apple-system,sans-serif");
+      });
+      s += band(90, 894, 620, 72, 24, TINT);
+      const q = wrapLines(c.tips[2][1], 20);
+      if (q.length === 1) s += txt(400, 938, 26, INK, esc(q[0]), 500);
+      else { s += txt(400, 922, 23, INK, esc(q[0]), 500); s += txt(400, 952, 23, INK, esc(q[1]), 500); }
+      return s;
+    }
+
+    // ---------- 韵语与声音游戏 ----------
+    function cardVerse(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.lines.forEach((line, i) => {
+        const m = line.match(/^(.*)([\u4e00-\u9fff])([，。；！？]?)$/);
+        const y = 210 + i * 96;
+        if (m) {
+          s += txt(400, y, 58, INK, esc(m[1]) + `<tspan fill="${ACCENT}">${esc(m[2])}</tspan>` + esc(m[3]), 700, SONG, 5);
+        } else {
+          s += txt(400, y, 58, INK, esc(line), 700, SONG, 5);
+        }
+      });
+      s += `<g transform="translate(210,668) scale(0.5)">${ART[c.key]}</g>`;
+      s += txt(400, 948, 26, MUTED, "句尾的字，结尾声音很像哦", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardGame(c) {
+      let s = frame();
+      s += txt(400, 104, 48, ACCENT, esc(c.title), 800);
+      s += `<line x1="330" y1="130" x2="470" y2="130" stroke="${TINT}" stroke-width="6" stroke-linecap="round"/>`;
+      c.steps.forEach((st, i) => {
+        const y = 196 + i * 78;
+        s += `<circle cx="152" cy="${y - 11}" r="23" fill="${ACCENT}"/>`;
+        s += txt(152, y - 2, 25, "#fff", String(i + 1), 700, "system-ui,-apple-system,sans-serif");
+        s += txt(192, y, 32, INK, esc(st), 600, SONG, 1, "start");
+      });
+      s += `<g transform="translate(202,472) scale(0.52)">${ART[c.key]}</g>`;
+      s += band(255, 774, 290, 56, 28, TINT);
+      s += txt(400, 811, 26, "#6b5a4e", "和爸爸妈妈一起玩", 500, "system-ui,-apple-system,sans-serif");
+      return s;
+    }
+
+    function cardSVG(card, revealed) {
+      const inner = KIND === "pic" ? cardPic(card, revealed)
+        : KIND === "magic" ? cardMagic(card, revealed)
+        : KIND === "family" ? cardFamily(card)
+        : card.type === "verse" ? cardVerse(card)
+        : cardGame(card);
+      return `<svg viewBox="0 0 800 1000" role="img" aria-label="${esc(card.key)}" class="card-svg">${inner}</svg>`;
+    }
+
+    const LEADS = {
+      pic: "先让孩子看图猜一猜，再翻开验证；翻开前别提示。",
+      magic: "先遮着答案让孩子猜，再点「变！」揭晓；猜错也是好机会。",
+      family: "这一套是讲解卡：先认部首，再把家族成员读一遍。",
+      shengyin: "这一套玩声音：重点是耳朵和嘴巴，不要求认字。",
+    };
+
+    function tipsHTML(card) {
+      let h = `<div class="lead">${LEADS[KIND] || ""}</div>`;
+      (card.tips || []).forEach((row) => {
+        h += `<div class="tip-row"><span class="tip-tag">${esc(row[0])}</span><span>${esc(row[1])}</span></div>`;
+      });
+      return h;
+    }
+
+    const cardWrap = document.getElementById("cardWrap");
+    const counter = document.getElementById("counter");
+    const groupName = document.getElementById("groupName");
+    const tips = document.getElementById("tips");
+    const primaryBtn = document.getElementById("primaryBtn");
+    const toggleTips = document.getElementById("toggleTips");
+    const sheetWrap = document.getElementById("sheetWrap");
+    const sheetGrid = document.getElementById("sheetGrid");
+    const bar = document.getElementById("bar");
+    const groupBtn = document.getElementById("groupBtn");
+    const hasPrimary = KIND === "pic" || KIND === "magic";
+    const multiGroup = GROUPS.length > 1;
+
+    const PRIMARY_LABEL = { pic: ["翻开字", "藏起字"], magic: ["变！", "收起来"] };
+
+    function render() {
+      const { c, i } = deck[state.i];
+      const shown = mode === "grid" ? true : state.revealed;
+      cardWrap.innerHTML = cardSVG(c, shown);
+      groupName.textContent = GROUPS[c.g].name;
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      counter.textContent = `${pos} / ${inGroup}`;
+      if (hasPrimary) {
+        const [on, off] = PRIMARY_LABEL[KIND];
+        primaryBtn.textContent = state.revealed ? off : on;
+        primaryBtn.setAttribute("aria-pressed", String(state.revealed));
+      }
+      document.querySelectorAll(".chip").forEach((el) => {
+        el.classList.toggle("active", Number(el.dataset.g) === c.g);
+      });
+    }
+
+    function go(delta) {
+      state.i = (state.i + delta + deck.length) % deck.length;
+      state.revealed = false;
+      closeTips();
+      render();
+    }
+
+    function jumpTo(gi) {
+      const at = deck.findIndex((d) => d.c.g === gi);
+      if (at >= 0) { state.i = at; state.revealed = false; closeTips(); render(); }
+    }
+
+    function closeTips() {
+      tips.hidden = true;
+      toggleTips.setAttribute("aria-pressed", "false");
+    }
+
+    function openSheet() {
+      sheetWrap.hidden = false;
+      const act = document.querySelector(".chip.active");
+      if (act) act.scrollIntoView({ block: "center" });
+    }
+    function closeSheet() { sheetWrap.hidden = true; }
+
+    // 飞书等容器会在 touchend 上 preventDefault 吞掉合成 click，按钮动作直接绑 touchend。
+    function bindTap(el, fn) {
+      let sx = 0, sy = 0;
+      el.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, { passive: true });
+      el.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+        e.preventDefault();
+        fn(e);
+      }, { passive: false });
+      el.addEventListener("click", fn);
+    }
+
+    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    bindTap(toggleTips, () => {
+      const open = tips.hidden;
+      if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
+      else closeTips();
+      toggleTips.setAttribute("aria-pressed", String(open));
+    });
+    if (multiGroup) groupBtn.addEventListener("click", openSheet);
+    bindTap(document.getElementById("sheetBackdrop"), closeSheet);
+    sheetGrid.addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (b) { jumpTo(Number(b.dataset.g)); closeSheet(); }
+    });
+    sheetGrid.addEventListener("touchend", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      e.preventDefault();
+      jumpTo(Number(b.dataset.g));
+      closeSheet();
+    }, { passive: false });
+
+    function cycleGroup(dir) {
+      const next = (deck[state.i].c.g + dir + GROUPS.length) % GROUPS.length;
+      jumpTo(next);
+      groupBtn.classList.add("flash");
+      setTimeout(() => groupBtn.classList.remove("flash"), 240);
+    }
+    let barTouch = null;
+    bar.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      barTouch = { x: t.clientX, y: t.clientY, onGroup: !!(e.target.closest && e.target.closest("#groupBtn")) };
+    }, { passive: true });
+    bar.addEventListener("touchend", (e) => {
+      if (!barTouch || mode !== "deck") { barTouch = null; return; }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - barTouch.x, dy = t.clientY - barTouch.y;
+      const onGroup = barTouch.onGroup;
+      barTouch = null;
+      const horiz = Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4;
+      const isTap = Math.abs(dx) <= 12 && Math.abs(dy) <= 12;
+      if (onGroup && multiGroup) {
+        if (horiz) { e.stopPropagation(); e.preventDefault(); cycleGroup(dx < 0 ? 1 : -1); }
+        else if (isTap) { e.preventDefault(); openSheet(); }
+        return;
+      }
+      if (horiz) { e.stopPropagation(); e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    }, { passive: false });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "Escape") closeSheet();
+    });
+
+    let touchX = null, touchY = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest && e.target.closest(".bar")) { touchX = null; return; }
+      touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null || mode !== "deck" || (e.target.closest && e.target.closest(".bar"))) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+      touchX = null;
+    }, { passive: true });
+
+    document.getElementById("head").innerHTML =
+      `<span class="t">${esc(TITLE)}</span><span class="s">${esc(SUB)}</span>`;
+
+    if (mode === "deck") {
+      sheetGrid.innerHTML = GROUPS.map((g, gi) =>
+        `<button class="chip" data-g="${gi}" aria-label="跳到${g.name}组">${g.name}</button>`).join("");
+      if (groupParam) {
+        const gi = GROUPS.findIndex((g) => g.id === groupParam);
+        if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      const nParam = parseInt(qs.get("n"), 10);
+      if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
+      render();
+      if (qs.get("tips") === "1") {
+        tips.innerHTML = tipsHTML(deck[state.i].c);
+        tips.hidden = false;
+        toggleTips.setAttribute("aria-pressed", "true");
+      }
+      if (qs.get("sheet") === "1") openSheet();
+      if (!multiGroup) { groupBtn.style.display = "none"; }
+      if (!hasPrimary) { primaryBtn.style.display = "none"; }
+    } else if (mode === "grid") {
+      document.body.classList.add("grid");
+      document.getElementById("stage").innerHTML = deck.map((d) => cardSVG(d.c, true)).join("");
+    } else {
+      document.body.classList.add("static");
+      const nParam = parseInt(qs.get("n"), 10);
+      state.i = Math.max(0, Math.min(deck.length - 1, (nParam || 1) - 1));
+      render();
+    }
+  </script>
+</body>
+</html>

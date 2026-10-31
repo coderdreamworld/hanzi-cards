@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 480">
+  <g id="art">
+    <ellipse cx="380" cy="446" rx="235" ry="22" fill="#c8e6d8"/>
+    <path d="M 288 442 Q 288 372 380 368 Q 472 372 472 442 Z" fill="#5fa8d8"/>
+    <circle cx="262" cy="284" r="15" fill="#f8cba4"/>
+    <circle cx="498" cy="284" r="15" fill="#f8cba4"/>
+    <circle cx="380" cy="272" r="116" fill="#f8cba4"/>
+    <path d="M 266 250 Q 280 158 380 152 Q 480 158 494 250 Q 466 230 440 234 Q 416 210 380 210 Q 344 210 320 234 Q 294 230 266 250 Z" fill="#5a3d2b"/>
+    <path d="M 318 254 Q 336 246 354 254" fill="none" stroke="#5a3d2b" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 406 254 Q 424 246 442 254" fill="none" stroke="#5a3d2b" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="338" cy="288" rx="11" ry="14" fill="#4a3226"/>
+    <ellipse cx="422" cy="288" rx="11" ry="14" fill="#4a3226"/>
+    <circle cx="334" cy="282" r="3.5" fill="#ffffff"/>
+    <circle cx="418" cy="282" r="3.5" fill="#ffffff"/>
+    <circle cx="310" cy="320" r="13" fill="#f5a58c" opacity="0.8"/>
+    <circle cx="450" cy="320" r="13" fill="#f5a58c" opacity="0.8"/>
+    <path d="M 348 320 Q 380 310 412 320 Q 410 352 380 356 Q 350 352 348 320 Z" fill="#6b3325"/>
+    <path d="M 363 342 Q 380 333 397 342 Q 391 354 380 355 Q 369 354 363 342 Z" fill="#f0876f"/>
+    <path d="M 452 398 Q 508 368 512 282" fill="none" stroke="#f8cba4" stroke-width="34" stroke-linecap="round"/>
+    <path d="M 446 402 L 468 380" fill="none" stroke="#4a97c9" stroke-width="48" stroke-linecap="round"/>
+    <circle cx="514" cy="274" r="20" fill="#f8cba4"/>
+    <path d="M 510 278 L 442 312" fill="none" stroke="#e8a13c" stroke-width="13" stroke-linecap="round"/>
+    <g transform="rotate(-30 430 318)">
+      <ellipse cx="430" cy="318" rx="30" ry="20" fill="#dfe3e6"/>
+      <ellipse cx="430" cy="322" rx="23" ry="13" fill="#c9cdd1"/>
+      <path d="M 405 305 Q 408 291 421 296 Q 427 283 440 290 Q 452 285 454 299 Q 464 303 456 310 Q 432 318 409 312 Q 402 309 405 305 Z" fill="#ffffff"/>
+    </g>
+    <path d="M 190 410 Q 198 384 218 390 Q 230 376 246 386 Q 262 378 268 394 Q 284 392 288 410 Q 239 424 190 410 Z" fill="#fdfdfa"/>
+    <path d="M 188 410 Q 238 424 288 410 Q 286 438 238 442 Q 190 438 188 410 Z" fill="#d9734f"/>
+  </g>
+</svg>
