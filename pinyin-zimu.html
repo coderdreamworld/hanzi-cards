@@ -155,6 +155,13 @@
     .hidden { display: none !important; }
     @keyframes pop { 0% { transform: scale(.6); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
     .pop { animation: pop .45s ease; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(4px); } }
+    .quiz-chip.wrong, .quiz.wrong { animation: shake .45s ease; }
+    .quiz-chip.wrong { border-color: #c05a4a !important; background: #fdecea !important; }
+    .card-box.win { background: #e9f8ef; border-color: #7cc8a8; }
+    .cf { position: fixed; top: -18px; width: 12px; height: 18px; border-radius: 3px; z-index: 9998;
+          pointer-events: none; animation: cfall 2.3s ease-in forwards; }
+    @keyframes cfall { to { transform: translateY(108vh) rotate(560deg); } }
     @keyframes bump { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px);} }
     .bump { animation: bump .5s ease; }
   
@@ -306,6 +313,72 @@
       return `<svg viewBox="0 0 ${W} ${H}" class="pop" aria-label="${esc(py)}">${inner}</svg>`;
     }
 
+    /* ---------- 音效：WebAudio 合成鼓掌+欢快音（无音频资产） ---------- */
+    let AC = null;
+    function playCheer() {
+      try {
+        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === "suspended") AC.resume();
+        const now = AC.currentTime;
+        [523, 659, 784, 1047].forEach((f, i) => {           // 上行琶音：答对旋律
+          const o = AC.createOscillator(), g = AC.createGain();
+          o.type = "triangle"; o.frequency.value = f;
+          g.gain.setValueAtTime(0.001, now + i * 0.09);
+          g.gain.exponentialRampToValueAtTime(0.22, now + i * 0.09 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+          o.connect(g).connect(AC.destination);
+          o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.25);
+        });
+        for (let b = 0; b < 3; b++) {                        // 三波噪声：鼓掌
+          const t0 = now + 0.18 + b * 0.2;
+          const buf = AC.createBuffer(1, Math.floor(AC.sampleRate * 0.22), AC.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.7);
+          const src = AC.createBufferSource(); src.buffer = buf;
+          const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1600 + b * 500; bp.Q.value = 0.7;
+          const g = AC.createGain();
+          g.gain.setValueAtTime(0.3, t0);
+          g.gain.exponentialRampToValueAtTime(0.01, t0 + 0.22);
+          src.connect(bp); bp.connect(g); g.connect(AC.destination);
+          src.start(t0);
+        }
+      } catch (e) {}
+    }
+    function confetti() {
+      const colors = ["#e8663c", "#f2b53c", "#4fae9f", "#5fa8d8", "#f5a58c", "#7fae70"];
+      for (let i = 0; i < 30; i++) {
+        const s = document.createElement("div");
+        s.className = "cf";
+        s.style.left = (Math.random() * 100) + "vw";
+        s.style.background = colors[i % colors.length];
+        s.style.animationDelay = (Math.random() * 0.4) + "s";
+        s.style.transform = `rotate(${Math.floor(Math.random() * 360)}deg)`;
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 2800);
+      }
+    }
+    function celebrate() { confetti(); playCheer(); }
+
+    /* ---------- 猜一猜：互异选项池（正确字母 + 易混干扰，洗牌） ---------- */
+    const NEAR = { b: ["d", "p", "q"], d: ["b", "q", "p"], p: ["q", "b", "d"], q: ["p", "d", "b"],
+                   f: ["t", "l", "i"], t: ["f", "l", "i"], n: ["m", "u", "h"], m: ["n", "w", "h"],
+                   h: ["n", "m", "b"], g: ["q", "p", "b"], k: ["h", "l", "t"], j: ["i", "l", "t"],
+                   y: ["x", "u", "w"], w: ["v", "m", "n"], x: ["y", "s", "c"],
+                   zh: ["z", "c", "sh"], ch: ["c", "sh", "z"], sh: ["s", "zh", "c"] };
+    function quizPool(card) {
+      const ans = card.letter;
+      const pool = [ans];
+      for (const d of (NEAR[ans] || [])) if (pool.length < 4 && !pool.includes(d)) pool.push(d);
+      const filler = ["o", "e", "u", "i", "a", "m", "s", "t", "l", "h", "g", "k", "x", "r", "n"];
+      for (const f of filler) { if (pool.length < 4 && !pool.includes(f)) pool.push(f); }
+      for (let i = pool.length - 1; i > 0; i--) {            // 洗牌：答案位置随机
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool;
+    }
+    function chipGlyph(L) { return glyphSVG(STROKES[L] ? L : L[0], true, { w: 13 }); }
+
     /* ---------- 语音（桌面浏览器；微信内自动隐藏） ---------- */
     const canSpeak = typeof speechSynthesis !== "undefined" && !/MicroMessenger/i.test(navigator.userAgent);
     function speak(text) {
@@ -347,11 +420,11 @@
       }
       let bottom = "";
       if (state.mode === "zhao" && !state.revealed) {
-        const pool = (c.combo ? [c.letter] : poolFor(c)).slice(0, 4);
-        bottom = `<text x="400" y="668" text-anchor="middle" font-size="28" fill="${MUTED}">听一听，是哪个字母？</text>` +
+        const pool = quizPool(c);
+        bottom = `<text x="400" y="668" text-anchor="middle" font-size="28" fill="${MUTED}">是哪个字母？点一点</text>` +
           pool.map((L, i) => `<g class="quiz" data-l="${esc(L)}" transform="translate(${190 + i * 110} 700)">
             <rect x="0" y="0" width="96" height="120" rx="18" fill="#fff" stroke="#ead9ac" stroke-width="4"/>
-            <g transform="translate(0 4) scale(0.92)">${gridLines().replaceAll('stroke="#cbb37f"', 'stroke="#e3d3a8"')}${glyphGroup(L, { w: 13 })}</g></g>`).join("");
+            <g transform="translate(0 4) scale(0.92)">${gridLines().replaceAll('stroke="#cbb37f"', 'stroke="#e3d3a8"')}${glyphGroup(STROKES[L] ? L : L[0], { w: 13 })}</g></g>`).join("");
       } else {
         bottom = band(96, 640, 608, 180, 30, "#d9f0ea") +
           `<text x="400" y="700" text-anchor="middle" font-size="40" font-weight="700" fill="${ACCENT}">${esc(c.jue)}</text>` +
@@ -427,12 +500,6 @@
       return c.art || "";
     }
 
-    function poolFor(c) {
-      const near = { "b": ["d", "p", "q"], "d": ["b", "q", "p"], "p": ["q", "b", "d"], "q": ["p", "d", "b"],
-                     "f": ["t", "l", "i"], "t": ["f", "l", "i"], "n": ["m", "u", "h"], "m": ["n", "w", "h"] };
-      return [c.letter].concat(near[c.letter] || ["o", "e", "u"]);
-    }
-
     /* ---------- 渲染 ---------- */
     const cardWrap = document.getElementById("cardWrap");
     const counter = document.getElementById("counter");
@@ -499,9 +566,18 @@
       root.querySelectorAll(".quiz").forEach((el) => {
         el.addEventListener("click", () => {
           const ok = el.dataset.l === c.letter;
-          el.querySelector("rect").setAttribute("stroke", ok ? "#3e9486" : "#c05a4a");
-          el.setAttribute("class", "quiz " + (ok ? "right" : "wrong"));
-          if (ok) { state.revealed = true; setTimeout(render, 500); }
+          if (ok) {
+            el.querySelector("rect").setAttribute("stroke", "#3e9486");
+            el.setAttribute("class", "quiz right");
+            state.revealed = true;
+            celebrate();
+            setTimeout(render, 900);
+          } else {
+            const g = el;
+            g.classList.remove("wrong"); void g.getBBox;
+            g.classList.add("wrong");
+            g.querySelector("rect").setAttribute("stroke", "#c05a4a");
+          }
         });
       });
       root.querySelectorAll(".wtile").forEach((el) => {
@@ -656,9 +732,10 @@
       return `<svg viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet">${art || ""}</svg>`;
     }
 
-    function deskWriteLoop(container, letters) {
-      /* 自动笔顺：逐笔描画，写完停一会擦掉重写（循环） */
+    function deskWriteLoop(container, letters, opt) {
+      /* 自动笔顺：逐笔描画；loop=false 时写完停住（猜对庆祝用） */
       const gen = ++animGen;
+      const keepLooping = !(opt && opt.loop === false);
       const W = letters.length * 100 + (letters.length - 1) * 6;
       let html = `<svg viewBox="-4 -4 ${W + 8} 148">
         <g transform="scale(${W / 100},1)">${gridLines().replaceAll('stroke-width="2.5"', 'stroke-width="0.5"').replaceAll('stroke-width="1.4"', 'stroke-width="0.3"')}</g>`;
@@ -689,7 +766,8 @@
         if (gen !== animGen) return;
         const nm = dEl("deskStrokeName");
         if (idx >= ps.length) {
-          if (nm) nm.textContent = "写完啦，再看一遍…";
+          if (nm) nm.textContent = keepLooping ? "写完啦，再看一遍…" : "写对啦！🎉";
+          if (!keepLooping) return;
           setTimeout(() => {
             if (gen !== animGen) return;
             ps.forEach((q) => { q.style.transition = "none"; q.style.strokeDashoffset = "1"; });
@@ -720,6 +798,8 @@
       modes.style.display = c.type === "letter" ? "flex" : "none";
 
       /* 左栏 */
+      const winNow = c.type === "letter" && state.mode === "zhao" && state.revealed;
+      dEl("deskCenter").closest(".card-box").classList.toggle("win", !!winNow);
       if (c.type === "letter") {
         dEl("deskLeft").innerHTML = `<div class="art-area">${artAreaSVG(artOf(c))}</div>
           <div class="desk-pill">${esc(c.jue)}</div>`;
@@ -739,22 +819,28 @@
       if (c.type === "letter") {
         const letters = c.combo || [c.letter];
         if (state.mode === "zhao" && !state.revealed) {
-          const pool = poolFor(c);
           dEl("deskCenter").innerHTML = `<div class="desk-hint">是哪个字母？点一点</div>
-            <div class="quiz-row">${pool.map((L) =>
-              `<button class="quiz-chip" data-l="${esc(L)}">${glyphSVG(L, true, { w: 13 })}</button>`).join("")}</div>`;
+            <div class="quiz-row">${quizPool(c).map((L) =>
+              `<button class="quiz-chip" data-l="${esc(L)}">${chipGlyph(L)}</button>`).join("")}</div>`;
           dEl("deskCenter").querySelectorAll(".quiz-chip").forEach((el) => {
             el.addEventListener("click", () => {
               const ok = el.dataset.l === c.letter;
-              el.classList.add(ok ? "right" : "wrong");
-              if (ok) { state.revealed = true; setTimeout(renderDesk, 600); }
-              else setTimeout(() => el.classList.remove("wrong"), 700);
+              if (ok) {
+                el.classList.add("right");
+                state.revealed = true;
+                celebrate();
+                dEl("deskCenter").closest(".card-box").classList.add("win");
+                setTimeout(renderDesk, 1000);   // 停一停，再写给你看
+              } else {
+                el.classList.remove("wrong"); void el.offsetWidth;
+                el.classList.add("wrong");
+              }
             });
           });
         } else {
           dEl("deskCenter").innerHTML = `<div class="board-wrap" id="dzBoard"></div>
             <div class="desk-hint" id="deskStrokeName">看笔尖怎么走…</div>`;
-          deskWriteLoop(dEl("dzBoard"), letters);
+          deskWriteLoop(dEl("dzBoard"), letters, { loop: !(state.mode === "zhao") });
         }
       } else if (c.type === "tone") {
         dEl("deskCenter").innerHTML = `<div class="tone-grid">
