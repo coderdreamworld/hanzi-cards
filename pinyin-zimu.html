@@ -120,6 +120,8 @@
     .word-tile .wart { height: 56px; }
     .word-tile .wart svg { width: 100%; height: 100%; }
     .word-tile.on { outline: 3px solid var(--accent); background: #fff; }
+    .trow .hl { opacity: 0; transition: opacity .3s ease; }
+    .trow.on .hl { opacity: 1; }
     .word-tile .wsay { font-size: 11px; color: var(--muted); }
     .match-flip { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .match-face { width: min(100%, 46vh); aspect-ratio: 760/480; }
@@ -731,6 +733,37 @@
     function artAreaSVG(art) {
       return `<svg viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet">${art || ""}</svg>`;
     }
+    function carSVG(x, y, rot) {
+      return `<g class="car" transform="translate(${x} ${y}) rotate(${rot || 0})">
+        <rect x="-26" y="-20" width="52" height="24" rx="8" fill="${ACCENT}"/>
+        <rect x="-14" y="-30" width="26" height="14" rx="5" fill="${ACCENT}"/>
+        <circle cx="-13" cy="6" r="7" fill="${INK}"/><circle cx="15" cy="6" r="7" fill="${INK}"/>
+        <circle cx="-13" cy="6" r="2.6" fill="#fff"/><circle cx="15" cy="6" r="2.6" fill="#fff"/></g>`;
+    }
+    function toneRoadsSVG(c) {
+      /* 四声全景：每行＝调号 + 坡道 + 小汽车 + 例词（小汽车爬坡教学法） */
+      const rows = [
+        { road: "M 90 60 L 470 60",               car: [150, 36, 0],   tip: "一声平" },
+        { road: "M 90 96 L 470 32",               car: [150, 74, -6],  tip: "二声扬" },
+        { road: "M 90 38 L 280 106 L 470 42",     car: [140, 18, 0],   tip: "三声拐弯" },
+        { road: "M 90 32 L 470 98",               car: [150, 12, 6],   tip: "四声降" },
+      ];
+      let s = `<svg viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet">
+        <rect x="4" y="4" width="752" height="472" rx="26" fill="#fffdf3" stroke="#f3e7cd" stroke-width="3"/>`;
+      rows.forEach((r, i) => {
+        const top = 10 + i * 116;
+        const w = c.words[i];
+        s += `<g class="trow${i === 0 ? " on" : ""}" id="trow${i}" transform="translate(0 ${top})">
+          <rect class="hl" x="10" y="2" width="740" height="108" rx="20" fill="#dff4f1"/>
+          <path d="${r.road}" stroke="#c05a4a" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          ${carSVG(r.car[0], r.car[1], r.car[2])}
+          <text x="575" y="60" text-anchor="middle" font-size="40" font-weight="700" fill="${ACCENT}">${esc(w.sy)}</text>
+          <text x="575" y="96" text-anchor="middle" font-size="26" fill="${INK}">${esc(w.zi)}</text>
+          <text x="678" y="80" font-size="21" fill="${MUTED}">${esc(r.tip)}</text>
+        </g>`;
+      });
+      return s + `</svg>`;
+    }
 
     function deskWriteLoop(container, letters, opt) {
       /* 自动笔顺：逐笔描画；loop=false 时写完停住（猜对庆祝用） */
@@ -804,7 +837,7 @@
         dEl("deskLeft").innerHTML = `<div class="art-area">${artAreaSVG(artOf(c))}</div>
           <div class="desk-pill">${esc(c.jue)}</div>`;
       } else if (c.type === "tone") {
-        dEl("deskLeft").innerHTML = `<div class="art-area">${artAreaSVG("")}</div>
+        dEl("deskLeft").innerHTML = `<div class="art-area">${toneRoadsSVG(c)}</div>
           <div class="desk-pill q">一声平 · 二声扬 · 三声拐弯 · 四声降</div>`;
       } else if (c.type === "match") {
         dEl("deskLeft").innerHTML = state.revealed
@@ -859,9 +892,11 @@
           el.addEventListener("click", () => {
             dEl("deskCenter").querySelectorAll(".word-tile").forEach((x) => x.classList.remove("on"));
             el.classList.add("on");
+            const i = Number(el.dataset.i);
+            document.querySelectorAll("#deskLeft .trow").forEach((r, k) => r.classList.toggle("on", k === i));
             const car = dEl("dzCar");
-            if (car) { car.setAttribute("transform", `translate(0 ${Number(el.dataset.i) * -1})`); car.classList.remove("bump"); void car.getBBox; car.classList.add("bump"); }
-            const w = c.words[Number(el.dataset.i)];
+            if (car) { car.classList.remove("bump"); void car.getBBox; car.classList.add("bump"); }
+            const w = c.words[i];
             speak(w.sy + "," + w.zi + "," + w.say);
           });
         });
