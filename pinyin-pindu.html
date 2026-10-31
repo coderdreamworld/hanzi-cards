@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a90c9'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fdf8ec' font-family='serif'%3E拼%3C/text%3E%3C/svg%3E">
   <meta name="theme-color" content="#fdf8ec">
   <title>拼音拼读卡</title>
   <style>
@@ -433,37 +432,36 @@
       const shown = state.mode === "ren" || state.revealed;
       const letters = c.combo || [c.letter];
       let mid;
-      if (state.mode === "shuo" && !state.revealed) {
-        mid = band(96, 340, 608, 300, 34, "#fbf3e2") + `<text x="400" y="490" text-anchor="middle" font-size="110" fill="#dccfae" font-weight="800">？</text>` +
-              `<text x="400" y="580" text-anchor="middle" font-size="27" fill="${MUTED}">想一想，点下面按钮揭晓</text>`;
+      if (state.mode === "zhao" && !state.revealed) {
+        mid = band(96, 320, 608, 300, 34, "#fbf3e2") + `<text x="400" y="470" text-anchor="middle" font-size="110" fill="#dccfae" font-weight="800">？</text>` +
+              `<text x="400" y="560" text-anchor="middle" font-size="27" fill="${MUTED}">想一想，点下面按钮揭晓</text>`;
       } else {
         const gw = letters.length * 210;
-        const gy = letters.length > 1 ? 406 : 406;
         mid = letters.map((L, i) => {
           const ghost = glyphGroup(L, { w: 13, ghost: true });
           const live = glyphGroup(L, { w: 13, live: true });
-          return `<g class="midx" data-l="${esc(L)}" transform="translate(${400 - gw / 2 + i * 210} ${gy - 90}) scale(1.68)">${gridLines()}${ghost}${live}</g>`;
+          return `<g class="midx" data-l="${esc(L)}" transform="translate(${400 - gw / 2 + i * 210} 416) scale(1.68)">${gridLines()}${ghost}${live}</g>`;
         }).join("");
       }
       let bottom = "";
       if (state.mode === "zhao" && !state.revealed) {
         const pool = quizPool(c);
-        bottom = `<text x="400" y="668" text-anchor="middle" font-size="28" fill="${MUTED}">是哪个字母？点一点</text>` +
+        bottom = `<text x="400" y="672" text-anchor="middle" font-size="28" fill="${MUTED}">是哪个字母？点一点</text>` +
           pool.map((L, i) => `<g class="quiz" data-l="${esc(L)}" transform="translate(${190 + i * 110} 700)">
             <rect x="0" y="0" width="96" height="120" rx="18" fill="#fff" stroke="#ead9ac" stroke-width="4"/>
             <g transform="translate(0 4) scale(0.92)">${gridLines().replaceAll('stroke="#cbb37f"', 'stroke="#e3d3a8"')}${glyphGroup(STROKES[L] ? L : L[0], { w: 13 })}</g></g>`).join("");
       } else {
-        bottom = band(96, 640, 608, 180, 30, "#d9f0ea") +
-          `<text x="400" y="700" text-anchor="middle" font-size="40" font-weight="700" fill="${ACCENT}">${esc(c.jue)}</text>` +
-          `<text x="400" y="758" text-anchor="middle" font-size="29" fill="${INK}">${esc(c.tip)}</text>` +
-          `<text x="400" y="802" text-anchor="middle" font-size="22" fill="${MUTED}">${c.kind === "final" ? "单韵母" : esc("声母 · 和韵母拼着读")}</text>`;
+        bottom = band(96, 660, 608, 150, 30, "#d9f0ea") +
+          `<text x="400" y="722" text-anchor="middle" font-size="40" font-weight="700" fill="${ACCENT}">${esc(c.jue)}</text>` +
+          `<text x="400" y="778" text-anchor="middle" font-size="29" fill="${INK}">${esc(c.tip)}</text>`;
       }
+      const kindLabel = c.kind === "final" ? "单韵母 · 自己就能响" : "声母 · 和韵母拼着读";
       return `<svg viewBox="0 0 800 1000" role="img" aria-label="${esc(c.letter)}" class="card-svg">${frame()}
-        <rect x="58" y="40" width="684" height="96" rx="30" fill="#fbf0c2"/>
-        <text x="400" y="108" text-anchor="middle" font-size="50" font-weight="800" fill="${ACCENT}">${esc(c.letter)}</text>
-        <g transform="translate(150,150) scale(0.6)">${artOf(c)}</g>
-        <g transform="translate(0,142)">${mid}</g>
-        <g transform="translate(0,116)">${bottom}</g></svg>`;
+        <rect x="230" y="42" width="340" height="58" rx="29" fill="#fbf0c2"/>
+        <text x="400" y="83" text-anchor="middle" font-size="30" font-weight="600" fill="${MUTED}">${kindLabel}</text>
+        <svg x="130" y="112" width="540" height="300" viewBox="0 0 760 480" preserveAspectRatio="xMidYMid meet">${artOf(c)}</svg>
+        ${mid}
+        ${bottom}</svg>`;
     }
 
     function toneCard(c) {
