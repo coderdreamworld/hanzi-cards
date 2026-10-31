@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a90c9'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fdf8ec' font-family='serif'%3E拼%3C/text%3E%3C/svg%3E>
   <meta name="theme-color" content="#fdf8ec">
   <title>拼音拼读卡</title>
   <style>
@@ -164,8 +165,11 @@
     @keyframes pop { 0% { transform: scale(.6); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
     .pop { animation: pop .45s ease; }
     @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(4px); } }
-    .quiz-chip.wrong, .quiz.wrong { animation: shake .45s ease; }
-    .quiz-chip.wrong { border-color: #c05a4a !important; background: #fdecea !important; }
+    .quiz-chip.wrong { animation: shake .45s ease; border-color: #c05a4a !important; background: #fdecea !important; }
+    @keyframes qflash { 0%,100% { opacity: 1; } 30% { opacity: .25; } 60% { opacity: 1; } 80% { opacity: .4; } }
+    g.quiz.wrong { animation: qflash .5s ease; }
+    g.quiz.wrong rect { stroke: #c05a4a !important; fill: #fdecea !important; }
+    g.quiz.right rect { stroke: #3e9486 !important; fill: #e8f7f3 !important; }
     .card-box.win { background: #e9f8ef; border-color: #7cc8a8; }
     .cf { position: fixed; top: -18px; width: 12px; height: 18px; border-radius: 3px; z-index: 9998;
           pointer-events: none; animation: cfall 2.3s ease-in forwards; }
@@ -188,6 +192,8 @@
     <section class="stage" id="stage"><div id="cardWrap"></div></section>
     <section id="tips" class="tips" hidden></section>
     <nav class="bar" id="bar">
+      <button id="btnRen" class="pill" aria-pressed="true">📖 一起读</button>
+      <button id="btnZhao" class="pill" aria-pressed="false">🎯 猜一猜</button>
       <button id="primaryBtn" class="primary"></button>
       <button id="groupBtn" class="group-btn" aria-label="左右滑切换分组，轻点打开分组列表">
         <span id="groupName">—</span><span id="counter" class="counter"></span><span class="caret">▾</span>
@@ -571,12 +577,14 @@
       const inGroup = CARDS.filter((x) => x.g === c.g).length;
       const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= deck[state.i].i).length;
       counter.textContent = `${pos} / ${inGroup}`;
-      primaryBtn.style.display = (hasPrimary && (c.type === "letter" || c.type === "match")) ? "" : "none";
-      if (hasPrimary && (c.type === "letter" || c.type === "match")) {
-        let label;
-        if (c.type === "match") label = state.revealed ? "翻回图" : "看字母";
-        else if (c.type === "letter") label = state.mode === "ren" ? "猜一猜" : (state.revealed ? "一起读" : "看答案");
-        else label = state.revealed ? "收起来" : "变！";
+      const modeBtns = c.type === "letter";
+      dEl("btnRen").style.display = modeBtns ? "" : "none";
+      dEl("btnZhao").style.display = modeBtns ? "" : "none";
+      dEl("btnRen").setAttribute("aria-pressed", String(modeBtns && state.mode === "ren" && !state.revealed ? true : state.mode === "ren"));
+      dEl("btnZhao").setAttribute("aria-pressed", String(modeBtns && state.mode === "zhao"));
+      primaryBtn.style.display = (hasPrimary && (c.type === "match" || c.type === "spell")) ? "" : "none";
+      if (hasPrimary && (c.type === "match" || c.type === "spell")) {
+        const label = c.type === "match" ? (state.revealed ? "翻回图" : "看字母") : (state.revealed ? "收起来" : "变！");
         primaryBtn.textContent = label;
         primaryBtn.setAttribute("aria-pressed", String(state.revealed));
       }
@@ -624,12 +632,11 @@
             el.setAttribute("class", "quiz right");
             state.revealed = true;
             celebrate();
+            playAudio("L_" + c.letter);
             setTimeout(render, 900);
           } else {
-            const g = el;
-            g.classList.remove("wrong"); void g.getBBox;
-            g.classList.add("wrong");
-            g.querySelector("rect").setAttribute("stroke", "#c05a4a");
+            el.classList.remove("wrong"); void el.getBBox;
+            el.classList.add("wrong");
           }
         });
       });
@@ -700,15 +707,13 @@
       el.addEventListener("click", fn);
     }
 
-    if (hasPrimary) bindTap(primaryBtn, () => {
-      const c = deck[state.i].c;
-      if (KIND === "letter" && c.type === "letter") {
-        if (state.mode === "ren") { state.mode = "zhao"; state.revealed = false; }
-        else if (!state.revealed) { state.revealed = true; }
-        else { state.mode = "ren"; state.revealed = false; }
-        render();
-      } else { state.revealed = !state.revealed; render(); }
-    });
+    if (hasPrimary) bindTap(primaryBtn, () => { state.revealed = !state.revealed; render(); });
+    function setMobileMode(m) {
+      state.mode = m; state.revealed = false;
+      render();
+    }
+    bindTap(document.getElementById("btnRen"), () => setMobileMode("ren"));
+    bindTap(document.getElementById("btnZhao"), () => setMobileMode("zhao"));
     bindTap(toggleTips, () => {
       const open = tips.hidden;
       if (open) { tips.innerHTML = tipsHTML(deck[state.i].c); tips.hidden = false; }
