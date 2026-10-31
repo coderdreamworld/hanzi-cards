@@ -70,7 +70,8 @@
     a.innerHTML = "<b>▶ 继续上次 · " + esc(last.name) + "</b>第 " + esc(last.pos) +
       " 张" + (last.label ? "「" + esc(last.label) + "」" : "") + "，点这里接着看";
     var sub = document.querySelector("p.sub");
-    sub.parentNode.insertBefore(a, sub.nextSibling);
+    if (sub) sub.parentNode.insertBefore(a, sub.nextSibling);
+    else document.body.insertBefore(a, document.body.firstChild);
     var entry = document.querySelector('a.card[href="./' + last.url + '?from=hub"]');
     if (entry) entry.querySelector("b").insertAdjacentHTML("beforeend", ' <i class="lastbadge">上次</i>');
   } catch (e) {}
