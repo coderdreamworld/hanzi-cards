@@ -500,7 +500,7 @@
     }, { passive: true });
 
     // ════════ 电脑版三栏字卡台（≥1024px；CSS 类 body.desk-on 由 matchMedia 驱动，手机端逻辑零改动） ════════
-    const deskMQ = window.matchMedia("(min-width: 1024px)");
+    const deskMQ = window.matchMedia("(min-width: 960px)");
     let deskActive = false;
     const deskState = { loop: true };
     let deskGen = 0;
