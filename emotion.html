@@ -44,7 +44,7 @@
       min-height: 420px;
       display: flex;
       flex-direction: column;
-      padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+      padding: max(44px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
     }
 
     .stage {
@@ -122,7 +122,7 @@
       .card { max-height: calc(100dvh - 70px); }
       .controls { min-height: 44px; }
     }
-    
+
     /* ════════ 宽屏版（≥960px，横屏平板/电脑/横屏大手机）════════ */
     #desk { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     #desk[hidden] { display: none; }
@@ -175,10 +175,16 @@
 .head .home-btn{position:absolute;left:max(10px,env(safe-area-inset-left));top:50%;transform:translateY(-50%)}
 .head{position:relative}
 @media(max-width:380px){.home-btn span{display:none}.home-btn{padding:4px 8px}}
-</style>
+    .mobile-home { align-self: flex-start; flex: 0 0 auto; display: inline-flex; align-items: center;
+      min-height: 36px; padding: 4px 12px; margin-bottom: 4px; border: 1.5px solid #e6ded2;
+      border-radius: 999px; background: #fff; color: #8a8078; font-size: 13px;
+      font-weight: 600; text-decoration: none; }
+    body.desk-on .mobile-home { display: none; }
+  </style>
 </head>
 <body>
   <main class="gallery" aria-label="情绪小怪兽情绪卡片">
+    <a class="home-btn mobile-home" href="index.html" aria-label="返回首页">🏠<span> 首页</span></a>
     <section class="stage">
       <img id="card" class="card" alt="情绪卡片">
     </section>
@@ -265,18 +271,13 @@
       var act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
     }
-    var posSkipFirst = new URLSearchParams(location.search).get("from") !== "hub";
-    var posTimer = null;
     function savePos() {
-      if (posSkipFirst) { posSkipFirst = false; return; }
-      clearTimeout(posTimer);
-      posTimer = setTimeout(function () {   // 停留满 1.5s 才算"正在看"：误触滑走不覆盖记录
-        try {
-          localStorage.setItem("hz.deck.emotion", JSON.stringify({ i: index, ts: Date.now() }));
-          localStorage.setItem("hz.last", JSON.stringify({ id: "emotion", url: "emotion.html", name: "情绪小怪兽", label: cards[index].title, pos: (index + 1) + "/" + cards.length, ts: Date.now() }));
-        } catch (e) {}
-      }, 1500);
+      try {
+        localStorage.setItem("hz.deck.emotion", JSON.stringify({ i: index, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: "emotion", url: "emotion.html", name: "情绪小怪兽", label: cards[index].title, pos: (index + 1) + "/" + cards.length, ts: Date.now() }));
+      } catch (e) {}
     }
+
     var orig = window.render;
     window.render = function (n) { orig(n); if (!desk.hidden) sync(); savePos(); };
     document.getElementById("deskPrev").addEventListener("click", function () { render(index - 1); });
@@ -296,6 +297,7 @@
         if (s0 && s0.i >= 0 && s0.i < cards.length) render(s0.i);
       } catch (e) {}
     }
+    savePos();
     mq.addEventListener("change", apply);
     apply();
   })();

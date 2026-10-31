@@ -14,9 +14,9 @@
   <title>识字卡 · 422字+启蒙+情绪</title>
   <style>
     :root { color-scheme: light; }
-    body { margin:0; min-height:100svh; padding-top:env(safe-area-inset-top); background:#fdf8ec; color:#4a3226;
+    body { margin:0; min-height:100svh; background:#fdf8ec; color:#4a3226;
            font-family: system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-           display:flex; flex-direction:column; align-items:center; padding:28px 18px 40px; box-sizing:border-box; gap:6px;}
+           display:flex; flex-direction:column; align-items:center; padding:max(44px, env(safe-area-inset-top)) 18px 40px; box-sizing:border-box; gap:6px;}
     h1 { font-size:25px; margin:0 0 2px; }
     p.sub { margin:0 0 14px; color:#8d7d73; font-size:14px; }
     h2 { font-size:15px; color:#8d7d73; margin:18px 0 8px; font-weight:600; width:min(420px,100%);}
@@ -25,10 +25,6 @@
     a.card b { display:block; font-size:18px; color:#3e9486; margin-bottom:3px;}
     a.card.warm { background:#fbe3dc; color:#a05a48; }
     a.card.warm b { color:#e8836f; }
-    a.card.continue { background:#3e9486; color:#d8f6f1; }
-    a.card.continue b { color:#fff; }
-    .lastbadge { display:inline-block; font-style:normal; font-size:11px; background:#fff; color:#3e9486;
-                 border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:2px; font-weight:700; }
     footer { font-size:12px; color:#b0a49a; margin-top:10px; text-align:center;}
     a.card.continue { background:#3e9486; color:#d8f6f1; }
     a.card.continue b { color:#fff; }
@@ -40,11 +36,11 @@
   <h1>识字卡 🎴</h1>
 
   <h2>第一步 · 拼音</h2>
-  <a class="card" href="./pinyin-zimu.html"><b>拼音字母卡</b>21 个声母 · y/w · 24 个韵母 · 16 个整体认读音节 · 63 张完整拼音表 · 五类声调，认形、正音与听音找字</a>
+  <a class="card" href="./pinyin-zimu.html?from=hub"><b>拼音字母卡</b>21 个声母 · y/w · 24 个韵母 · 16 个整体认读音节 · 63 张完整拼音表 · 五类声调，认形、正音与听音找字</a>
 
   <h2>第二步 · 识字卡</h2>
   <a class="card" href="./shizi-422.html?from=hub"><b>识字卡片 · 422 字全量</b>21 组 402 卡，含笔顺演示</a>
-  <a class="card" href="./shizi-1000.html"><b>识字卡片 · 1000 字全集</b>31 组 964 卡，宽屏三栏 / 竖屏自适应</a>
+  <a class="card" href="./shizi-1000.html?from=hub"><b>识字卡片 · 1000 字全集</b>31 组 964 卡，宽屏三栏 / 竖屏自适应</a>
 
   <h2>进阶 · 汉语启蒙</h2>
   <a class="card" href="./huiyi.html?from=hub"><b>会意字 · 拼字魔法</b>部件相加猜新字</a>
@@ -60,6 +56,7 @@ function refreshResume() {
   try {
     var stale = document.querySelector("a.card.continue");
     if (stale) stale.remove();
+    document.querySelectorAll(".lastbadge").forEach(function (badge) { badge.remove(); });
     var last = JSON.parse(localStorage.getItem("hz.last") || "null");
     if (!last || !last.url || !/^[\w.-]+\.html$/.test(last.url)) return;
     if (Date.now() - (last.ts || 0) > 1000 * 60 * 60 * 24 * 180) return;
@@ -72,7 +69,7 @@ function refreshResume() {
     var sub = document.querySelector("p.sub");
     if (sub) sub.parentNode.insertBefore(a, sub.nextSibling);
     else document.body.insertBefore(a, document.body.firstChild);
-    var entry = document.querySelector('a.card[href="./' + last.url + '?from=hub"]');
+    var entry = document.querySelector('a.card:not(.continue)[href="./' + last.url + '?from=hub"]');
     if (entry) entry.querySelector("b").insertAdjacentHTML("beforeend", ' <i class="lastbadge">上次</i>');
   } catch (e) {}
 }

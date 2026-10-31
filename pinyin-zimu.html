@@ -20,7 +20,7 @@
     [hidden] { display: none !important; }
 
     .app { height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; }
-    .topbar { min-height: 64px; padding: 10px max(14px,env(safe-area-inset-left)) 8px max(14px,env(safe-area-inset-right));
+    .topbar { min-height: 64px; padding: max(44px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-left)) 8px max(14px,env(safe-area-inset-right));
       display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: rgba(253,248,236,.95); }
     .brand { min-width: 0; flex: 1; }
     .brand h1 { margin: 0; font-size: clamp(20px,2.2vw,30px); line-height: 1.15; }
@@ -130,7 +130,7 @@
       .sheet-grid { grid-template-columns: repeat(8,minmax(0,1fr)); }
     }
     @media (max-height: 690px) and (max-width: 959px) {
-      .topbar { min-height: 54px; padding-block: 6px; }
+      .topbar { min-height: 54px; padding-bottom: 6px; }
       .brand p { display: none; }
       .group-tabs { padding-block: 5px; }
       .group-tab { padding-block: 7px; }
@@ -362,20 +362,16 @@
       if (!["letter","sound"].includes(current().type)) state.mode = "learn";
       render(speak); saveLastPos();
     }
-    /* 记住上次看到的位置：任何入口都记录；带 ?from=hub 从首页进入时恢复。停留 1.5s 才写入。 */
+    /* 显示卡片即记录位置；从首页进入时先恢复本组位置。 */
     const DECK_META = { id: "pinyin-zimu", url: "pinyin-zimu.html", name: "拼音字母卡" };
-    let posSkipFirst = new URLSearchParams(location.search).get("from") !== "hub";
-    let posTimer = null;
     function saveLastPos() {
-      if (posSkipFirst) { posSkipFirst = false; return; }
-      clearTimeout(posTimer);
-      posTimer = setTimeout(() => {
-        try {
-          const c = current();
-          localStorage.setItem("hz.last", JSON.stringify({ id: "pinyin-zimu", url: "pinyin-zimu.html", name: "拼音字母卡", label: labelOf(c), pos: groupPos() + "/" + groupCards(c.g).length, ts: Date.now() }));
-        } catch (e) {}
-      }, 1500);
+      const c = current();
+      try {
+        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: labelOf(c), pos: groupPos() + "/" + groupCards(c.g).length, ts: Date.now() }));
+      } catch (e) {}
     }
+
     function move(delta) { selectIndex(state.i + delta,true); saveLastPos(); }
     function jumpGroup(g) { const at=CARDS.findIndex((c)=>c.g===g); if(at>=0) selectIndex(at,true); saveLastPos(); }
     function openSheet() { $("sheet").hidden=false; const a=$("sheetGrid").querySelector(".active"); if(a) requestAnimationFrame(()=>a.scrollIntoView({block:"center"})); }
@@ -458,8 +454,15 @@
     const params=new URLSearchParams(location.search);
     const requestedGroup=params.get("group");
     if(requestedGroup){const g=GROUPS.findIndex((x)=>x.id===requestedGroup),i=CARDS.findIndex((x)=>x.g===g);if(i>=0)state.i=i;}
+    if (params.get("from") === "hub") {
+      try {
+        const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+        if (s && s.i >= 0 && s.i < CARDS.length) state.i = s.i;
+      } catch (e) {}
+    }
     const n=Number(params.get("n"));if(Number.isInteger(n)&&n>=1&&n<=CARDS.length)state.i=n-1;
     render(false);
+    saveLastPos();
   </script>
 
 </body>

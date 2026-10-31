@@ -22,7 +22,7 @@
     .gallery {
       width: 100%; height: 100dvh; height: 100svh;
       display: flex; flex-direction: column;
-      padding: max(6px, env(safe-area-inset-top)) 8px 16px;
+      padding: max(44px, env(safe-area-inset-top)) 8px 16px;
     }
     .stage { min-height: 0; flex: 1; display: grid; place-items: center; cursor: default; }
 
@@ -174,10 +174,24 @@
     .mini.active { border-color: var(--daccent); background: #fff; font-weight: 700; }
     .mini.pair { font-size: 16px; letter-spacing: -1px; }
     #desk .counter { font-size: 14px; white-space: nowrap; }
+      .mobile-home { align-self: flex-start; flex: 0 0 auto; display: inline-flex; align-items: center;
+      min-height: 36px; padding: 4px 12px; margin-bottom: 4px; border: 1.5px solid #e6ded2;
+      border-radius: 999px; background: #fff; color: #8a8078; font-size: 13px;
+      font-weight: 600; text-decoration: none; }
+    body.desk-on .mobile-home { display: none; }
+      .home-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px 4px 9px; border: 1.5px solid #e6ded2; border-radius: 999px;
+      background: #fff; color: #8a8078; font-size: 13px; font-weight: 600;
+      text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+    .head { position: relative; }
+    .head .home-btn { position: absolute; left: max(10px, env(safe-area-inset-left));
+      top: 50%; transform: translateY(-50%); }
+    @media (max-width: 380px) { .home-btn span { display: none; } }
   </style>
 </head>
 <body>
   <main class="gallery" aria-label="识字卡片1000">
+    <a class="home-btn mobile-home" href="index.html" aria-label="返回首页">🏠<span> 首页</span></a>
     <section class="stage" id="stage"><div id="cardWrap"></div></section>
     <section id="tips" class="tips" hidden></section>
     <nav class="bar" id="bar">
@@ -192,7 +206,7 @@
       <div class="sheet"><div class="sheet-grid" id="sheetGrid"></div></div>
     </div>
     <div id="desk" hidden>
-      <header class="desk-top">
+      <header class="desk-top"><a class="home-btn" href="index.html" aria-label="返回首页">🏠<span> 首页</span></a>
         <h1>识字卡片 · 1000 字</h1>
         <nav class="desk-chips" id="deskChips" aria-label="分组导航"></nav>
         <div class="desk-switches">
@@ -287,6 +301,20 @@
     const bar = document.getElementById("bar");
     const groupBtn = document.getElementById("groupBtn");
 
+    /* 每次显示卡片即记录位置；从首页进入时先恢复本组位置。 */
+    const DECK_META = { id: "shizi-1000", url: "shizi-1000.html", name: "识字卡片 · 1000 字全集" };
+    function saveLastPos() {
+      if (mode !== "deck" || deck.length !== CARDS.length) return;
+      const { c, i } = deck[state.i];
+      const inGroup = CARDS.filter((x) => x.g === c.g).length;
+      const pos = CARDS.filter((x, idx) => x.g === c.g && idx <= i).length;
+      const label = c.pair ? c.pair.join("") : c.char;
+      try {
+        localStorage.setItem("hz.deck." + DECK_META.id, JSON.stringify({ i: state.i, ts: Date.now() }));
+        localStorage.setItem("hz.last", JSON.stringify({ id: DECK_META.id, url: DECK_META.url, name: DECK_META.name, label: GROUPS[c.g].name + " · " + label, pos: pos + "/" + inGroup, ts: Date.now() }));
+      } catch (e) {}
+    }
+
     function render() {
       if (mode === "deck" && deskActive) return renderDesk();
       const { c, i } = deck[state.i];
@@ -313,6 +341,7 @@
       document.querySelectorAll(".chip").forEach((el) => {
         el.classList.toggle("active", Number(el.dataset.g) === c.g);
       });
+      saveLastPos();
     }
 
     function go(delta) {
@@ -574,6 +603,7 @@
       const act = document.querySelector("#deskFilm .mini.active");
       if (act) act.scrollIntoView({ block: "nearest", inline: "center" });
       deskWrite(c);
+      saveLastPos();
     }
     if (mode === "deck") {
       document.getElementById("deskPrev").addEventListener("click", () => go(-1));
@@ -614,6 +644,12 @@
       if (groupParam) {
         const gi = GROUPS.findIndex((g) => g.id === groupParam);
         if (gi >= 0) state.i = Math.max(0, deck.findIndex((d) => d.c.g === gi));
+      }
+      if (qs.get("from") === "hub") {
+        try {
+          const s = JSON.parse(localStorage.getItem("hz.deck." + DECK_META.id) || "null");
+          if (s && s.i >= 0 && s.i < deck.length) state.i = s.i;
+        } catch (e) {}
       }
       const nParam = parseInt(qs.get("n"), 10);
       if (nParam >= 1 && nParam <= deck.length) state.i = nParam - 1;
