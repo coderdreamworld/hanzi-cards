@@ -142,15 +142,7 @@
     }
     @media (max-width: 360px) { .mobile-card .badge { display: none; } }
     @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto !important; } }
-  
-    /* 微信内引导条（仅 MicroMessenger UA 显示） */
-    .wx-tip { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
-              background: var(--button, #dff4f1); color: var(--ink, #4a3226); border-radius: 14px; padding: 10px 14px;
-              font-size: 14px; display: none; align-items: center; gap: 10px;
-              box-shadow: 0 4px 16px rgba(74,50,38,.18); z-index: 999; }
-    .wx-tip.show { display: flex; }
-    .wx-tip .wx-x { margin-left: auto; color: var(--muted, #8d7d73); padding: 2px 6px; cursor: pointer; }
-.cf { position: fixed; top: -18px; width: 12px; height: 18px; border-radius: 3px; z-index: 9998;
+    .cf { position: fixed; top: -18px; width: 12px; height: 18px; border-radius: 3px; z-index: 9998;
       pointer-events: none; animation: cfall 2.3s ease-in forwards; }
 @keyframes cfall { to { transform: translateY(108vh) rotate(560deg); } }
 .home-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;
@@ -468,22 +460,6 @@
     if(requestedGroup){const g=GROUPS.findIndex((x)=>x.id===requestedGroup),i=CARDS.findIndex((x)=>x.g===g);if(i>=0)state.i=i;}
     const n=Number(params.get("n"));if(Number.isInteger(n)&&n>=1&&n<=CARDS.length)state.i=n-1;
     render(false);
-  </script>
-
-  <script>
-  (function () {
-    if (!/MicroMessenger/i.test(navigator.userAgent)) return;
-    if (sessionStorage.getItem('wxTipDone')) return;
-    var bar = document.createElement('div');
-    bar.className = 'wx-tip';
-    bar.innerHTML = '微信里用：点右上角「···」可<span style="color:#3e9486;font-weight:600">收藏</span>或加<span style="color:#3e9486;font-weight:600">浮窗</span>，下次秒开<span class="wx-x">✕</span>';
-    bar.querySelector('.wx-x').addEventListener('click', function () {
-      sessionStorage.setItem('wxTipDone', '1');
-      bar.remove();
-    });
-    document.body.appendChild(bar);
-    requestAnimationFrame(function () { bar.classList.add('show'); });
-  })();
   </script>
 
 </body>
