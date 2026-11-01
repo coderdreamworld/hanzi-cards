@@ -12,6 +12,10 @@
 
 `english-word-cards/` 是独立的英语卡片目录：[直接打开在线 demo](https://coderdreamworld.github.io/hanzi-cards/english-word-cards/)；`index.html` 即可编辑源码与发布页面，`previews/` 仅供视觉审查。其本地权威副本在 `/Users/ping/C 行动_与人交流/孩子/英语单词卡/`，修改后同步整个目录。本 demo 暂不列入首页既有卡组，也不在现有中文卡片的进度及统计测试范围内。
 
+## 逻辑桌游 Demo
+
+《奇妙小脑袋》独立放在 [`logic-board-game/`](logic-board-game/)；[在线试玩](https://coderdreamworld.github.io/hanzi-cards/logic-board-game/)。可维护的源码和设计方案放在 [`src/logic-board-game/`](src/logic-board-game/)，同步方法见该目录 README。它与卡片共用仓库，但不加入卡片首页。
+
 ## 访问统计
 
 已发布的首页和 8 套卡片页（包括保留直达的象形字卡）共用 Google Analytics 4 属性 `561759969` 的网站数据流，衡量 ID 为 `G-V23C1X2DQX`。拼音拼读卡不发布，因此不在统计范围内。
