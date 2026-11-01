@@ -1,0 +1,71 @@
+# 会意字候选池（结果字与全部部件都在 1000 字全集内，且不等于现有 14 张）
+# 列：结果字<TAB>部件(用+号)<TAB>所属组<TAB>art_src（空白=需新绘）
+
+结果	部件	组	art_src
+出	山+山	duibi	
+加	力+口	dongzuo2	dongzuo2:加
+动	云+力	wenti	1000:1000/wenti:动
+吗	口+马	changyong	changyong:吗
+吧	口+巴	changyong	changyong:吧
+员	口+贝	rencheng	1000:1000/rencheng:员
+和	禾+口	changyong	changyong:和
+地	土+也	ziran	ziran:地
+坏	土+不	xingrong	1000:1000/xingrong:坏
+坡	土+皮	ziran	1000:1000/ziran:坡
+城	土+成	changsuo	1000:1000/changsuo:城
+好	女+子	xingrong	xingrong:好
+妈	女+马	rencheng	rencheng:妈
+岩	山+石	huiyi	1000:1000/huiyi:岩
+您	你+心	rencheng	1000:1000/rencheng:您
+早	日+十	shijian	shijian:早
+星	日+生	tianwen	tianwen:星
+晒	日+西	fushi	1000:1000/fushi:晒
+晶	日+日+日	huiyi	1000:1000/huiyi:晶
+朋	月+月	rencheng	rencheng:朋
+本	木+一	wupin	wupin:本
+朵	几+木	liangci	1000:1000/liangci:朵
+杏	木+口	zhiwu	zhiwu:杏
+束	木+口	liangci	1000:1000/liangci:束
+果	日+木	zhiwu	zhiwu:果
+架	加+木	fangwu	1000:1000/fangwu:架
+树	木+对	zhiwu	zhiwu:树
+棵	木+果	liangci	1000:1000/liangci:棵
+灶	火+土	huiyi	1000:1000/huiyi:灶
+男	田+力	duibi	
+百	白+一	shuzi	shuzi:百
+的	白+勺	changyong	changyong:的
+秋	禾+火	shijian	shijian:秋
+种	禾+中	dongzuo4	1000:1000/dongzuo4_b:种
+秒	禾+少	shijian	1000:1000/shijian:秒
+笔	竹+毛	wupin	wupin:笔
+筷	竹+快	wupin	1000:1000/wupin:筷
+粉	米+分	yanse	yanse:粉
+美	羊+大	xingrong	xingrong:美
+肚	月+土	renti	renti:肚
+胖	月+半	duibi	
+腰	月+要	renti	1000:1000/renti:腰
+蚂	虫+马	dongwu2	1000:1000/dongwu2:蚂
+蚊	虫+文	dongwu2	1000:1000/dongwu2:蚊
+表	衣+毛	wupin	1000:1000/wupin:表
+起	走+己	dongzuo2	dongzuo2:起
+趴	足+八	dongzuo3	1000:1000/dongzuo3:趴
+跑	足+包	dongzuo	dongzuo:跑
+路	足+各	changsuo	changsuo:路
+轨	车+九	jiaotong	1000:1000/jiaotong:轨
+闪	门+人	tianwen	tianwen:闪
+问	门+口	dongzuo2	dongzuo2:问
+间	门+日	liangci	1000:1000/liangci:间
+闻	门+耳	dongzuo4	1000:1000/dongzuo4_b:闻
+雷	雨+田	tianwen	1000:1000/tianwen:雷
+露	雨+路	tianwen	1000:1000/tianwen:露
+音	立+日	xuexi	xuexi:音
+香	禾+日	duibi	
+鲜	鱼+羊	shiwu	1000:1000/shiwu:鲜
+鲤	鱼+里	dongwu2	1000:1000/dongwu2:鲤
+鲨	鱼+沙	dongwu	1000:1000/dongwu:鲨
+鸡	又+鸟	dongwu	dongwu:鸡
+鸦	牙+鸟	dongwu	dongwu:鸦
+鸭	甲+鸟	dongwu	dongwu:鸭
+
+共 64 个候选。部件池现状：现有 14 张只用了 日月木人小大土手目一火不正口鸟氵 这 16 个部件。
+优先补开新部件家族：女 口 氵 力 日 目 鸟 禾 竹 鱼 忄 讠 纟 宀 辶 羊 竹 月 力 田 白 土 竹 舟 车 石 雨 立

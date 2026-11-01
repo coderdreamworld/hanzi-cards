@@ -3,7 +3,10 @@
 """汉语启蒙卡集构建器。
 
 - 复用上级目录的插画素材库与各组模块（只读，不改动正式识字卡项目）；
-- 复用插画写 art_src："组id:字"（识字卡片_素材_<组id>.py 的 arts()）或 "seed:字"（识字卡片_图片/*.svg）；
+- 复用插画写 art_src：
+  "组id:字"      → 识字卡片_素材_<组id>.py 的 arts()（422 字卡插画，只读）
+  "1000:组id:字" → 识字卡片_1000字/素材/素材1000_<组id>*.py 的 arts()（1000 字新增卡插画，只读）
+  "seed:字"      → 识字卡片_图片/*.svg（种子卡插画，只读）；
 - 大字字形用 fontTools 从 Songti.ttc 提取矢量轮廓（复用 识字卡片_构建.extract_glyphs）；
 - 唯一正式构建入口：python3 汉语启蒙_构建.py
 """
@@ -17,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent          # 汉语启蒙卡集/
 PARENT = ROOT.parent                            # 孩子/
 SEED_DIR = PARENT / "识字卡片_图片"
+NEW_MAT_DIR = PARENT / "识字卡片_1000字" / "素材"   # 1000 字新增插画模块
 
 sys.path.insert(0, str(PARENT))
 import 识字卡片_构建 as base  # noqa: E402  只借用 extract_glyphs，不会触发正式构建
@@ -36,6 +40,22 @@ def load_seed_art(char):
     inner = inner.replace('id="art"', "").replace('id="monster"', 'id="m-seed"')
     inner = inner.replace('id="hand"', 'id="hand-seed"').replace('href="#hand"', 'href="#hand-seed"')
     return inner.strip(), path
+
+
+def load_1000_arts(gid):
+    """1000 字项目的新增素材模块：识字卡片_1000字/素材/素材1000_<gid>*.py。
+
+    同一组可能拆成 _a/_b 多模块（如 dongzuo4_a/dongzuo4_b），按 gid 前缀合并。
+    """
+    mats = []
+    for f in sorted(NEW_MAT_DIR.glob(f"素材1000_{gid}*.py")):
+        mats.append(load_module(f, f"qs1000_{f.stem}"))
+    if not mats:
+        raise ValueError(f"1000 字素材目录里没有组 {gid} 的模块")
+    arts = {}
+    for m in mats:
+        arts.update(m.arts())
+    return arts
 
 
 def blend(accent_hex, bg="#fdf8ec", alpha=0.16):
@@ -78,12 +98,25 @@ def build_set(sucai, template, set_def):
                 art_map[c["key"]] = sucai.NEW_ARTS[src]
                 check_art(c["key"], art_map[c["key"]], from_seed=False)
             elif ":" in src:
-                gid, key = src.split(":", 1)
-                if gid == "seed":
-                    art, path = load_seed_art(key)
+                # "seed:<字>" | "<组id>:<字>"（422 素材模块）| "1000:<组id>:<字>"（1000 字素材模块）
+                head, rest = src.split(":", 1)
+                if head == "seed":
+                    art, path = load_seed_art(rest)
                     art_map[c["key"]] = art
                     check_art(c["key"], art, from_seed=True)
+                elif head == "1000":
+                    gid, key = rest.split(":", 1)
+                    arts = group_mods.get(("1000", gid))
+                    if arts is None:
+                        arts = load_1000_arts(gid)
+                        group_mods[("1000", gid)] = arts
+                    if key not in arts:
+                        problems.append(f"{set_def['file']}: {c['key']} 引用 {src}，但 1000 字组内无此插画")
+                    else:
+                        art_map[c["key"]] = arts[key]
+                        check_art(c["key"], art_map[c["key"]], from_seed=False)
                 else:
+                    gid, key = head, rest
                     if gid not in group_mods:
                         group_mods[gid] = load_module(PARENT / f"识字卡片_素材_{gid}.py", f"qs_{gid}").arts()
                     if key not in group_mods[gid]:
@@ -146,6 +179,14 @@ def repr_json(obj):
 
 def main():
     sucai = load_module(ROOT / "汉语启蒙_素材.py", "qisucai")
+    # 2026-11-01 扩充：并入 扩充/ 下的三个扩充数据模块（会意字+10 / 部首家族+9 / 韵语+6+4）。
+    # 扩充文件缺失时静默跳过，构建器保持向后兼容。
+    try:
+        ext = load_module(ROOT / "扩充" / "扩充合并.py", "qisuo_ext")
+        for row in ext.apply(sucai, verbose=True):
+            pass
+    except FileNotFoundError:
+        pass
     template = (ROOT / "汉语启蒙_模板.html").read_text(encoding="utf-8")
     outs = []
     try:

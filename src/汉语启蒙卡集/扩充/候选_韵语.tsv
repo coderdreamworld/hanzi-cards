@@ -1,0 +1,25 @@
+# 韵语候选池：现有 8 韵语已覆盖的韵母 = ao / iao / a / ua / ou / u / i / ian / ang / uang
+# 下面是尚未覆盖、且 1000 字里字数够用的韵母，按可选用字数排序
+
+韵母	1000字数	可选用字（字+拼音）
+an	60	万(wàn) 三(sān) 伞(sǎn) 伴(bàn) 兰(lán) 办(bàn) 半(bàn) 南(nán) 参(cān) 反(fǎn) 咱(zán) 喊(hǎn) 安(ān) 寒(hán) 展(zhǎn) 山(shān) 岩(yán) 岸(àn) 帆(fān) 干(gān) 弯(wān) 弹(tán) 慢(màn) 扇(shàn) 按(àn) 攀(pān) 敢(gǎn) 散(sàn) 晚(wǎn) 暗(àn) 板(bǎn) 毯(tǎn) 汗(hàn) 淡(dàn)
+ing	44	井(jǐng) 亭(tíng) 停(tíng) 兵(bīng) 冰(bīng) 净(jìng) 厅(tīng) 名(míng) 听(tīng) 岭(lǐng) 应(yìng) 影(yǐng) 惊(jīng) 拧(nǐng) 明(míng) 星(xīng) 晴(qíng) 晶(jīng) 杏(xìng) 柠(níng) 猩(xīng) 瓶(píng) 硬(yìng) 苹(píng) 茎(jīng) 萤(yíng) 蜓(tíng) 蜻(qīng) 蝇(yíng) 行(xíng) 警(jǐng) 请(qǐng) 赢(yíng) 轻(qīng)
+ai	41	买(mǎi) 再(zài) 卖(mài) 台(tái) 在(zài) 外(wài) 太(tài) 奶(nǎi) 孩(hái) 带(dài) 开(kāi) 彩(cǎi) 才(cái) 抬(tái) 拍(pāi) 排(pái) 掰(bāi) 摆(bǎi) 摘(zhāi) 晒(shài) 来(lái) 柏(bǎi) 柴(chái) 歪(wāi) 海(hǎi) 爱(ài) 牌(pái) 白(bái) 百(bǎi) 盖(gài) 矮(ǎi) 窄(zhǎi) 腮(sāi) 菜(cài)
+e	40	业(yè) 个(gè) 么(me) 乐(lè) 也(yě) 厕(cè) 可(kě) 叶(yè) 各(gè) 呢(ne) 和(hé) 哥(gē) 喝(hē) 客(kè) 得(dé) 折(zhé) 棵(kē) 歌(gē) 河(hé) 热(rè) 爷(yé) 的(de) 盒(hé) 着(zhe) 禾(hé) 舌(shé) 色(sè) 荷(hé) 蛇(shé) 蛾(é) 蝌(kē) 课(kè) 车(chē) 野(yě)
+eng	35	乘(chéng) 冷(lěng) 凳(dèng) 升(shēng) 城(chéng) 声(shēng) 层(céng) 峰(fēng) 成(chéng) 扔(rēng) 捧(pěng) 整(zhěng) 更(gèng) 朋(péng) 枫(fēng) 梦(mèng) 棚(péng) 橙(chéng) 檬(méng) 正(zhèng) 灯(dēng) 生(shēng) 登(dēng) 睁(zhēng) 秤(chèng) 等(děng) 筝(zhēng) 绳(shéng) 能(néng) 蒸(zhēng) 藤(téng) 蜂(fēng) 蜢(měng) 蹦(bèng)
+ong	34	东(dōng) 中(zhōng) 从(cóng) 众(zhòng) 公(gōng) 农(nóng) 冬(dōng) 冲(chōng) 动(dòng) 勇(yǒng) 同(tóng) 工(gōng) 懂(dǒng) 松(sōng) 栋(dòng) 桐(tóng) 桶(tǒng) 棕(zōng) 泳(yǒng) 洞(dòng) 浓(nóng) 用(yòng) 种(zhǒng) 空(kōng) 筒(tǒng) 粽(zòng) 红(hóng) 葱(cōng) 虫(chóng) 虹(hóng) 蚣(gōng) 送(sòng) 重(zhòng) 钟(zhōng)
+uo	31	伙(huǒ) 作(zuò) 国(guó) 坐(zuò) 多(duō) 左(zuǒ) 座(zuò) 或(huò) 托(tuō) 拖(tuō) 捉(zhuō) 搓(cuō) 昨(zuó) 朵(duǒ) 果(guǒ) 桌(zhuō) 活(huó) 火(huǒ) 脱(tuō) 舵(duò) 萝(luó) 螺(luó) 说(shuō) 过(guò) 锁(suǒ) 锅(guō) 错(cuò) 锣(luó) 驼(tuó) 骆(luò) 鸵(tuó)
+ei	29	为(wèi) 倍(bèi) 北(běi) 卫(wèi) 围(wéi) 妹(mèi) 尾(wěi) 悲(bēi) 杯(bēi) 枚(méi) 梅(méi) 每(měi) 没(méi) 泪(lèi) 猬(wèi) 玫(méi) 眉(méi) 累(lèi) 给(gěi) 美(měi) 肥(féi) 背(bèi) 苇(wěi) 莓(méi) 被(bèi) 贝(bèi) 雷(léi) 飞(fēi) 黑(hēi)
+en	28	人(rén) 什(shén) 们(men) 份(fèn) 分(fēn) 奔(bēn) 婶(shěn) 尘(chén) 很(hěn) 文(wén) 晨(chén) 本(běn) 枕(zhěn) 根(gēn) 森(sēn) 沉(chén) 深(shēn) 温(wēn) 盆(pén) 真(zhēn) 粉(fěn) 蚊(wén) 认(rèn) 跟(gēn) 针(zhēn) 门(mén) 问(wèn) 闻(wén)
+uan	24	串(chuàn) 乱(luàn) 传(chuán) 全(quán) 关(guān) 卷(juàn) 宽(kuān) 拳(quán) 换(huàn) 暖(nuǎn) 欢(huān) 泉(quán) 短(duǎn) 砖(zhuān) 穿(chuān) 端(duān) 罐(guàn) 船(chuán) 蒜(suàn) 转(zhuǎn) 软(ruǎn) 选(xuǎn) 钻(zuàn) 馆(guǎn)
+ui	23	会(huì) 吹(chuī) 嘴(zuǐ) 回(huí) 堆(duī) 对(duì) 岁(suì) 挥(huī) 推(tuī) 最(zuì) 柜(guì) 桂(guì) 水(shuǐ) 灰(huī) 瑰(guī) 睡(shuì) 腿(tuǐ) 谁(shuí) 轨(guǐ) 追(zhuī) 锤(chuí) 队(duì) 龟(guī)
+iang	22	两(liǎng) 乡(xiāng) 亮(liàng) 凉(liáng) 向(xiàng) 响(xiǎng) 墙(qiáng) 奖(jiǎng) 姜(jiāng) 娘(niáng) 巷(xiàng) 想(xiǎng) 晾(liàng) 桨(jiǎng) 橡(xiàng) 江(jiāng) 箱(xiāng) 讲(jiǎng) 象(xiàng) 辆(liàng) 酱(jiàng) 香(xiāng)
+ie	22	些(xiē) 借(jiè) 写(xiě) 切(qiè) 别(bié) 叠(dié) 姐(jiě) 捏(niē) 接(jiē) 灭(miè) 睫(jié) 碟(dié) 茄(qié) 蝎(xiē) 蝶(dié) 蟹(xiè) 街(jiē) 解(jiě) 谢(xiè) 贴(tiē) 铁(tiě) 鞋(xié)
+in	18	今(jīn) 品(pǐn) 巾(jīn) 心(xīn) 您(nín) 拎(līn) 新(xīn) 林(lín) 琴(qín) 紧(jǐn) 蚓(yǐn) 近(jìn) 进(jìn) 邻(lín) 金(jīn) 银(yín) 阴(yīn) 音(yīn)
+iu	16	久(jiǔ) 九(jiǔ) 休(xiū) 修(xiū) 六(liù) 就(jiù) 扭(niǔ) 旧(jiù) 柳(liǔ) 牛(niú) 球(qiú) 秋(qiū) 羞(xiū) 舅(jiù) 蚯(qiū) 袖(xiù)
+o	16	伯(bó) 哦(ò) 坡(pō) 墨(mò) 婆(pó) 我(wǒ) 握(wò) 摸(mō) 波(bō) 泼(pō) 玻(bō) 窝(wō) 脖(bó) 菠(bō) 蘑(mó) 蜗(wō)
+un	15	吞(tūn) 唇(chún) 困(kùn) 孙(sūn) 捆(kǔn) 春(chūn) 村(cūn) 滚(gǔn) 笋(sǔn) 群(qún) 菌(jūn) 裙(qún) 豚(tún) 蹲(dūn) 轮(lún)
+ia	10	下(xià) 假(jiǎ) 加(jiā) 夏(xià) 家(jiā) 架(jià) 甲(jiǎ) 虾(xiā) 霞(xiá) 颊(jiá)
+ue	8	学(xué) 穴(xué) 血(xuè) 觉(jué) 雀(què) 雪(xuě) 靴(xuē) 鹊(què)
+
+建议新增 6 首韵语，覆盖下列 6 个空白韵母（其余留白）：an ing ai e eng ong uo ei en uan ui iang ie in
