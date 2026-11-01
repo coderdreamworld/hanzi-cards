@@ -6,7 +6,11 @@
 
 每套已发布卡片都有“返回首页”。打开或切换卡片时，会立即把当前位置写入同一浏览器、同一站点的 `localStorage`；从首页进入时，先恢复该卡组上次的位置。换浏览器、清理站点数据后，记录不会跨端保留。
 
-本地源码在 `/Users/ping/C 行动_与人交流/孩子/`，`src/` 是仓库内备份。修改后运行 `python3 tests/test_navigation_progress.py`，它用本机 Chrome 检查 8 套已发布页面的入口、返回按钮、进度记录、恢复和窄屏布局。
+本地源码在 `/Users/ping/C 行动_与人交流/孩子/`，既有中文卡片的仓库备份在 `src/`。修改后运行 `python3 tests/test_navigation_progress.py`，它用本机 Chrome 检查 8 套已发布页面的入口、返回按钮、进度记录、恢复和窄屏布局。
+
+## 英语单词卡 demo
+
+`english-word-cards/` 是独立的英语卡片目录：[直接打开在线 demo](https://coderdreamworld.github.io/hanzi-cards/english-word-cards/)；`index.html` 即可编辑源码与发布页面，`previews/` 仅供视觉审查。其本地权威副本在 `/Users/ping/C 行动_与人交流/孩子/英语单词卡/`，修改后同步整个目录。本 demo 暂不列入首页既有卡组，也不在现有中文卡片的进度及统计测试范围内。
 
 ## 访问统计
 

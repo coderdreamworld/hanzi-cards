@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Pop! 英语单词卡 · 交互原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF8EC; --card:#FFFFFF; --line:#EDDEC8;
+    --ink:#3B2E2A; --sub:#7D6F64; --coral:#E8613C; --gold:#F5B301;
+    --wfont:'Baloo 2',ui-rounded,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{min-height:100%}
+  body{margin:0;height:100dvh;overflow:hidden;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column}
+  button{font-family:inherit;cursor:pointer;border:0;padding:0}
+  button:focus-visible,summary:focus-visible,.word:focus-visible,.stage:focus-visible{outline:3px solid #2F7FBF;outline-offset:3px}
+  header{width:min(100% - 32px,980px);margin:0 auto;padding:16px 0 8px;display:flex;align-items:center;justify-content:space-between}
+  .logo{font-family:var(--wfont);font-weight:800;font-size:21px;color:var(--coral)}
+  .stars{font-size:14px;font-weight:800;color:#A77800;display:flex;align-items:center;gap:4px}
+  .stars .pop{animation:pop .5s ease}
+  @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+  .islands{width:min(100% - 32px,980px);margin:0 auto;display:flex;gap:7px;overflow-x:auto;padding:0 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .islands::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;color:#6B5A4E}
+  .chip.now{background:#FFF0E6;border-color:var(--coral);color:#A64429}
+  main{width:min(100% - 32px,980px);margin:0 auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:0 0 10px}
+  .center-col{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:27px;padding:clamp(10px,2vh,22px);box-shadow:0 7px 0 #F3E8D7}
+  .stage-wrap{height:100%;min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+  .stage-caption{display:none}
+  .stage{position:relative;height:min(100%,410px);width:auto;max-width:100%;aspect-ratio:1;background:#FFF9F0;border:1.5px solid #F3E6D4;border-radius:22px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+  .stage svg{width:80%;height:80%}
+  .stage.cheered{background:#FFFBE8}
+  .star-fx{position:absolute;top:10px;right:14px;font-size:26px;opacity:0;transform:scale(.3);transition:all .45s cubic-bezier(.2,1.6,.4,1);pointer-events:none}
+  .star-fx.show{opacity:1;transform:scale(1)}
+  .audio-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(59,46,42,.7);color:#fff;border-radius:999px;font-size:12px;padding:4px 12px;pointer-events:none;opacity:0;transition:opacity .2s}
+  .stage.speaking .audio-hint{opacity:1}
+  .deck{min-width:0;display:flex;flex-direction:column;gap:clamp(8px,2vh,22px);justify-content:center}
+  .deck.slide-r{animation:slideR .3s ease}.deck.slide-l{animation:slideL .3s ease}
+  @keyframes slideR{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+  .word{font-family:var(--wfont);font-weight:800;font-size:clamp(48px,6vw,72px);line-height:1.05;color:var(--coral);cursor:pointer;user-select:none;max-width:100%;overflow-wrap:anywhere}
+  .word.hidden-mode{color:transparent;text-shadow:0 0 24px rgba(232,97,60,.75)}
+  .meta{font-size:14px;color:var(--sub);margin-top:5px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .type{background:#F0F4E8;color:#4E7139;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700}
+  .zh{font-weight:750;color:var(--ink)}
+  .spell{display:none;flex-direction:column;gap:10px;align-items:flex-start}
+  .spell.on{display:flex}
+  .slots,.pool{display:flex;gap:6px;flex-wrap:wrap}
+  .slot{width:clamp(31px,4vw,43px);height:clamp(40px,5vw,52px);border-radius:10px;background:#fff;border:2px dashed #E8BE80;display:flex;align-items:center;justify-content:center;font-family:var(--wfont);font-size:25px;font-weight:800;color:#9B6426}
+  .slot.filled{background:#FFF3E4;border-style:solid;animation:pop .35s ease}
+  .pool button{width:44px;height:44px;border-radius:12px;background:#FFF2D8;box-shadow:0 2px 0 #EAD9BC;font-family:var(--wfont);font-size:24px;font-weight:800;color:#A5661D}
+  .pool button.used{opacity:.2;pointer-events:none}
+  .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .actions button{height:clamp(42px,6vh,54px);border-radius:14px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:23px;box-shadow:0 3px 0 rgba(59,46,42,.1)}
+  .actions button small{font-size:14px;font-weight:750}
+  .btn-say{background:var(--coral);color:#fff}
+  .btn-slow{background:#E8F4FD;color:#246B9F}
+  .btn-spell{background:#F3EAFB;color:#694685}
+  .btn-hide{background:#FFF0DD;color:#94601E}
+  .actions button:active,.pool button:active{transform:translateY(2px);box-shadow:none}
+  .support-row{display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:10px}
+  .coach{display:flex;align-items:center;gap:10px;background:#FFF0DD;border-radius:17px;padding:8px 12px}
+  .coach-icon{font-size:26px;flex:0 0 auto}
+  .coach strong{font-size:13px;color:#915820}
+  .coach p{margin:2px 0 0;font-size:13px;line-height:1.4}
+  .more{position:relative;background:#fff;border:1px solid var(--line);border-radius:15px;color:#67594D}
+  .more summary{height:100%;cursor:pointer;list-style:none;padding:11px 15px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .more summary::-webkit-details-marker{display:none}
+  .more[open] summary span{transform:rotate(180deg)}
+  .more-grid{position:absolute;z-index:3;right:0;bottom:calc(100% + 8px);width:min(640px,calc(100vw - 32px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 12px 30px #3B2E2A22}
+  .more-grid>div{background:#FFF9F1;border-radius:12px;padding:12px;font-size:13px;line-height:1.5}
+  .more-grid b{color:#594A3E}.more-grid p{margin:5px 0 0}
+  nav{flex:0 0 auto;position:sticky;bottom:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:14px;padding:9px 16px calc(9px + env(safe-area-inset-bottom));background:rgba(255,248,236,.96);border-top:1px solid var(--line)}
+  nav button.arrow{width:46px;height:46px;border-radius:999px;background:#fff;border:1.5px solid var(--line);font-size:20px;font-weight:800;color:var(--ink)}
+  .dots{display:flex;gap:7px;justify-content:center}
+  .dot{width:29px;height:29px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:700;color:#7D6F64}
+  .dot.now{background:var(--coral);border-color:var(--coral);color:#fff}
+  .dot.got:not(.now){background:#FFE8A0;color:#6F5200}
+  @media(min-width:701px) and (max-height:560px){
+    header{padding:5px 0 3px}.logo{font-size:18px}
+    .islands{padding-bottom:5px}.chip{padding:4px 10px;font-size:12px}
+    main{gap:6px;padding-bottom:6px}
+    .center-col{padding:8px;gap:12px}
+    .deck{gap:6px}.word{font-size:42px}.meta{font-size:12px}
+    .spell{gap:5px}.slots,.pool{gap:4px}
+    .slot{width:32px;height:34px;font-size:20px}.pool button{width:36px;height:36px;font-size:20px}
+    .actions{gap:6px}.actions button{height:38px;font-size:19px}.actions button small{font-size:12px}
+    .support-row{gap:6px}.coach{padding:4px 9px}.coach-icon{font-size:20px}.coach strong{font-size:11px}.coach p{font-size:12px;line-height:1.2}
+    .more summary{padding:4px 10px;font-size:12px}
+    nav{padding:4px 16px}nav button.arrow{width:38px;height:38px}.dot{width:24px;height:24px}
+  }
+  @media(max-width:700px){
+    body{height:auto;min-height:100dvh;overflow:visible}
+    header{padding:10px 0 7px}.logo{font-size:19px}
+    .islands{padding-bottom:9px}
+    main{gap:10px;padding-bottom:14px}
+    .center-col{flex:none;display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:22px}
+    .stage-wrap{height:auto}
+    .stage{height:auto;width:min(100%,275px);border-radius:18px}
+    .stage-caption{display:block;font-size:11px;color:var(--sub)}
+    .deck{width:100%;align-items:center;gap:11px}
+    .word-zone{text-align:center}
+    .word{font-size:clamp(43px,12vw,57px)}
+    .meta{justify-content:center;margin-top:0;font-size:13px}
+    .type{display:none}
+    .spell{align-items:center;width:100%}.slots,.pool{justify-content:center}
+    .actions{width:100%;gap:8px}
+    .actions button{height:49px;font-size:21px}
+    .actions button small{font-size:13px}
+    .coach{padding:10px 12px;gap:10px}.coach-icon{font-size:23px}.coach p{font-size:13px}
+    .support-row{display:flex;flex-direction:column}
+    .more summary{height:auto}
+    .more-grid{position:static;width:auto;grid-template-columns:1fr;border:0;box-shadow:none;padding:0 15px 15px}
+  }
+  @media(max-width:360px){.stage{width:min(100%,255px)}.center-col{padding:11px}.slot{width:31px;height:39px}.pool button{width:39px;height:39px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">Word&nbsp;Pop!</span>
+  <div class="stars"><span id="starIcon">⭐</span><span id="starNum">0</span></div>
+</header>
+
+<div class="islands" id="islands"></div>
+
+<main>
+  <div class="center-col">
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage" id="stage" role="button" tabindex="0" aria-label="点图朗读当前单词">
+        <span class="star-fx" id="starFx">⭐</span>
+        <span class="audio-hint">正在发音</span>
+        <div id="art" style="display:contents"></div>
+      </div>
+      <span class="stage-caption">点图听音 · 左右滑图换卡</span>
+    </div>
+
+    <div class="deck" id="deck">
+      <div class="word-zone">
+        <div class="word" id="word" role="button" tabindex="0" title="点击发音">apple</div>
+        <div class="meta">
+          <span class="type" id="type">名词 · 实物</span>
+          <span class="zh" id="zh">苹果</span>
+          <span id="ipa">/ˈæp.əl/</span>
+        </div>
+      </div>
+
+      <div class="spell" id="spell">
+        <div class="slots" id="slots"></div>
+        <div class="pool" id="pool"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-say"  onclick="speak(false)" aria-label="读一遍"><span aria-hidden="true">🔊</span><small>读一遍</small></button>
+        <button class="btn-slow" onclick="speak(true)" aria-label="慢慢读"><span aria-hidden="true">🐢</span><small>慢慢读</small></button>
+        <button class="btn-spell" id="btnSpell" onclick="toggleSpell()" aria-label="拼一拼"><span aria-hidden="true">🧩</span><small>拼一拼</small></button>
+        <button class="btn-hide"  id="btnHide" onclick="toggleHide()" aria-label="藏起字"><span aria-hidden="true">🙈</span><small>藏起字</small></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="support-row">
+    <section class="coach" aria-label="亲子互动建议">
+      <span class="coach-icon" aria-hidden="true">💬</span>
+      <div><strong>一起试试</strong><p id="tipSay"></p></div>
+    </section>
+    <details class="more" id="moreTips">
+      <summary>更多玩法与卡片说明 <span aria-hidden="true">⌄</span></summary>
+      <div class="more-grid">
+        <div><b>🎯 问一问</b><p id="tipChat"></p></div>
+        <div><b>🏠 生活里</b><p id="tipLife"></p></div>
+        <div><b>🎨 画面线索</b><p id="tipHow"></p></div>
+      </div>
+    </details>
+  </div>
+</main>
+
+<nav>
+  <button class="arrow" onclick="step(-1)" aria-label="上一个单词">←</button>
+  <div class="dots" id="dots"></div>
+  <button class="arrow" onclick="step(1)" aria-label="下一个单词">→</button>
+</nav>
+
+<script>
+/* ============================================================
+   词库：19 词 · 8 岛。每张卡带 how = 画面线索说明
+   ============================================================ */
+const WORDS = [
+/* ---------- 果园岛 ---------- */
+{
+  w:"apple", zh:"苹果", ipa:"/ˈæp.əl/", island:"果园岛", type:"名词 · 实物",
+  say:"指着图说 An apple! A red apple!",
+  chat:"问 Where is the apple? 让孩子指。",
+  life:"吃水果时轮流说 apple、banana。",
+  how:"果柄与叶子保留，红苹果轮廓一眼可认。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一颗带绿叶的红苹果"><ellipse cx="120" cy="205" rx="67" ry="8" fill="#EADDC8"/><path d="M119 75q-30-21-58-2q-27 19-15 65q11 47 43 61q15 7 31 0q16 7 31 0q32-14 43-61q12-46-15-65q-28-19-60 2z" fill="#E8613C" stroke="#A64429" stroke-width="3"/><path d="M67 93q-19 24-5 60q6 13 15 20" fill="none" stroke="#F59B7B" stroke-width="12" stroke-linecap="round" opacity=".8"/><path d="M121 77q-6-20 2-42" fill="none" stroke="#79543A" stroke-width="9" stroke-linecap="round"/><path d="M126 54q29-25 59-8q-13 29-51 23z" fill="#67A56A" stroke="#3D7B4E" stroke-width="3"/></svg>`
+},
+{
+  w:"banana", zh:"香蕉", ipa:"/bəˈnæn.ə/", island:"果园岛", type:"名词 · 实物",
+  say:"拿着香蕉说 A banana! Yellow banana!",
+  chat:"问 Do you like bananas? 点头摇头都行。",
+  life:"超市水果区让孩子找 banana。",
+  how:"完整弯香蕉，有深色两端和浅色果身。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一根完整的弯香蕉"><ellipse cx="121" cy="202" rx="83" ry="8" fill="#EADDC8"/><path d="M40 57q26 83 88 113q49 23 88-18q-37 7-76-12q-53-25-77-88z" fill="#F3C648" stroke="#AC7E2E" stroke-width="3"/><path d="M57 64q23 65 74 88q37 19 66 7" fill="none" stroke="#FFE58B" stroke-width="15" stroke-linecap="round"/><path d="M42 55q-4-18 8-26q11 11 8 29z" fill="#75523A"/><path d="M211 150q12-3 16 4q-4 9-17 8z" fill="#75523A"/><path d="M78 93q27 47 68 60" fill="none" stroke="#DDA636" stroke-width="3" opacity=".55"/></svg>`
+},
+/* ---------- 动物园 ---------- */
+{
+  w:"cat", zh:"猫", ipa:"/kæt/", island:"动物园", type:"名词 · 实物",
+  say:"指图说 A cat! Meow~ 配上猫叫。",
+  chat:"问 How does a cat say? 一起学猫叫。",
+  life:"路上见到猫就说 Look! A cat!",
+  how:"尖耳、胡须、长尾和坐姿共同指向猫。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一只坐着的橘猫，尖耳朵和长尾巴"><ellipse cx="120" cy="207" rx="76" ry="8" fill="#EADDC8"/><path d="M159 169q40 4 38-32q-2-15-15-20" fill="none" stroke="#D98A43" stroke-width="19" stroke-linecap="round"/><path d="M80 177q-8-32 5-55q10-21 35-22q25 1 35 22q13 23 5 55q-16 13-40 13q-24 0-40-13z" fill="#E99A50" stroke="#A66A3C" stroke-width="3"/><path d="M89 184q0 15 17 14h28q17 1 17-14" fill="#F4BF85"/><path d="M70 103L66 46l39 29q16-7 31 0l39-29l-4 57q9 18 1 38q-14 34-52 35q-38-1-52-35q-9-20 2-38z" fill="#E99A50" stroke="#A66A3C" stroke-width="3"/><path d="M74 78l-1-20l22 18m72 2l1-20l-22 18" fill="#F8C5A0"/><path d="M94 121q7-5 14 0m25 0q7-5 14 0" fill="none" stroke="#4B382F" stroke-width="4" stroke-linecap="round"/><path d="M120 130l-6 5h12z" fill="#B75C52"/><path d="M120 135q-5 10-13 9m13-9q5 10 13 9" fill="none" stroke="#4B382F" stroke-width="2.5" stroke-linecap="round"/><path d="M74 138l26 3m-29 8l28-2m67-9l-26 3m29 8l-28-2" stroke="#765647" stroke-width="2.5" stroke-linecap="round"/></svg>`
+},
+{
+  w:"dog", zh:"狗", ipa:"/dɑːɡ/", island:"动物园", type:"名词 · 实物",
+  say:"指图说 A dog! Woof woof!",
+  chat:"问 Can a dog jump? 一起跳一跳。",
+  life:"小区里见到小狗就打招呼 A dog!",
+  how:"垂耳、口鼻、尾巴和坐姿共同指向狗。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一只坐着的棕色小狗，垂耳和尾巴"><ellipse cx="120" cy="207" rx="77" ry="8" fill="#EADDC8"/><path d="M162 164q32-8 39-31" fill="none" stroke="#B47D55" stroke-width="16" stroke-linecap="round"/><path d="M77 177q-8-33 6-54q12-20 37-22q25 2 37 22q14 21 6 54q-18 17-43 17q-25 0-43-17z" fill="#C99264" stroke="#8E6247" stroke-width="3"/><path d="M94 158q8 35 26 37q18-2 26-37" fill="#E9B892"/><path d="M72 84q-24-18-35 8q-8 29 20 42l21-25m90-25q24-18 35 8q8 29-20 42l-21-25" fill="#B47D55" stroke="#8E6247" stroke-width="3"/><circle cx="120" cy="107" r="51" fill="#C99264" stroke="#8E6247" stroke-width="3"/><path d="M86 128q7 33 34 35q27-2 34-35q-16-16-34-14q-18-2-34 14z" fill="#E9B892"/><circle cx="101" cy="106" r="4" fill="#3B2E2A"/><circle cx="139" cy="106" r="4" fill="#3B2E2A"/><ellipse cx="120" cy="131" rx="10" ry="7" fill="#3B2E2A"/><path d="M120 138q-6 10-16 10m16-10q6 10 16 10" fill="none" stroke="#6D4437" stroke-width="3" stroke-linecap="round"/></svg>`
+},
+{
+  w:"fish", zh:"鱼", ipa:"/fɪʃ/", island:"动物园", type:"名词 · 实物",
+  say:"指图说 A fish! It can swim!",
+  chat:"问 What color is the fish?",
+  life:"吃饭时指鱼说 fish。",
+  how:"鱼尾、鱼鳍、鳃线和气泡交代水中游动。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一条有鱼鳍和尾巴的蓝色鱼在水中游"><circle cx="58" cy="61" r="7" fill="none" stroke="#83C5DC" stroke-width="3"/><circle cx="44" cy="91" r="4" fill="none" stroke="#83C5DC" stroke-width="3"/><ellipse cx="122" cy="193" rx="76" ry="7" fill="#D8E9E5"/><path d="M169 111l50-42v112l-50-39" fill="#4D9AC5" stroke="#2B729B" stroke-width="3" stroke-linejoin="round"/><path d="M94 103q5-30 32-38q15 20 10 42" fill="#8BC7D8" stroke="#2B729B" stroke-width="3"/><path d="M89 151q9 24 35 28q13-18 11-38" fill="#6CB1D0" stroke="#2B729B" stroke-width="3"/><path d="M42 127q31-45 80-45q41 0 67 45q-26 45-67 45q-49 0-80-45z" fill="#5FA9CF" stroke="#2B729B" stroke-width="3"/><path d="M60 127q42-44 110-18" fill="none" stroke="#9BD2E0" stroke-width="12" stroke-linecap="round" opacity=".75"/><circle cx="83" cy="121" r="6" fill="#fff"/><circle cx="84" cy="121" r="3" fill="#3B2E2A"/><path d="M103 100q18 27 0 54" fill="none" stroke="#2B729B" stroke-width="3"/><path d="M118 116q12 6 24 1m-23 17q11 5 22 1" fill="none" stroke="#3B88B2" stroke-width="3" stroke-linecap="round"/></svg>`
+},
+/* ---------- 动作岛：具体动词 = 动作场景画法 ---------- */
+{
+  w:"run", zh:"跑", ipa:"/rʌn/", island:"动作岛", type:"动词 · 动作场景",
+  say:"原地跑说 Run! Run fast! 边说边做。",
+  chat:"说 Run to the door! 孩子跑过去。",
+  life:"公园里跑步时间喊 run run run!",
+  how:"迈开的双腿、前倾身体和身后速度线表现跑。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友迈开双腿向前跑"><ellipse cx="124" cy="210" rx="82" ry="8" fill="#EADDC8"/><g fill="none" stroke="#9CCBE0" stroke-width="6" stroke-linecap="round"><path d="M27 112h39"/><path d="M20 132h36"/><path d="M31 152h31"/></g><path d="M116 136 Q96 160 72 178" fill="none" stroke="#2E7F72" stroke-width="22" stroke-linecap="round"/><path d="M120 139 Q147 157 171 177" fill="none" stroke="#2E7F72" stroke-width="22" stroke-linecap="round"/><path d="M72 177 Q60 183 49 181" fill="none" stroke="#E8613C" stroke-width="13" stroke-linecap="round"/><path d="M171 177 Q180 190 195 190" fill="none" stroke="#E8613C" stroke-width="13" stroke-linecap="round"/><path d="M106 102 Q127 96 143 113 L138 145 Q116 150 96 136Z" fill="#4B9CC2" stroke="#3B4D4F" stroke-width="3" stroke-linejoin="round"/><path d="M101 115 Q88 130 75 137" fill="none" stroke="#4B9CC2" stroke-width="18" stroke-linecap="round"/><path d="M142 117 Q158 126 172 118" fill="none" stroke="#4B9CC2" stroke-width="18" stroke-linecap="round"/><circle cx="73" cy="138" r="8" fill="#DFAE86"/><circle cx="174" cy="118" r="8" fill="#DFAE86"/><circle cx="124" cy="76" r="25" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M100 75 Q98 46 124 47 Q148 47 151 70 Q138 61 121 65 Q112 72 100 75Z" fill="#4A3328"/><circle cx="134" cy="79" r="2.6" fill="#3B2E2A"/><path d="M136 92q7 5 12-1" fill="none" stroke="#7B4939" stroke-width="2.5" stroke-linecap="round"/></svg>`
+},
+{
+  w:"jump", zh:"跳", ipa:"/dʒʌmp/", island:"动作岛", type:"动词 · 动作场景",
+  say:"跳起来说 Jump! Jump high!",
+  chat:"说 Can you jump? 比比谁跳得高。",
+  life:"等电梯时玩 jump 游戏。",
+  how:"双脚离地、举起双臂，地上留影子表现跳。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友双脚离地跳起来"><ellipse cx="120" cy="215" rx="58" ry="8" fill="#EADDC8"/><g fill="none" stroke="#A6D2E5" stroke-width="5" stroke-linecap="round"><path d="M43 144q-10-18-3-37"/><path d="M196 144q10-18 3-37"/></g><path d="M109 141 Q91 157 77 171" fill="none" stroke="#2E7F72" stroke-width="20" stroke-linecap="round"/><path d="M130 141 Q148 157 163 171" fill="none" stroke="#2E7F72" stroke-width="20" stroke-linecap="round"/><path d="M77 171q-9 6-22 1" fill="none" stroke="#E8613C" stroke-width="13" stroke-linecap="round"/><path d="M163 171q9 6 22 1" fill="none" stroke="#E8613C" stroke-width="13" stroke-linecap="round"/><path d="M97 101 Q120 93 143 101 L139 143 Q120 153 101 143Z" fill="#4B9CC2" stroke="#3B4D4F" stroke-width="3"/><path d="M99 112Q76 98 62 66" fill="none" stroke="#4B9CC2" stroke-width="17" stroke-linecap="round"/><path d="M142 112Q163 95 177 65" fill="none" stroke="#4B9CC2" stroke-width="17" stroke-linecap="round"/><circle cx="59" cy="60" r="8" fill="#DFAE86"/><circle cx="179" cy="59" r="8" fill="#DFAE86"/><circle cx="120" cy="73" r="26" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M95 72 Q94 45 120 45 Q145 45 147 72 Q131 60 116 62 Q106 68 95 72Z" fill="#4A3328"/><circle cx="110" cy="78" r="2.3" fill="#3B2E2A"/><circle cx="130" cy="78" r="2.3" fill="#3B2E2A"/><path d="M111 90q9 7 18 0" fill="none" stroke="#7B4939" stroke-width="2.5" stroke-linecap="round"/></svg>`
+},
+{
+  w:"eat", zh:"吃", ipa:"/iːt/", island:"动作岛", type:"动词 · 动作场景",
+  say:"咬一口说 Eat! Yummy yummy!",
+  chat:"问 What do you eat? 指晚饭回答。",
+  life:"每餐第一口前说 eat。",
+  how:"孩子把有咬痕的苹果送到张开的嘴边。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友拿着苹果咬了一口"><ellipse cx="120" cy="208" rx="78" ry="8" fill="#EADDC8"/><path d="M49 174h144v15H49z" fill="#C99564" stroke="#8F6342" stroke-width="2"/><path d="M63 190v20m115-20v20" stroke="#8F6342" stroke-width="9" stroke-linecap="round"/><path d="M74 163q12-46 44-48q31 1 49 48" fill="#4B9CC2" stroke="#3B4D4F" stroke-width="3"/><circle cx="101" cy="85" r="32" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M70 84Q67 48 99 48q35 0 34 37q-18-13-39-11q-10 7-24 10" fill="#4A3328"/><circle cx="103" cy="86" r="2.7" fill="#3B2E2A"/><path d="M118 97q8 2 9 9q-6 8-14 1" fill="#833E35"/><path d="M147 150 Q154 127 166 118" fill="none" stroke="#4B9CC2" stroke-width="18" stroke-linecap="round"/><circle cx="168" cy="115" r="9" fill="#DFAE86"/><path d="M171 80q-12-7-21 1q-8 9-1 22q8 16 21 16q14 0 22-16q6-14-3-22q-9-8-18-1z" fill="#E8613C" stroke="#A63E2D" stroke-width="2"/><path d="M176 76q4-11 12-12" fill="none" stroke="#5A7F43" stroke-width="5" stroke-linecap="round"/><path d="M166 80q-7-11-16-9q3 10 16 9" fill="#78A760"/><path d="M144 86q11-2 13 8q-4 9-13 5" fill="#FFF8EC"/></svg>`
+},
+{
+  w:"sleep", zh:"睡觉", ipa:"/sliːp/", island:"动作岛", type:"动词 · 动作场景",
+  say:"闭眼做睡觉状说 Sleep! Shh…",
+  chat:"问 Where is the baby sleeping? 指一指。",
+  life:"睡前仪式最后一个词：sleep。",
+  how:"闭眼躺在枕头与被子里，月亮提示夜晚。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友闭眼躺在枕头和被子里睡觉"><circle cx="187" cy="47" r="20" fill="#F2C866"/><circle cx="196" cy="39" r="20" fill="#FFF9F0"/><circle cx="160" cy="39" r="3" fill="#EFCB78"/><circle cx="209" cy="82" r="3" fill="#EFCB78"/><path d="M31 143h178v55H31z" fill="#B77E5B" stroke="#825940" stroke-width="3"/><path d="M46 198v16m148-16v16" stroke="#825940" stroke-width="10" stroke-linecap="round"/><rect x="45" y="119" width="70" height="40" rx="17" fill="#F8E6CC" stroke="#D5C0A5" stroke-width="2"/><circle cx="87" cy="126" r="26" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M62 125Q61 96 86 99q25 1 27 24q-15-10-27-8q-10 8-24 10" fill="#4A3328"/><path d="M77 130q6-4 12 0m9 0q6-4 12 0" fill="none" stroke="#6D4437" stroke-width="2.5" stroke-linecap="round"/><path d="M114 132q62-12 85 20v36H41v-32q37-9 73-24" fill="#79A8B8" stroke="#4D7D8E" stroke-width="3"/><path d="M45 158q71 20 153-4" fill="none" stroke="#B2D3D7" stroke-width="6" stroke-linecap="round"/></svg>`
+},
+/* ---------- 能力岛：情态/助动词 = 能力与动手场景画法 ---------- */
+{
+  w:"can", zh:"能、会", ipa:"/kæn/", island:"能力岛", type:"情态动词 · 能力场景",
+  say:"指着骑车的孩子说 I can ride a bike! 我会骑车！",
+  chat:"问 Can you ride a bike? 试着回答 Yes, I can!",
+  life:"孩子完成任何小事都说 Yes, you can!",
+  how:"I can ride a bike：稳稳骑车表现「会做」。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友已经学会骑自行车"><ellipse cx="120" cy="211" rx="83" ry="8" fill="#EADDC8"/><circle cx="67" cy="173" r="29" fill="#F9F5EB" stroke="#394A4E" stroke-width="7"/><circle cx="179" cy="173" r="29" fill="#F9F5EB" stroke="#394A4E" stroke-width="7"/><path d="M67 173l44-53 29 53H67l44-53 68 53-18-58" fill="none" stroke="#E8613C" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M153 113h20m-64 6l-15-11" fill="none" stroke="#394A4E" stroke-width="5" stroke-linecap="round"/><path d="M116 128q-14 10-19 26m27-19q12 9 15 24" fill="none" stroke="#2E7F72" stroke-width="16" stroke-linecap="round"/><path d="M110 94q25-4 33 14l-12 31q-24 1-37-19z" fill="#4B9CC2" stroke="#3B4D4F" stroke-width="3"/><path d="M133 108q16 4 28 9" fill="none" stroke="#4B9CC2" stroke-width="15" stroke-linecap="round"/><circle cx="162" cy="118" r="7" fill="#DFAE86"/><circle cx="116" cy="71" r="24" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M92 72q-2-27 24-27q24 0 25 28q-18-10-31-7q-9 8-18 6" fill="#4A3328"/><path d="M91 68q5-31 27-31q23 1 29 31z" fill="#E8613C" stroke="#A64429" stroke-width="2"/><path d="M92 69q28-8 55 0" fill="none" stroke="#A64429" stroke-width="3"/><path d="M95 69q0 20 10 24" fill="none" stroke="#A64429" stroke-width="2"/><circle cx="124" cy="74" r="2.4" fill="#3B2E2A"/><path d="M122 87q8 5 15-2" fill="none" stroke="#7B4939" stroke-width="2.5" stroke-linecap="round"/><path d="M40 113q-12-10-17-3m6 19q-10-5-15 0" fill="none" stroke="#9CCBE0" stroke-width="4" stroke-linecap="round"/></svg>`
+},
+{
+  w:"do", zh:"做、干", ipa:"/duː/", island:"能力岛", type:"动词 · 动手场景",
+  say:"动手拼时说 Do it! 做起来！",
+  chat:"问 What are you doing? 孩子答 Doing a puzzle!",
+  life:"亲子手工时间开场词 Let's do it!",
+  how:"双手正在搭积木，动作尚未结束。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="小朋友正在亲手搭积木"><ellipse cx="120" cy="210" rx="86" ry="8" fill="#EADDC8"/><path d="M42 171h156v14H42z" fill="#C99564" stroke="#8F6342" stroke-width="2"/><path d="M57 185v25m126-25v25" stroke="#8F6342" stroke-width="9" stroke-linecap="round"/><path d="M88 160q6-49 32-51q29 3 34 51" fill="#4B9CC2" stroke="#3B4D4F" stroke-width="3"/><circle cx="121" cy="75" r="27" fill="#DFAE86" stroke="#8D614A" stroke-width="2"/><path d="M95 76q-3-28 25-29q27 0 28 27q-19-11-33-8q-10 8-20 10" fill="#4A3328"/><circle cx="112" cy="79" r="2.5" fill="#3B2E2A"/><circle cx="130" cy="79" r="2.5" fill="#3B2E2A"/><path d="M112 91q9 6 18 0" fill="none" stroke="#7B4939" stroke-width="2.5" stroke-linecap="round"/><path d="M96 125q-12 18-18 38m65-38q13 13 21 28" fill="none" stroke="#4B9CC2" stroke-width="17" stroke-linecap="round"/><circle cx="78" cy="162" r="8" fill="#DFAE86"/><circle cx="165" cy="154" r="8" fill="#DFAE86"/><rect x="93" y="146" width="35" height="26" rx="3" fill="#E6B55A" stroke="#9A7046" stroke-width="2"/><rect x="128" y="146" width="35" height="26" rx="3" fill="#6FAA82" stroke="#4E8163" stroke-width="2"/><rect x="111" y="119" width="35" height="26" rx="3" fill="#E8613C" stroke="#A64429" stroke-width="2"/></svg>`
+},
+/* ---------- 对比岛：形容词 = 同物对比画法 ---------- */
+{
+  w:"big", zh:"大的", ipa:"/bɪɡ/", island:"对比岛", type:"形容词 · 同物对比",
+  say:"张开双臂说 Big! A big ball!",
+  chat:"问 Which one is big? 二选一。",
+  life:"看到大狗大树就说 big。",
+  how:"两颗同款球直接并排，大球成为主角。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="同款两个球，一个很大，一个很小，大球突出"><ellipse cx="116" cy="199" rx="92" ry="7" fill="#EADDC8"/><circle cx="91" cy="123" r="65" fill="#E8613C" stroke="#AA4934" stroke-width="3"/><path d="M61 68q54 53 49 117M38 130q53-23 111-6" fill="none" stroke="#F9C4A9" stroke-width="7" stroke-linecap="round"/><path d="M59 85q9-11 21-15" fill="none" stroke="#FFE0CC" stroke-width="7" stroke-linecap="round"/><circle cx="186" cy="169" r="22" fill="#E8613C" stroke="#AA4934" stroke-width="2"/><path d="M176 151q16 15 13 38" fill="none" stroke="#F9C4A9" stroke-width="3"/><path d="M169 169q18-8 37-2" fill="none" stroke="#F9C4A9" stroke-width="3"/></svg>`
+},
+{
+  w:"small", zh:"小的", ipa:"/smɑːl/", island:"对比岛", type:"形容词 · 同物对比",
+  say:"捏手指说 Small! A small ball!",
+  chat:"问 Can you find a small thing? 家里找小物。",
+  life:"乐高积木都是 small。",
+  how:"同一组球，小球上色，大球退后变淡。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="同款两个球，一个很大，一个很小，小球突出"><ellipse cx="116" cy="199" rx="92" ry="7" fill="#EADDC8"/><circle cx="91" cy="123" r="65" fill="#F1D3C4" stroke="#CFB09E" stroke-width="3"/><path d="M61 68q54 53 49 117M38 130q53-23 111-6" fill="none" stroke="#FFF7EF" stroke-width="7" stroke-linecap="round"/><circle cx="185" cy="169" r="22" fill="#E8613C" stroke="#AA4934" stroke-width="2"/><path d="M175 151q16 15 13 38" fill="none" stroke="#F9C4A9" stroke-width="3"/><path d="M168 169q18-8 37-2" fill="none" stroke="#F9C4A9" stroke-width="3"/></svg>`
+},
+/* ---------- 方位岛：介词 = 方位场景画法 ---------- */
+{
+  w:"in", zh:"在…里面", ipa:"/ɪn/", island:"方位岛", type:"介词 · 方位场景",
+  say:"把小球放进盒子说 In! The ball is in the box!",
+  chat:"玩藏球：猜 Where is the ball? In the box?",
+  life:"收玩具时说 Put it in!",
+  how:"红球从敞口盒中露出上半部，盒壁遮住下半部。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="红色球从敞口盒子里露出上半部"><ellipse cx="120" cy="210" rx="85" ry="8" fill="#EADDC8"/><path d="M54 105l66-23 66 23-66 24z" fill="#DDB486" stroke="#8F6342" stroke-width="3"/><path d="M68 108q52-35 104 0q-28 22-52 23q-24-1-52-23z" fill="#966B4C"/><circle cx="120" cy="128" r="31" fill="#E8613C" stroke="#A64429" stroke-width="3"/><path d="M103 108q7-7 16-8" fill="none" stroke="#F8B09A" stroke-width="5" stroke-linecap="round"/><path d="M54 112l66 25v67l-66-23z" fill="#D9AD7C" stroke="#8F6342" stroke-width="3"/><path d="M186 112l-66 25v67l66-23z" fill="#C99564" stroke="#8F6342" stroke-width="3"/><path d="M54 112l66 25 66-25" fill="none" stroke="#8F6342" stroke-width="5" stroke-linejoin="round"/></svg>`
+},
+{
+  w:"on", zh:"在…上面", ipa:"/ɑːn/", island:"方位岛", type:"介词 · 方位场景",
+  say:"球放盒顶说 On! The ball is on the box!",
+  chat:"换位置再问 Where is the ball?",
+  life:"放餐盘时说 on the table。",
+  how:"红球压在盒子顶面，接触关系明确。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="红色球稳稳放在盒子的顶面上"><ellipse cx="120" cy="208" rx="83" ry="8" fill="#EADDC8"/><path d="M55 120l65-22 65 22-65 21z" fill="#E2B887" stroke="#8F6342" stroke-width="3"/><path d="M55 120v61l65 22v-62z" fill="#D9AD7C" stroke="#8F6342" stroke-width="3"/><path d="M185 120v61l-65 22v-62z" fill="#C99564" stroke="#8F6342" stroke-width="3"/><circle cx="120" cy="72" r="29" fill="#E8613C" stroke="#A64429" stroke-width="3"/><path d="M105 55q6-6 13-7" fill="none" stroke="#F8B09A" stroke-width="5" stroke-linecap="round"/><path d="M91 111q29-9 58 0" fill="none" stroke="#8F6342" stroke-width="3" opacity=".45"/></svg>`
+},
+{
+  w:"under", zh:"在…下面", ipa:"/ˈʌn.dɚ/", island:"方位岛", type:"介词 · 方位场景",
+  say:"球滚到桌下说 Under! The ball is under the table!",
+  chat:"玩躲猫猫：玩具藏桌下问 Is it under?",
+  life:"吃饭时脚下的球 under the table。",
+  how:"红球位于桌面下方，两侧桌腿作参照。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="红色球在小桌子的桌面正下方"><ellipse cx="120" cy="211" rx="88" ry="8" fill="#EADDC8"/><path d="M40 90h160v19H40z" fill="#D9AD7C" stroke="#8F6342" stroke-width="3"/><path d="M53 109v96m134-96v96" stroke="#8F6342" stroke-width="14" stroke-linecap="round"/><path d="M43 108h154" stroke="#A37350" stroke-width="4"/><circle cx="120" cy="164" r="29" fill="#E8613C" stroke="#A64429" stroke-width="3"/><path d="M105 147q6-6 13-7" fill="none" stroke="#F8B09A" stroke-width="5" stroke-linecap="round"/></svg>`
+},
+/* ---------- 天气岛 & 玩具岛 ---------- */
+{
+  w:"sun", zh:"太阳", ipa:"/sʌn/", island:"天气岛", type:"名词 · 实物",
+  say:"指窗外说 The sun! 早上问好。",
+  chat:"问 Is it sunny today?",
+  life:"晴天出门指太阳说 sun。",
+  how:"圆形日轮与八束光线组成太阳。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一轮明亮的黄色太阳和放射状阳光"><g stroke="#E9A90F" stroke-width="11" stroke-linecap="round"><path d="M120 23v24m0 146v24M23 120h24m146 0h24M51 51l18 18m102 102l18 18M189 51l-18 18M69 171l-18 18"/></g><circle cx="120" cy="120" r="66" fill="#FFD45C" stroke="#E9A90F" stroke-width="4"/><path d="M85 81q19-16 44-17" fill="none" stroke="#FFE8A5" stroke-width="12" stroke-linecap="round"/><circle cx="120" cy="120" r="44" fill="#FFE083" opacity=".5"/></svg>`
+},
+{
+  w:"car", zh:"小汽车", ipa:"/kɑːr/", island:"玩具岛", type:"名词 · 实物",
+  say:"推玩具车说 A car! Beep beep!",
+  chat:"问 What color is the car?",
+  life:"路上数汽车 One car, two cars!",
+  how:"车顶、车窗、两轮和前后车灯组成汽车。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一辆有车窗和四个轮子的红色小汽车"><ellipse cx="121" cy="200" rx="95" ry="8" fill="#EADDC8"/><path d="M42 139q4-21 23-25l24-39q10-13 30-13h28q20 0 31 13l24 39q18 4 20 25v34H42z" fill="#E8613C" stroke="#A64429" stroke-width="3"/><path d="M84 112l17-29q6-8 19-8h25q14 0 20 8l17 29z" fill="#A7D0D8" stroke="#4A7C89" stroke-width="3"/><path d="M134 76v36" stroke="#4A7C89" stroke-width="3"/><path d="M43 143h178" stroke="#F28C6D" stroke-width="6"/><circle cx="76" cy="174" r="23" fill="#3B3B3B"/><circle cx="76" cy="174" r="11" fill="#CFCDC7"/><circle cx="187" cy="174" r="23" fill="#3B3B3B"/><circle cx="187" cy="174" r="11" fill="#CFCDC7"/><path d="M42 147h16m147 0h16" stroke="#FFD67A" stroke-width="10" stroke-linecap="round"/><path d="M53 126q12-8 27-8" fill="none" stroke="#F8A387" stroke-width="7" stroke-linecap="round"/></svg>`
+},
+{
+  w:"ball", zh:"球", ipa:"/bɑːl/", island:"玩具岛", type:"名词 · 实物",
+  say:"滚球说 A ball! Catch!",
+  chat:"说 Catch the ball! 玩接球。",
+  life:"玩球时间先喊 ball 再扔。",
+  how:"与 big/small 同款的红色条纹球。",
+  art:`<svg viewBox="0 0 240 240" role="img" aria-label="一个红色条纹玩具球"><ellipse cx="120" cy="207" rx="70" ry="8" fill="#EADDC8"/><circle cx="120" cy="121" r="75" fill="#E8613C" stroke="#AA4934" stroke-width="3"/><path d="M86 52q64 62 59 137M47 130q73-31 146-8" fill="none" stroke="#F9C4A9" stroke-width="8" stroke-linecap="round"/><path d="M78 75q14-11 30-13" fill="none" stroke="#FFE0CC" stroke-width="8" stroke-linecap="round"/></svg>`
+}
+];
+
+/* ---------- 状态 ---------- */
+let islandIdx = 0, i = 0, hideMode = false, spellOn = false, spellPos = 0;
+let got = JSON.parse(localStorage.getItem("wp2_stars") || "{}");
+let stars = parseInt(localStorage.getItem("wp2_starTotal") || "0", 10);
+const ISLANDS = [...new Set(WORDS.map(w => w.island))];
+const $ = id => document.getElementById(id);
+const curIsland = () => WORDS.filter(w => w.island === ISLANDS[islandIdx]);
+const curWord = () => curIsland()[i];
+
+/* ---------- 发音 ---------- */
+let VOICE = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  const natural = vs.filter(v => /en[-_]US/i.test(v.lang) &&
+    !/Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Fred|Good News|Jester|Junior|Organ|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox/i.test(v.name));
+  VOICE = natural.find(v => /Google US English/i.test(v.name))
+       || natural.find(v => /Samantha/i.test(v.name))
+       || natural.find(v => /Ava|Allison|Susan/i.test(v.name))
+       || natural.find(v => v.default) || natural[0] || null;
+}
+if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+let speechSeq = 0;
+function stopSpeech(){
+  speechSeq++;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  $("stage").classList.remove("speaking");
+}
+function speak(slow){
+  if (!("speechSynthesis" in window)) return;
+  stopSpeech();
+  const seq = speechSeq;
+  const u = new SpeechSynthesisUtterance(curWord().w);
+  u.lang = "en-US"; if (VOICE) u.voice = VOICE;
+  u.rate = slow ? 0.55 : 1.05; u.pitch = 1;
+  u.onstart = () => { if (seq === speechSeq) $("stage").classList.add("speaking"); };
+  u.onend = u.onerror = () => { if (seq === speechSeq) $("stage").classList.remove("speaking"); };
+  speechSynthesis.speak(u);
+}
+
+/* ---------- 渲染 ---------- */
+function renderIslands(){
+  $("islands").innerHTML = ISLANDS.map((n, k) =>
+    `<button class="chip ${k===islandIdx?"now":""}" onclick="goIsland(${k})">${n}</button>`).join("");
+}
+function renderDots(){
+  $("dots").innerHTML = curIsland().map((w, k) =>
+    `<button class="dot ${k===i?"now":""} ${got[w.w]?"got":""}" onclick="goCard(${k})" aria-label="第 ${k+1} 张：${w.w}" ${k===i?'aria-current="true"':''}>${k+1}</button>`).join("");
+}
+function render(anim){
+  const c = curWord();
+  $("art").innerHTML = c.art;
+  const w = $("word");
+  w.textContent = c.w;
+  w.classList.toggle("hidden-mode", hideMode);
+  w.onclick = () => { if (hideMode) reveal(); else speak(false); };
+  w.setAttribute("aria-label", hideMode ? "揭晓单词" : `朗读 ${c.w}`);
+  $("stage").setAttribute("aria-label", hideMode ? "点图揭晓单词" : `点图朗读 ${c.w}`);
+  $("type").textContent = c.type;
+  $("zh").textContent = c.zh;
+  $("ipa").textContent = c.ipa;
+  $("tipSay").textContent = c.say;
+  $("tipChat").textContent = c.chat;
+  $("tipLife").textContent = c.life;
+  $("tipHow").textContent = c.how;
+  $("starNum").textContent = stars;
+  spellOn = false; $("spell").classList.remove("on");
+  $("btnHide").innerHTML = hideMode ? '<span aria-hidden="true">👀</span><small>看答案</small>' : '<span aria-hidden="true">🙈</span><small>藏起字</small>';
+  $("btnHide").setAttribute("aria-label", hideMode ? "看答案" : "藏起字");
+  renderDots();
+  if (anim){
+    const d = $("deck");
+    d.classList.remove("slide-l","slide-r"); void d.offsetWidth;
+    d.classList.add(anim);
+  }
+}
+
+/* ---------- 翻卡 / 切岛 ---------- */
+function step(d){
+  stopSpeech();
+  const n = curIsland().length;
+  i = (i + d + n) % n;
+  hideMode = false; render(d > 0 ? "slide-r" : "slide-l");
+}
+function goCard(k){
+  if (k === i) return;
+  stopSpeech();
+  const anim = k > i ? "slide-r" : "slide-l";
+  i = k; hideMode = false; render(anim);
+}
+function goIsland(k){
+  if (k === islandIdx) return;
+  stopSpeech();
+  islandIdx = k; i = 0; hideMode = false;
+  renderIslands(); render("slide-r");
+}
+$("stage").addEventListener("click", ()=>{ if(hideMode) reveal(); else speak(false); });
+for (const el of [$("stage"), $("word")]) el.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); el.click(); }
+});
+
+/* ---------- 藏字猜词 ---------- */
+function toggleHide(){ hideMode = !hideMode; render(); if(hideMode) speak(false); }
+function reveal(){ hideMode = false; render(); speak(false); award(); }
+
+/* ---------- 拼写 ---------- */
+function toggleSpell(){
+  spellOn = !spellOn;
+  $("spell").classList.toggle("on", spellOn);
+  if (spellOn) buildSpell();
+}
+function buildSpell(){
+  const c = curWord(); spellPos = 0;
+  const letters = c.w.split("");
+  $("slots").innerHTML = letters.map(() => `<div class="slot"></div>`).join("");
+  const extra = "abcdefghilmnoprstuw".split("").filter(ch => !letters.includes(ch));
+  const pool = letters.concat([extra[(i*7)%extra.length], extra[(i*3+5)%extra.length]]);
+  $("pool").innerHTML = shuffle(pool).map(ch =>
+    `<button data-c="${ch}" onclick="tryLetter(this,'${ch}')">${ch}</button>`).join("");
+}
+function shuffle(a){ return a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]); }
+function tryLetter(btn, ch){
+  const c = curWord();
+  if (ch === c.w[spellPos]){
+    const slot = $("slots").children[spellPos];
+    slot.textContent = ch; slot.classList.add("filled");
+    btn.classList.add("used");
+    spellPos++;
+    if (spellPos === c.w.length){ setTimeout(()=>{
+      if (curWord() === c && spellOn) { celebrate(); speak(false); }
+    }, 450); }
+  } else {
+    btn.animate([{transform:"translateX(0)"},{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"translateX(0)"}],{duration:260});
+  }
+}
+
+/* ---------- 奖励 ---------- */
+function celebrate(){
+  award();
+  const st = $("stage");
+  st.classList.add("cheered");
+  setTimeout(()=>st.classList.remove("cheered"), 1200);
+}
+function award(){
+  const c = curWord();
+  if (!got[c.w]){ got[c.w]=1; stars++;
+    localStorage.setItem("wp2_stars", JSON.stringify(got));
+    localStorage.setItem("wp2_starTotal", stars);
+  }
+  $("starNum").textContent = stars;
+  const si = $("starIcon"); si.classList.remove("pop"); void si.offsetWidth; si.classList.add("pop");
+  const s = $("starFx"); s.classList.remove("show"); void s.offsetWidth; s.classList.add("show");
+  setTimeout(()=>s.classList.remove("show"), 1600);
+  renderDots();
+}
+
+/* ---------- 键盘 / 滑动 ---------- */
+document.addEventListener("keydown", e => {
+  if (e.target.closest("button, summary")) return;
+  if (e.key === "ArrowLeft") step(-1);
+  else if (e.key === "ArrowRight") step(1);
+  else if (e.key === " ") { e.preventDefault(); if (hideMode) reveal(); else speak(false); }
+  else if (/^[1-9]$/.test(e.key)) { const k = +e.key - 1; if (k < curIsland().length) goCard(k); }
+});
+let touchStart = null;
+$("stageWrap").addEventListener("touchstart", e => {
+  touchStart = {x:e.touches[0].clientX,y:e.touches[0].clientY};
+}, {passive:true});
+$("stageWrap").addEventListener("touchend", e => {
+  if (!touchStart) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)*1.5) step(dx < 0 ? 1 : -1);
+  touchStart = null;
+}, {passive:true});
+
+renderIslands();
+render();
+</script>
+</body>
+</html>
