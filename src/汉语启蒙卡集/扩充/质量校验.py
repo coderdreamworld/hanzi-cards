@@ -205,6 +205,12 @@ def static_audit():
                     continue
                 # 新韵语：每行末字同辙、6 首互不同辙、用字全在 1000 字集
                 check(len(set(fams)) == 1, f"{pub}:{v['title']} 韵脚不齐 {list(zip(last, fams))}")
+                # 「找韵脚」提示里列的字必须就是每行行末那个字（2026-11-01 审校新增）
+                tip = v.get("tips", [])
+                tip_text = next((t for tag, t in tip if tag == "找韵脚"), "")
+                listed = re.findall(r"[一-鿿]", tip_text.split("——")[0])
+                check(listed == last,
+                      f"{pub}:{v['title']} 「找韵脚」提示列的字 {''.join(listed)} ≠ 行末字 {''.join(last)}")
                 new_families.append(fams[0])
                 for ch in "".join(v["lines"]):
                     if "\u4e00" <= ch <= "\u9fff":

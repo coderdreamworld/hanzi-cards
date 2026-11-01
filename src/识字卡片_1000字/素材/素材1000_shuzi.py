@@ -189,8 +189,8 @@ def a_chu():
     def cookie(cx, cy, r=30):
         return C(cx, cy, r, COOKIE) + C(cx - 8, cy - 6, 5, COOKIE_D) + C(cx + 9, cy + 7, 5, COOKIE_D)
 
-    g += E(380, 282, 136, 21, WHITE)                          # 上面一盘 4 块
-    g += cookie(310, 254) + cookie(376, 242) + cookie(442, 254) + cookie(376, 268)
+    g += E(380, 284, 150, 22, WHITE)                          # 上面一盘 4 块（等大分开）
+    g += cookie(272, 250) + cookie(344, 250) + cookie(416, 250) + cookie(488, 250)
     g += L(322, 312, 252, 368, GRAY, 9) + PG([(234, 382), (268, 368), (254, 346)], GRAY)
     g += L(438, 312, 508, 368, GRAY, 9) + PG([(526, 382), (492, 368), (506, 346)], GRAY)
     g += E(236, 430, 120, 18, WHITE)                          # 左盘 2 块

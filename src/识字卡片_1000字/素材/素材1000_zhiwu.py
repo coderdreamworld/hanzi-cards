@@ -584,7 +584,7 @@ def mulberry_leaf(ln, fill):
 
 
 def art_sang():
-    """桑：枝上垂着紫红桑果（疙疙瘩瘩）+ 裂叶。"""
+    """桑：枝上垂着紫红桑果（疙疙瘩瘩）+ 裂叶，一片叶上白色小蚕啃叶。"""
     g = ground()
     g += P("M 110 226 Q 290 200 470 222 Q 580 236 646 222", stroke="#8a6242", w=17)
     g += P("M 300 210 Q 292 178 306 150", stroke="#8a6242", w=10)
@@ -600,6 +600,15 @@ def art_sang():
             body += C(-11, yy, 7, MUL_L) + C(9, yy + 8, 7, MUL_L)
         g += L(fx, fy - 40, fx, fy - 58, "#8a6242", 5)
         g += f'<g transform="translate({fx},{fy}) rotate({rot})">{body}</g>'
+    # 叶上的小蚕：白色分节胶囊身，头朝叶尖作啃食状（同叶坐标系放置，小巧不抢桑果）
+    worm = (E(55, 7, 26, 5, "#3e6a34", 0.28)
+            + C(34, 1, 6.5, "#efe9da")
+            + C(44, -1, 8, WHITE)
+            + C(55, 0, 8.5, "#efe9da")
+            + C(66, -0.5, 8, WHITE)
+            + C(77, 0, 7, WHITE)
+            + C(80.5, -2.6, 1.6, INK) + C(80.5, 2.6, 1.6, INK))
+    g += place(worm, 250, 236, 14)
     return g
 
 

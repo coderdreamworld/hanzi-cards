@@ -131,21 +131,20 @@ def a_zao():
 
 
 def a_mie():
-    """灭：盖子压住火苗，火灭了只冒烟。"""
+    """灭：木盖严严实实扣压在火堆上，盖缝只露出一点橙红小苗，青烟上飘。"""
     g = ground()
     logs = wrap(
         f'<g transform="rotate(14 380 428)">{R(300, 416, 160, 26, 12, WOOD_D)}</g>',
         f'<g transform="rotate(-14 380 428)">{R(300, 416, 160, 26, 12, WOOD_D)}</g>')
-    flame = wrap(
-        P("M 380 418 Q 328 386 352 326 Q 360 348 374 334 Q 382 314 394 332 "
-          "Q 406 320 410 342 Q 432 384 380 418 Z", "#e8663c"),
-        P("M 380 412 Q 358 392 370 356 Q 378 372 386 360 Q 396 384 380 412 Z", SUN))
-    lid_p = lid(380, 300, 216, 52, rot=-6)
+    tip = wrap(
+        P("M 476 442 Q 456 426 468 404 Q 472 416 480 410 Q 490 422 484 442 Z", "#e8663c"),
+        P("M 477 438 Q 468 428 474 418 Q 482 426 480 438 Z", SUN))
+    lid_p = lid(380, 400, 200, 50, rot=-6)
     smoke = wrap(
-        P("M 292 262 q -16 -20 2 -38", stroke=LGRAY, w=8),
-        P("M 268 240 q -12 -18 4 -32", stroke=LGRAY, w=6),
-        P("M 470 262 q 16 -20 -2 -38", stroke=LGRAY, w=8))
-    return g + logs + flame + lid_p + smoke
+        P("M 340 328 q -14 -22 0 -42", stroke=LGRAY, w=6),
+        P("M 424 324 q 14 -22 0 -42", stroke=LGRAY, w=6),
+        P("M 382 300 q -8 -18 4 -32", stroke=LGRAY, w=5))
+    return g + logs + tip + lid_p + smoke
 
 
 def a_bai():

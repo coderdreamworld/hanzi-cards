@@ -138,7 +138,7 @@ def a_fen():
 
 
 def a_zhang():
-    """张：一张白纸（折角 + 画了颗小心心）。"""
+    """张：一张白纸（折角 + 小心心）在地上，右上方一架它折出的纸飞机正向右上飞。"""
     g = ground()
     g += E(382, 434, 150, 16, "#a5d0bd", 0.8)
     sheet = wrap(
@@ -146,7 +146,21 @@ def a_zhang():
         PG([(494, 196), (494, 248), (442, 196)], "#e3ded2"),   # 折角
         L(442, 196, 494, 248, "#d5d0c2", 3),
         heart(360, 320, 30, "#f0876f"))
-    return g + f'<g transform="rotate(-7 380 320)">{sheet}</g>'
+    g += f'<g transform="rotate(-7 380 320)">{sheet}</g>'
+    # 纸飞机（白色折纸三角 + 折痕线），悬在纸右上方空中向右上飞
+    plane = wrap(
+        PG([(46, 0), (-34, -16), (-12, 4)], WHITE),            # 上翼面
+        PG([(46, 0), (-12, 4), (-34, 14)], "#e9e5da"),         # 下折机身
+        P("M 46 0 L -12 4", stroke="#d5d0c2", w=2.5),          # 中缝折痕
+        P("M 14 -4 L -26 -13", stroke="#e3ded2", w=2),         # 翼面折痕
+        P("M 10 2 L -26 11", stroke="#e3ded2", w=2))           # 机腹折痕
+    g += f'<g transform="translate(590,190) rotate(-38)">{plane}</g>'
+    # 浅灰小虚线轨迹（后跟两节，从纸的方向甩上来）
+    g += (f'<line x1="560" y1="232" x2="534" y2="252" stroke="{GRAY}" stroke-width="4.5" '
+          f'stroke-dasharray="8 10" stroke-linecap="round" opacity="0.65"/>'
+          f'<line x1="518" y1="264" x2="502" y2="277" stroke="{GRAY}" stroke-width="4.5" '
+          f'stroke-dasharray="8 10" stroke-linecap="round" opacity="0.65"/>')
+    return g
 
 
 def a_mei():

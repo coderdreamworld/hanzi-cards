@@ -13,32 +13,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 PUBLISH = HERE.parent / "微信传播方案" / "发布" / "github-pages"
 
 FAVICON = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%233e9486\'/%3E%3Ctext x=\'32\' y=\'44\' font-size=\'36\' text-anchor=\'middle\' fill=\'%23fdf8ec\' font-family=\'serif\'%3E字%3C/text%3E%3C/svg%3E">'
-CSS = """
-    /* 微信内引导条（仅 MicroMessenger UA 显示） */
-    .wx-tip { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
-              background: var(--button, #dff4f1); color: var(--ink, #4a3226); border-radius: 14px; padding: 10px 14px;
-              font-size: 14px; display: none; align-items: center; gap: 10px;
-              box-shadow: 0 4px 16px rgba(74,50,38,.18); z-index: 999; }
-    .wx-tip.show { display: flex; }
-    .wx-tip .wx-x { margin-left: auto; color: var(--muted, #8d7d73); padding: 2px 6px; cursor: pointer; }
-"""
-JS = """
-  <script>
-  (function () {
-    if (!/MicroMessenger/i.test(navigator.userAgent)) return;
-    if (sessionStorage.getItem('wxTipDone')) return;
-    var bar = document.createElement('div');
-    bar.className = 'wx-tip';
-    bar.innerHTML = '微信里用：点右上角「···」可<span style="color:#3e9486;font-weight:600">收藏</span>或加<span style="color:#3e9486;font-weight:600">浮窗</span>，下次秒开<span class="wx-x">✕</span>';
-    bar.querySelector('.wx-x').addEventListener('click', function () {
-      sessionStorage.setItem('wxTipDone', '1');
-      bar.remove();
-    });
-    document.body.appendChild(bar);
-    requestAnimationFrame(function () { bar.classList.add('show'); });
-  })();
-  </script>
-"""
+# 2026-11-01：微信内收藏引导条（.wx-tip）已按用户定调"自己用、不必提示"从全部源模板移除
+# （commit aa5783f），此发布脚本里的注入块是残留，会把引导条复活到线上，故一并删除。
 
 
 def publish():
@@ -47,11 +23,11 @@ def publish():
     html = src
     if 'rel="icon"' not in html:
         html = html.replace('<meta name="theme-color"', FAVICON + "\n  <meta name=\"theme-color\"", 1)
-    if "wxTipDone" not in html:
-        i = html.rfind("</style>")
-        html = html[:i] + CSS + html[i:]
-        j = html.rfind("</body>")
-        html = html[:j] + JS + "\n" + html[j:]
+    # GA4 统计（analytics.js）为发布层能力，由另一会话在发布副本上接入（commit 5eeee96），
+    # 源模板不含此行；若不在此幂等补回，每次从源重建发布副本都会把统计引用冲掉。
+    if "analytics.js" not in html:
+        i = html.rfind("</head>")
+        html = html[:i] + '  <script defer src="./analytics.js"></script>\n' + html[i:]
     out = PUBLISH / "shizi-1000.html"
     out.write_text(html, encoding="utf-8")
     print("已发布副本:", out, f"{out.stat().st_size/1024:.0f}KB")

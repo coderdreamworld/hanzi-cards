@@ -108,7 +108,7 @@ def a_ting():
 
 # ---------- 票 ----------
 def a_piao():
-    """票：两张彩色车票（色块+星星/爱心图案，无字）。"""
+    """票：两只画边袖口手各捏一张票角，两张票微微张开呈手持状（星/心图案保留）。"""
     g = ground()
     g += E(380, 442, 230, 13, INK, 0.07)
     t1 = wrap(
@@ -125,8 +125,19 @@ def a_piao():
         f'stroke-dasharray="12 14"/>',
         heart(-62, 0, 22, STR_WHITE),
         C(62, -22, 15, STR_WHITE) + C(62, 24, 15, "#f7c95e"))
-    g += f'<g transform="translate(258,300) rotate(-8)">{t1}</g>'
-    g += f'<g transform="translate(508,316) rotate(6)">{t2}</g>'
+    g += f'<g transform="translate(285,285) rotate(-16)">{t1}</g>'
+    g += f'<g transform="translate(485,302) rotate(14)">{t2}</g>'
+    # 画边袖口手（肤色手臂延到画布左下/右下缘 + 黄袖口 + 手圆捏票角）
+    g += L(20, 490, 192, 399, SKIN, 40)
+    g += ('<g transform="translate(140,427) rotate(-28)">'
+          + R(-28, -38, 56, 76, 16, "#f2b53c") + R(-28, -38, 18, 76, 9, "#e8a13c")
+          + "</g>")
+    g += C(192, 399, 29, SKIN)
+    g += L(724, 490, 581, 413, SKIN, 40)
+    g += ('<g transform="translate(628,437) rotate(29)">'
+          + R(-28, -38, 56, 76, 16, "#f2b53c") + R(10, -38, 18, 76, 9, "#e8a13c")
+          + "</g>")
+    g += C(581, 413, 29, SKIN)
     return g
 
 

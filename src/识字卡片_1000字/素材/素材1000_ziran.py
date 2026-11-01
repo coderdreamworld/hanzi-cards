@@ -183,7 +183,7 @@ def art_an():
 
 
 def art_bo():
-    """波：满幅水面，一层层波纹带 + 白色弧线。"""
+    """波：满幅水面，层层波纹带 + 白色弧线，水面几组一圈圈扩散的同心涟漪。"""
     g = R(52, 128, 656, 300, 34, SEA)
     band1 = P("M 52 236 Q 116 208 180 236 Q 244 264 308 236 Q 372 208 436 236 "
               "Q 500 264 564 236 Q 628 208 692 236 L 708 236 L 708 428 L 52 428 Z", SEA_M)
@@ -198,6 +198,23 @@ def art_bo():
         g += P(f"M 240 {y0 + 44} Q 280 {y0 + 24} 320 {y0 + 44}", stroke=SKIN_W, w=7)
     g += P("M 96 434 Q 380 448 668 434", stroke="#3d84b8", w=10)
     g += E(120, 452, 40, 9, SKIN_W, 0.55)
+
+    # 同心椭圆涟漪：一圈比一圈大，浅白/浅青细环，共三组不画满
+    def ripples(cx, cy, rings):
+        out = ""
+        for k, (rx, ry, col, w, op) in enumerate(rings):
+            out += (f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="none" '
+                    f'stroke="{col}" stroke-width="{w}" opacity="{op}"/>')
+        return out
+
+    g += ripples(355, 200, [(16, 6, "#dff0fa", 4.5, 0.95),
+                            (34, 13, SKIN_W, 4.5, 0.85),
+                            (54, 21, SKIN_W, 4, 0.6)])
+    g += ripples(636, 330, [(16, 6, "#dff0fa", 4.5, 0.95),
+                            (36, 14, SKIN_W, 4.5, 0.85),
+                            (56, 22, SKIN_W, 4, 0.6)])
+    g += ripples(185, 398, [(13, 5, "#dff0fa", 4, 0.9),
+                            (28, 11, SKIN_W, 4, 0.65)])
     return g
 
 

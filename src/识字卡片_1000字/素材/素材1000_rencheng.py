@@ -119,10 +119,10 @@ GROUP_CARDS = [
      "chat": "锅里煮着什么好吃的？",
      "life": "帮娘递一双筷子。"},
     {"char": "父", "pinyin": "fù", "tone": "第四声",
-     "sentence": "父亲抱着我哈哈笑。",
-     "say": "抱着孩子的爸爸是父亲。",
-     "chat": "坐在父亲手臂上像什么？",
-     "life": "让父亲抱你转个圈吧。"},
+     "sentence": "我和父亲笑哈哈。",
+     "say": "笑着的爸爸是我的父亲。",
+     "chat": "你和父亲长得像吗？",
+     "life": "和父亲一起哈哈笑吧。"},
     {"char": "母", "pinyin": "mǔ", "tone": "第三声",
      "sentence": "母亲抱着小宝宝。",
      "say": "妈妈就是你的母亲。",
@@ -144,7 +144,7 @@ GROUP_CARDS = [
      "chat": "爷爷奶奶怎么疼你呀？",
      "life": "出门牵好长辈的手。"},
     {"char": "咱", "pinyin": "zán", "tone": "第二声",
-     "sentence": "咱们一起手拉手。",
+     "sentence": "咱们都是好朋友。",
      "say": "把大家算进来就说咱们。",
      "chat": "咱们全家去哪儿玩好？",
      "life": "喊上小伙伴一起玩。"},
@@ -393,15 +393,12 @@ def a_jiu():
     g = ground()
     g += kid(380, 444, s=1.05, shirt="#5e8f52", mustache=True,
              arms="point", point_at=(580, 190), look=(2, -0.6))
-    wave = wrap(
-        P("M 512 208 q 12 -10 24 -4", stroke=GRAY, w=5),
-        P("M 520 236 q 14 6 26 -2", stroke=GRAY, w=5))
     case = wrap(
         P("M 302 352 Q 313 334 324 352", stroke="#6e4526", w=7),
         R(276, 350, 76, 58, 9, "#8a5a33"),
         R(276, 350, 76, 14, 7, "#6e4526"),
         R(304, 372, 18, 10, 3, YEL_D))
-    return g + wave + case
+    return g + case
 
 
 def a_po():

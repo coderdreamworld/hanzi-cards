@@ -56,18 +56,18 @@ def _er(cx, cy, rx, ry, color, w):
 
 
 def _art_listen_find():
-    """听音找物：小朋友伸手指着大苹果，旁边还摆着皮球和水杯——听词指物。"""
+    """听音找物：小朋友伸手指着大苹果，旁边地上摆着皮球和水杯——听词指物。"""
     apple = wrap(
-        E(424, 238, 62, 58, RED_D),
-        E(416, 230, 62, 58, RED),
-        E(396, 208, 16, 10, "#f0876f", 0.85),
-        R(411, 154, 12, 30, 6, "#8a5a33"),
-        E(448, 158, 30, 14, GREEN, 0.95))
-    cup_art = cup(644, 158, 118, 164, 0.55)
-    pit = ball(556, 382, 46, TEAL, TEAL_D, TEAL_L)
-    kidfig = kid(152, 454, 0.88, shirt=TEAL, arms="point",
-                 point_at=(410, 230), face="smile")
-    return wrap(ground(380, 452, 270, 24), kidfig, pit, cup_art, apple)
+        E(428, 396, 62, 58, RED_D),
+        E(420, 388, 62, 58, RED),
+        E(400, 366, 16, 10, "#f0876f", 0.85),
+        R(415, 312, 12, 30, 6, "#8a5a33"),
+        E(452, 316, 30, 14, GREEN, 0.95))
+    cup_art = cup(644, 296, 118, 164, 0.55)
+    pit = ball(530, 384, 46, TEAL, TEAL_D, TEAL_L)
+    kidfig = kid(230, 458, 0.88, shirt=TEAL, arms="point",
+                 point_at=(348, 352), face="smile")
+    return wrap(ground(380, 452, 320, 24), kidfig, pit, cup_art, apple)
 
 
 def _art_chain():
@@ -95,25 +95,59 @@ def _art_soft_voice():
     return wrap(ground(380, 452, 258, 24), loud, big, small, quiet)
 
 
-def _art_tangle():
-    """舌头打结：一团绕来绕去的绳结，旁边小朋友一脸茫然。"""
-    knot = wrap(
-        _er(298, 306, 108, 78, WOOD_D, 28),
-        _er(298, 300, 108, 78, WOOD, 20),
-        _er(392, 274, 74, 54, WOOD, 20),
-        _er(330, 382, 66, 50, WOOD, 20),
-        _er(372, 340, 44, 84, WOOD, 20),
-        P("M 404 376 Q 456 392 482 424", stroke=WOOD, w=20),
-        P("M 214 258 Q 190 226 210 200", stroke=WOOD, w=18))
-    kidfig = kid(600, 444, 0.76, face="o", shirt=YEL, arms="down")
-    return wrap(ground(380, 452, 262, 24), knot, kidfig)
+def _art_tongue():
+    """舌头打卷：左边小朋友张大嘴，舌头伸出来卷成一个小卷（翘舌）；
+    右边小朋友舌头平平地伸出来（平舌）——一张图说清「卷」和不卷的区别。"""
+    big = kid(268, 458, 0.94, face="open", shirt=YEL, arms="up")
+    curled = P("M 268 300 C 292 322 316 336 316 360 "
+               "C 316 382 292 390 280 378 C 269 367 280 351 294 356",
+               stroke="#f0876f", w=17)
+    small = kid(586, 462, 0.66, face="open", shirt=TEAL, arms="down")
+    flat = P("M 586 346 L 586 372", stroke="#f0876f", w=16)
+    return wrap(ground(380, 456, 300, 22), big, curled, small, flat)
+
+
+def _art_train():
+    """小火车开进城：一列小火车在铁轨上冒着小烟，旁边小朋友挥手，远处是城市的楼。"""
+    city = wrap(
+        R(452, 196, 88, 156, 12, "#e3e7ea"),
+        R(470, 216, 22, 26, 6, WBLUE), R(506, 216, 22, 26, 6, WBLUE),
+        R(470, 262, 22, 26, 6, WBLUE), R(506, 262, 22, 26, 6, WBLUE),
+        R(556, 156, 96, 196, 12, "#cfd6da"),
+        R(576, 180, 24, 28, 6, WBLUE), R(614, 180, 24, 28, 6, WBLUE),
+        R(576, 228, 24, 28, 6, WBLUE), R(614, 228, 24, 28, 6, WBLUE))
+    smoke = wrap(
+        C(250, 168, 24, WHITE), C(282, 138, 19, WHITE), C(310, 116, 14, WHITE))
+    train = wrap(
+        R(150, 292, 152, 120, 30, RED),          # 锅炉与车头
+        R(150, 250, 100, 58, 16, RED),          # 驾驶室
+        R(166, 264, 44, 32, 9, WBLUE),          # 车窗
+        R(232, 202, 38, 96, 12, RED_D),         # 烟囱
+        R(222, 192, 58, 20, 8, INK),
+        C(288, 322, 15, SUN),                   # 车灯
+        C(196, 424, 30, INK), C(196, 424, 12, "#d9d0c5"),
+        C(272, 424, 30, INK), C(272, 424, 12, "#d9d0c5"),
+        R(360, 300, 132, 100, 20, TEAL),        # 第一节车厢
+        R(378, 316, 36, 34, 9, WBLUE), R(438, 316, 36, 34, 9, WBLUE),
+        C(392, 424, 26, INK), C(392, 424, 10, "#d9d0c5"),
+        C(458, 424, 26, INK), C(458, 424, 10, "#d9d0c5"),
+        R(506, 300, 120, 100, 20, YEL_D),       # 第二节车厢
+        R(522, 316, 32, 34, 9, WBLUE), R(576, 316, 32, 34, 9, WBLUE),
+        C(534, 424, 26, INK), C(534, 424, 10, "#d9d0c5"),
+        C(598, 424, 26, INK), C(598, 424, 10, "#d9d0c5"))
+    rails = wrap(
+        L(36, 452, 724, 452, "#6b5a4a", 9),
+        *[R(x, 456, 34, 12, 4, "#8a5a33") for x in range(52, 700, 62)])
+    kidfig = kid(700, 462, 0.5, arms="up", shirt=BLUE, face="smile")
+    return wrap(city, ground(380, 462, 340, 22), rails, train, smoke, kidfig)
 
 
 NEW_ARTS = {
     "听音找东西": _art_listen_find(),
     "词语接一接": _art_chain(),
     "轻声轻轻读": _art_soft_voice(),
-    "舌头打卷": _art_tangle(),
+    "舌头打卷": _art_tongue(),
+    "小火车开进城": _art_train(),
 }
 
 
@@ -141,7 +175,7 @@ NEW_VERSES = [
             "爱吃青菜爱吃麦，",
             "蹦蹦跳跳真可爱。"],
            "dongwu:兔",
-           "白、白、来、菜、爱——都是 ai 音，嘴巴扁扁地笑出来。"),
+           "白、来、麦、爱——都是 ai 音，嘴巴扁扁地笑出来。"),
 
     _verse("晚上星星亮晶晶",
            ["晚上星星亮晶晶，",
@@ -154,34 +188,34 @@ NEW_VERSES = [
     _verse("雨过天晴出彩虹",
            ["雨过天晴出彩虹，",
             "弯弯挂在天空中。",
-            "红色最红蓝色最浓，",
+            "太阳出来红又红。",
             "我拉着妈妈往前冲。"],
            "tianwen:虹",
-           "虹、中、浓、冲——都是 ong 音，嘴巴圆圆地收住。"),
+           "虹、中、红、冲——都是 ong 音，嘴巴圆圆地收住。"),
 
     _verse("小火车开进城",
            ["小火车，开进城，",
             "还有轻轻的读书声。",
             "站台挂着一排灯，",
             "开过田野和高峰。"],
-           "1000:jiaotong:轨",
+           "小火车开进城",
            "城、声、灯、峰——都是 eng 音，把声音往后拖一点。"),
 
     _verse("小书本有儿歌",
            ["小书本，有儿歌，",
-            "我读一句你一和。",
-            "读得大人也快乐，",
-            "我也读给哥哥。"],
+            "读着读着心里乐，",
+            "我也读给哥哥，",
+            "书里的字都认得。"],
            "wupin:书",
-           "歌、和、乐、哥——都是 e 音，嘴巴半开轻轻送气。"),
+           "歌、乐、哥、得——都是 e 音，嘴巴半开轻轻送气。"),
 
     _verse("小母鸡下蛋蛋",
            ["小母鸡，下蛋蛋，",
             "蛋儿放进小竹篮。",
-            "摇摇摆摆下了岸，",
+            "摇摇摆摆走得慢。",
             "我拍着手慢慢看。"],
            "dongwu:鸡",
-           "蛋、篮、岸、看——都是 an 音，嘴巴闭紧再张开。"),
+           "蛋、篮、慢、看——都是 an 音，嘴巴闭紧再张开。"),
 ]
 
 
@@ -300,6 +334,7 @@ def _self_check():
     seen = {}
     for v in NEW_VERSES:
         fins = []
+        tails = []
         for ln in v["lines"]:
             tail = _line_tail(ln)
             if tail is None:
@@ -308,11 +343,18 @@ def _self_check():
             if tail not in pinyin:
                 problems.append(f"{v['title']} 韵脚字 {tail} 不在 1000 字")
                 continue
+            tails.append(tail)
             fins.append(_final(pinyin[tail]["pinyin"]))
         if not fins:
             continue
         if len(set(fins)) != 1:
             problems.append(f"{v['title']} 行尾韵母不一致: {fins}")
+        # 「找韵脚」提示里列的字，必须就是每行行末的那个字（2026-11-01 审校新增）
+        tip_head = v["tips"][2][1].split("——")[0]
+        listed = re.findall(r"[一-鿿]", tip_head)
+        if listed != tails:
+            problems.append(f"{v['title']} 「找韵脚」提示列的字 {''.join(listed)} "
+                            f"≠ 实际行末字 {''.join(tails)}")
         fin = fins[0]
         if fin in seen:
             problems.append(f"{v['title']} 与 {seen[fin]} 韵母重复: {fin}")
