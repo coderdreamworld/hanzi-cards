@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-04",
+  "browser": "ZCode In-app Browser / 实际页面上下文",
+  "cards": 500,
+  "groups": 25,
+  "checks": {
+    "desktop_text_500": "pass，逐卡render读取letter与word scrollWidth，无水平溢出",
+    "mobile_text_500": "pass，390×844逐卡读取SVG文字实际getBBox，均在卡面范围内",
+    "small_mobile": "pass，320×568 scrollWidth=320 scrollHeight=568，底栏bottom=560",
+    "responsive_breakpoint": "960px，matchMedia切换mobile/desk",
+    "progress_direct": "pass，首次直连等待后无新存储",
+    "progress_debounce": "pass，切至rabbit立即无记录，停留1.5s后保存i=2/key=rabbit/pos=3/20",
+    "progress_restore": "pass，from=hub恢复rabbit",
+    "audio_single_player": "pass，DOM仅1个audio；rabbit拼读R高亮时src=en_letter_r.m4a，快速切mouse后src=en_mouse_w.m4a且旧高亮清除",
+    "touch_group_selector": "pass，合成touchstart/touchend短按开启25主题抽屉",
+    "quiz": "pass，四个图片选项；答对后feedback为mouse·老鼠、nextEnabled、confetti存在；390px屏幕dialog宽352",
+    "art_bounds": "最终500张实际getBBox复测全部通过，failures=[]；含transform后的真实边界均在760x480内",
+    "js_syntax": "检查英语卡.py / node --check通过"
+  },
+  "notes": [
+    "浏览器首次自动播受平台手势策略约束，页面提示点单词即可；后续翻卡自动播。",
+    "role点击工具曾超时，改DOM/CUA实际点击及事件测试，不将工具超时当页面成功证据。",
+    "拼读为字母名，不是自然拼读音素；UI和README明确说明。"
+  ]
+}

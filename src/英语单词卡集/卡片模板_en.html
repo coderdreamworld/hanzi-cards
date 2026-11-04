@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fdf8ec">
+<link rel="icon" href="data:,">
+<title>英语单词卡 · English Words</title>
+<style>
+:root{color-scheme:light;--page:#fdf8ec;--ink:#4a3226;--muted:#8d7d73;--accent:#f2c14e;--teal:#3e9486;--button:#dff4f1;--line:#ead9ac}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:var(--page);overflow:hidden}body{color:var(--ink);font-family:system-ui,-apple-system,"PingFang SC",sans-serif}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;color:inherit;border:0;border-radius:999px;background:var(--button);cursor:pointer;touch-action:manipulation;min-height:42px}button:hover{background:#c5ebe7}button:active{transform:scale(.97)}button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}[hidden]{display:none!important}.home-btn{flex:none;display:inline-flex;align-items:center;min-height:36px;padding:5px 12px;border:1px solid #e6ded2;border-radius:999px;background:#fff;color:#70645c;font-size:13px;text-decoration:none;white-space:nowrap}.gallery{height:100vh;height:100svh;display:flex;flex-direction:column;gap:5px;padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))}.mobile-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}.mobile-head strong{font-size:14px}.stage{flex:1;min-height:0;display:grid;place-items:stretch}.card-wrap{min-height:0;min-width:0;height:100%;width:100%;text-align:center}.card-svg{display:block;width:100%;height:100%;user-select:none;filter:drop-shadow(0 5px 12px #70533117)}.lt{fill:var(--ink);transition:fill .1s}.lt.on{fill:#d4552f}.mobile-controls{flex:none;display:flex;gap:6px}.mobile-controls button{flex:1;min-width:0;font-size:13px;padding:5px 7px}.audio-busy{background:var(--accent)!important}.bar{flex:none;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:7px}.nav-btn{background:var(--teal);color:#fff;font-size:22px}.group-btn{background:#fff;border:1px solid var(--line);font-size:13px;min-width:0;padding:6px;overflow:hidden;text-overflow:ellipsis}.counter{color:var(--muted);font-size:12px}.tips{flex:none;max-height:22svh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 14px;font-size:13px;line-height:1.65}.audio-status{position:fixed;bottom:112px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;background:#fff5d9;border:1px solid var(--line);border-radius:12px;font-size:13px;padding:8px 14px;pointer-events:none}.sheet-wrap{position:fixed;inset:0;z-index:30}.sheet-backdrop{position:absolute;inset:0;background:#4a322659}.sheet{position:absolute;bottom:0;left:0;right:0;max-height:70svh;overflow:auto;background:var(--page);border-radius:22px 22px 0 0;padding:16px 14px max(16px,env(safe-area-inset-bottom))}.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.sheet-head h2{margin:0;font-size:18px}.sheet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px}.chip{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 8px;font-size:14px}.chip.active{background:var(--accent);font-weight:700}
+#desk{flex:1;min-height:0;display:flex;flex-direction:column}.desk-top{flex:none;display:flex;align-items:center;gap:14px;padding:9px 18px;border-bottom:2px solid #f3e7cd;background:#fbf3dd}.desk-top h1{font-size:17px;white-space:nowrap;margin:0}.desk-chips{flex:1;min-width:0;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}.desk-chips::-webkit-scrollbar,.film::-webkit-scrollbar{display:none}.dchip{padding:5px 13px;white-space:nowrap;font-size:13px;min-height:36px}.dchip.active{background:var(--teal);color:#fff}.desk-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,32fr) minmax(0,43fr) minmax(0,25fr);gap:14px;padding:14px 18px}.card-box{height:100%;min-width:0;min-height:0;display:flex;flex-direction:column;border:2px solid #f3e7cd;border-radius:22px;padding:16px;background:#fff9ea;overflow:auto}.art-area{flex:1;min-height:0;display:flex;align-items:center}.art-area svg{width:100%;max-height:100%;aspect-ratio:760/480}.center .card-box{justify-content:center;align-items:center;gap:24px;overflow:hidden}.desk-letters{width:100%;text-align:center;font-family:"Avenir Next",system-ui,sans-serif;font-weight:800}.lrow{display:flex;justify-content:center;gap:.12em;line-height:1.45;white-space:nowrap}.desk-letters .lt{color:var(--ink)}.desk-letters .lt.on{color:#d4552f}.desk-word{text-align:center;width:100%;font-weight:800;line-height:1.2;overflow-wrap:anywhere}.desk-cn{font-size:24px;color:var(--muted);text-align:center}.audio-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}.audio-row button{padding:8px 15px;font-size:14px}.desk-panel{font-size:14px;line-height:1.8;overflow-wrap:anywhere}.desk-panel h2{font-size:24px;line-height:1.3;margin:0 0 14px}.desk-panel p{margin:10px 0}.desk-panel .label{color:#a07b33;background:#fbf0c2;border-radius:7px;padding:2px 6px;font-size:12px}.desk-foot{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:2px solid #f3e7cd;background:#fbf3dd;flex:none}.desk-foot .nav-btn{width:44px;flex:none}.film{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.mini{flex:none;min-width:46px;padding:0 10px;font-size:14px;font-weight:650;border:2px solid transparent;border-radius:12px}.mini.active{border-color:var(--teal);background:#fff}.desk-on .gallery{padding:0;gap:0}.desk-on .mobile-head,.desk-on .stage,.desk-on .tips,.desk-on .mobile-controls,.desk-on .bar{display:none}.desk-on .audio-status{bottom:88px}
+body.static .gallery{padding:16px;display:block;height:auto}body.static{overflow:auto}body.static .mobile-head,body.static .bar,body.static .mobile-controls{display:none}body.static .card-wrap{width:min(100%,720px);height:auto;margin:auto}body.static .card-svg{height:auto;aspect-ratio:800/1000;filter:none}body.grid{height:auto;overflow:auto}body.grid .gallery{height:auto;display:block;padding:16px}body.grid .mobile-head,body.grid .bar,body.grid .mobile-controls{display:none}body.grid .stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}body.grid .card-svg{height:auto;aspect-ratio:800/1000;filter:none}
+.quiz-dialog{width:min(92vw,780px);max-height:92svh;border:2px solid var(--line);border-radius:24px;background:var(--page);padding:18px;color:var(--ink);overflow:auto}.quiz-dialog::backdrop{background:#4a322666}.quiz-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.quiz-top h2{font-size:18px;margin:0}.quiz-top button{padding:6px 14px}.quiz-prompt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0}.quiz-prompt button{padding:8px 18px}.quiz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.quiz-choice{border:2px solid var(--line);border-radius:18px;background:#fffaf0;min-width:0;padding:0;overflow:hidden}.quiz-choice svg{display:block;width:100%;aspect-ratio:760/480}.quiz-choice.wrong{border-color:#d4552f;background:#ffe8dd}.quiz-choice.correct{border-color:var(--teal);background:#e2f4df}.quiz-feedback{min-height:28px;margin:12px 0;font-weight:650;text-align:center}.quiz-next{display:block;width:100%;padding:8px}.confetti{position:fixed;inset:0;pointer-events:none;z-index:100;overflow:hidden}.confetti i{position:absolute;top:12%;width:10px;height:15px;animation:fall 1.5s ease-in forwards}@keyframes fall{to{transform:translate(var(--dx),85vh) rotate(720deg);opacity:0}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:359px){.mobile-controls button{font-size:12px;padding:3px}.mobile-head strong{font-size:12px}}
+</style>
+</head>
+<body>
+<main class="gallery" aria-label="英语单词卡">
+  <header class="mobile-head"><a class="home-btn" href="index.html">🏠 首页</a><strong>英语单词卡</strong></header>
+  <section class="stage" id="stage"><div class="card-wrap" id="cardWrap"></div></section>
+  <section id="tips" class="tips" hidden>先看图猜词，再听单词；「拼读」逐个读字母名，最后读整词。左右滑动换卡，点分组可选主题。停留满 1.5 秒后记录位置。</section>
+  <div class="mobile-controls"><button id="playWord">🔊 单词</button><button id="playSpell">🔤 拼读</button><button id="playQuiz">听音选图</button><button id="toggleTips" aria-pressed="false">提示</button></div>
+  <nav class="bar" id="bar"><button class="nav-btn" id="mobilePrev" aria-label="上一张">←</button><button class="group-btn" id="groupBtn" aria-label="选择分组"><span id="groupName"></span> <span class="counter" id="counter"></span> ▾</button><button class="nav-btn" id="mobileNext" aria-label="下一张">→</button></nav>
+  <div class="sheet-wrap" id="sheetWrap" hidden><div class="sheet-backdrop" id="sheetBackdrop"></div><section class="sheet" role="dialog" aria-label="选择分组" aria-modal="true"><div class="sheet-head"><h2>选择分组</h2><button id="closeSheet">关闭</button></div><div class="sheet-grid" id="sheetGrid"></div></section></div>
+  <div id="desk" hidden>
+    <header class="desk-top"><a class="home-btn" href="index.html">🏠 首页</a><h1>英语单词卡</h1><nav class="desk-chips" id="deskChips" aria-label="分组导航"></nav></header>
+    <section class="desk-main">
+      <div class="card-box"><div class="art-area"><svg id="deskArtSvg" viewBox="0 0 760 480" role="img" aria-label="插画"></svg></div></div>
+      <div class="center"><div class="card-box"><div class="desk-letters" id="deskLetters"></div><div class="desk-word" id="deskWord"></div><div class="desk-cn" id="deskCn"></div><div class="audio-row"><button id="deskPlayW">🔊 单词</button><button id="deskPlayS">🔤 拼读</button><button id="deskQuiz">听音选图</button></div></div></div>
+      <div class="card-box"><div class="desk-panel" id="deskPanel"></div></div>
+    </section>
+    <footer class="desk-foot"><button class="nav-btn" id="deskPrev" aria-label="上一张">←</button><div class="film" id="deskFilm" aria-label="组内卡片"></div><span class="counter" id="deskCounter"></span><button class="nav-btn" id="deskNext" aria-label="下一张">→</button></footer>
+  </div>
+</main>
+<p class="audio-status" id="audioStatus" role="status" hidden></p>
+<dialog class="quiz-dialog" id="quizDialog" aria-labelledby="quizTitle"><div class="quiz-top"><h2 id="quizTitle">听音选图</h2><button id="quizClose">关闭练习</button></div><div class="quiz-prompt"><button id="quizReplay">🔊 再听一遍</button><span id="quizScore">0 / 0</span></div><div class="quiz-grid" id="quizChoices"></div><div class="quiz-feedback" id="quizFeedback" aria-live="polite">听单词，选对应的图片。</div><button id="quizNext" class="quiz-next" disabled>下一题</button></dialog>
+<audio id="player" preload="none" hidden></audio>
+<script>
+const CARDS = __CARDS__;
+const GROUPS = __GROUPS__;
+const ART = __ART__;
+const AUD = __AUD__;
+const VER = "__VER__";
+const qs = new URLSearchParams(location.search);
+const mode = qs.has('grid') ? 'grid' : qs.has('n') ? 'static' : 'deck';
+const state = {i:0,tipsOpen:false};
+const byId = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let deck = CARDS.map((c,i)=>({c,i}));
+const groupParam = qs.get('group');
+if(groupParam){const gi=GROUPS.findIndex(g=>g.id===groupParam);if(gi>=0)deck=deck.filter(d=>d.c.g===gi)}
+const take = Number(qs.get('limit'));
+if(take>0)deck=deck.slice(Number(qs.get('offset'))||0,(Number(qs.get('offset'))||0)+take);
+const audioEl = byId('player');
+let audioGeneration=0, audioCancel=null, busyBtn=null, statusTimer=0;
+function audioStatus(text){clearTimeout(statusTimer);byId('audioStatus').textContent=text;byId('audioStatus').hidden=!text;if(text)statusTimer=setTimeout(()=>{byId('audioStatus').hidden=true},3500)}
+function clearMarks(){document.querySelectorAll('.lt.on').forEach(el=>el.classList.remove('on'))}
+function markLetter(li){clearMarks();document.querySelectorAll(`.lt[data-li="${li}"]`).forEach(el=>el.classList.add('on'))}
+function stopAudio(){audioGeneration++;audioEl.pause();if(audioCancel)audioCancel();audioCancel=null;audioEl.onended=null;audioEl.onerror=null;if(busyBtn)busyBtn.classList.remove('audio-busy');busyBtn=null;clearMarks()}
+function wordUrl(card){return `audio/en_${card.key.toLowerCase().replace(/ /g,'-')}_w.m4a?v=${VER}`}
+function clip(url,generation){return new Promise(resolve=>{
+ if(generation!==audioGeneration){resolve(false);return}
+ let finished=false;const end=ok=>{if(finished)return;finished=true;audioEl.onended=null;audioEl.onerror=null;audioCancel=null;resolve(ok)};
+ audioCancel=()=>end(false);audioEl.src=url;audioEl.onended=()=>end(true);audioEl.onerror=()=>{audioStatus('音频暂时无法播放，请再点一次。');end(false)};
+ audioEl.play().catch(error=>{if(generation!==audioGeneration){end(false);return}if(error.name==='NotAllowedError')audioStatus('点「单词」开始听读。');else if(error.name!=='AbortError')audioStatus('音频暂时无法播放，请再点一次。');end(false)});
+})}
+async function playWord(card=deck[state.i].c){stopAudio();const generation=audioGeneration;busyBtn=byId(deskActive?'deskPlayW':'playWord');busyBtn.classList.add('audio-busy');await clip(wordUrl(card),generation);if(generation===audioGeneration){busyBtn?.classList.remove('audio-busy');busyBtn=null}}
+async function playSpell(card=deck[state.i].c){stopAudio();const generation=audioGeneration;busyBtn=byId(deskActive?'deskPlayS':'playSpell');busyBtn.classList.add('audio-busy');let li=0;
+ for(const ch of card.w){if(!/[A-Za-z]/.test(ch))continue;markLetter(li++);if(!await clip(`audio/en_letter_${ch.toLowerCase()}.m4a?v=${VER}`,generation))break}
+ if(generation===audioGeneration){clearMarks();await clip(wordUrl(card),generation)}
+ if(generation===audioGeneration){busyBtn?.classList.remove('audio-busy');busyBtn=null;clearMarks()}
+}
+function letterRows(word){let li=0;return word.split(' ').map(w=>[...w].map(ch=>({ch:ch.toUpperCase(),li:/[a-z]/i.test(ch)?li++:-1})))}
+function rowsSVG(rows){const nr=rows.length,ph=nr===1?206:nr===2?240:286;let html='';rows.forEach((row,ri)=>{
+ const fs=Math.min(nr===1?148:80,650/row.length*1.02);const y=46+ph*(ri+.5)/nr;
+ row.forEach((c,i)=>{html+=`<text class="lt" ${c.li>=0?`data-li="${c.li}"`:''} x="${58+(i+.5)*684/row.length}" y="${y}" dominant-baseline="central" text-anchor="middle" font-size="${c.li<0?fs*.6:fs}" font-weight="800" font-family="'Avenir Next',system-ui,sans-serif">${esc(c.ch)}</text>`})
+ });return html}
+function cardSVG(card){const rows=letterRows(card.w),ph=rows.length===1?206:rows.length===2?240:286;const artY=46+ph+12,scale=Math.min(1,(766-artY)/480);const fs=Math.min(76,1180/Math.max(6,card.w.length));return `<svg class="card-svg" viewBox="0 0 800 1000" role="img" aria-label="${esc(card.w)} 英语单词卡" data-key="${esc(card.key)}"><rect x="10" y="10" width="780" height="980" rx="42" fill="#fdf8ec" stroke="#f2c14e" stroke-width="10"/><rect x="46" y="46" width="708" height="${ph}" rx="34" fill="#fbf0c2"/>${rowsSVG(rows)}<svg class="art" x="20" y="${artY}" width="760" height="${480*scale}" viewBox="0 0 760 480" overflow="hidden">${ART[card.key]}</svg><g class="wpanel"><rect x="46" y="792" width="708" height="174" rx="34" fill="#d9f0ea"/><text class="whole-word" x="400" y="${850+fs*.15}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="#4a3226" font-family="'Avenir Next',system-ui,sans-serif">${esc(card.w)}</text><text x="400" y="930" text-anchor="middle" font-size="34" fill="#786b62">${esc(card.cn)}</text></g></svg>`}
+const DECK_META={id:'en-words',url:'english-words.html',name:'英语单词卡'};
+let saveTimer=0,navigated=false;
+function queueSave(){clearTimeout(saveTimer);if(mode!=='deck'||deck.length!==CARDS.length||!navigated)return;const expected=deck[state.i].c.key;saveTimer=setTimeout(()=>{if(document.hidden||deck[state.i].c.key!==expected)return;const{c,i}=deck[state.i];const total=CARDS.filter(x=>x.g===c.g).length;const pos=CARDS.slice(0,i+1).filter(x=>x.g===c.g).length;try{localStorage.setItem('hz.deck.'+DECK_META.id,JSON.stringify({i:state.i,key:c.key,ts:Date.now()}));localStorage.setItem('hz.last',JSON.stringify({...DECK_META,label:GROUPS[c.g].name+' · '+c.w,pos:`${pos}/${total}`,ts:Date.now()}))}catch(e){}},1500)}
+const deskMQ=matchMedia('(min-width:960px)');let deskActive=false;
+function updateDeskMode(){deskActive=mode==='deck'&&deskMQ.matches;byId('desk').hidden=!deskActive;document.body.classList.toggle('desk-on',deskActive)}
+function stats(){const{c}=deck[state.i];const entries=deck.filter(d=>d.c.g===c.g);return{total:entries.length,pos:entries.findIndex(d=>d.c.key===c.key)+1}}
+function render(){if(!deck.length)return;stopAudio();const c=deck[state.i].c;const{pos,total}=stats();const group=GROUPS[c.g];
+ byId('groupName').textContent=group.name;byId('counter').textContent=`${pos} / ${total}`;
+ if(deskActive){byId('cardWrap').innerHTML='';byId('deskArtSvg').innerHTML=ART[c.key];const longest=Math.max(...c.w.split(' ').map(w=>w.length));byId('deskLetters').style.fontSize=`clamp(18px,${Math.min(4.4,29/longest)}vw,58px)`;byId('deskLetters').innerHTML=letterRows(c.w).map(row=>'<span class="lrow">'+row.map(l=>`<span class="lt" ${l.li>=0?`data-li="${l.li}"`:''}>${esc(l.ch)}</span>`).join('')+'</span>').join('');byId('deskWord').textContent=c.w;byId('deskWord').style.fontSize=`clamp(23px,${Math.min(4.6,45/c.w.length)}vw,64px)`;byId('deskCn').textContent=c.cn;
+ byId('deskPanel').innerHTML=`<h2>${esc(c.w)}</h2><p><span class="label">中文</span> ${esc(c.cn)}</p><p><span class="label">主题</span> ${esc(group.name)}<br>${esc(group.en)}</p><p>第 ${pos} / ${total} 张 · 全集 ${CARDS.length} 词条</p><p>先看图猜词，再听单词。<br>「拼读」逐个读字母名，最后读整词。</p><p>听音选图：听一遍，再找对应画面。</p>`;
+ byId('deskChips').innerHTML=GROUPS.map((g,gi)=>`<button class="dchip${gi===c.g?' active':''}" data-g="${gi}" aria-pressed="${gi===c.g}">${esc(g.name)}</button>`).join('');byId('deskFilm').innerHTML=deck.map((d,i)=>d.c.g===c.g?`<button class="mini${i===state.i?' active':''}" data-i="${i}" aria-current="${i===state.i?'true':'false'}">${esc(d.c.w)}</button>`:'').join('');byId('deskCounter').textContent=`${pos} / ${total}`;byId('deskFilm').querySelector('.active')?.scrollIntoView({block:'nearest',inline:'center'});
+ }else byId('cardWrap').innerHTML=cardSVG(c);
+ byId('sheetGrid').querySelectorAll('.chip').forEach(el=>el.classList.toggle('active',Number(el.dataset.g)===c.g));queueSave();if(mode==='deck')playWord(c)
+}
+function selectIndex(i){if(!deck.length)return;state.i=(i+deck.length)%deck.length;navigated=true;render()}
+function go(delta){selectIndex(state.i+delta)}
+function jumpTo(gi){const i=deck.findIndex(d=>d.c.g===gi);if(i>=0)selectIndex(i)}
+function openSheet(){byId('sheetWrap').hidden=false;byId('closeSheet').focus()}
+function closeSheet(){byId('sheetWrap').hidden=true;byId('groupBtn').focus()}
+function tap(el,fn){let start=null;el.addEventListener('touchstart',e=>{const t=e.changedTouches[0];start={x:t.clientX,y:t.clientY}},{passive:true});el.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0];const hit=Math.abs(t.clientX-start.x)<12&&Math.abs(t.clientY-start.y)<12;start=null;if(hit){e.preventDefault();fn(e)}},{passive:false});el.addEventListener('click',fn)}
+for(const id of ['playWord','deskPlayW'])tap(byId(id),()=>playWord());for(const id of ['playSpell','deskPlayS'])tap(byId(id),()=>playSpell());for(const id of ['mobilePrev','deskPrev'])tap(byId(id),()=>go(-1));for(const id of ['mobileNext','deskNext'])tap(byId(id),()=>go(1));
+tap(byId('groupBtn'),openSheet);tap(byId('closeSheet'),closeSheet);tap(byId('sheetBackdrop'),closeSheet);tap(byId('toggleTips'),()=>{state.tipsOpen=!state.tipsOpen;byId('tips').hidden=!state.tipsOpen;byId('toggleTips').setAttribute('aria-pressed',String(state.tipsOpen))});
+function delegateTap(container,selector,action){tap(container,e=>{const target=e.target.closest(selector);if(target)action(target)})}
+delegateTap(byId('sheetGrid'),'.chip',b=>{jumpTo(Number(b.dataset.g));closeSheet()});delegateTap(byId('deskChips'),'.dchip',b=>jumpTo(Number(b.dataset.g)));delegateTap(byId('deskFilm'),'.mini',b=>selectIndex(Number(b.dataset.i)));tap(byId('cardWrap'),()=>playWord());tap(byId('deskArtSvg'),()=>playWord());
+let swipe=null;byId('stage').addEventListener('touchstart',e=>{const t=e.touches[0];swipe={x:t.clientX,y:t.clientY}},{passive:true});byId('stage').addEventListener('touchend',e=>{if(!swipe)return;const t=e.changedTouches[0],dx=t.clientX-swipe.x,dy=t.clientY-swipe.y;swipe=null;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){e.preventDefault();go(dx<0?1:-1)}},{passive:false});byId('stage').addEventListener('touchcancel',()=>{swipe=null});
+const quiz={target:null,answered:false,correct:0,total:0};
+function celebrate(){const layer=document.createElement('div');layer.className='confetti';const colors=['#e8663c','#f2b53c','#4fae9f','#5fa8d8','#9b7fc4'];for(let i=0;i<30;i++){const p=document.createElement('i');p.style.left=(10+Math.random()*80)+'%';p.style.background=colors[i%colors.length];p.style.setProperty('--dx',(Math.random()-.5)*220+'px');p.style.animationDelay=(Math.random()*.25)+'s';layer.append(p)}document.body.append(layer);setTimeout(()=>layer.remove(),2100)}
+function nextQuestion(first=false){stopAudio();quiz.target=first?deck[state.i].c:deck[Math.floor(Math.random()*deck.length)].c;quiz.answered=false;byId('quizNext').disabled=true;byId('quizFeedback').textContent='听单词，选对应的图片。';const pool=CARDS.filter(c=>c.key!==quiz.target.key&&ART[c.key]);const options=[quiz.target];while(options.length<4&&pool.length){const at=Math.floor(Math.random()*pool.length);options.push(pool.splice(at,1)[0])}options.sort(()=>Math.random()-.5);byId('quizChoices').innerHTML=options.map((c,i)=>`<button class="quiz-choice" data-key="${esc(c.key)}" aria-label="图片 ${i+1}"><svg viewBox="0 0 760 480" aria-hidden="true">${ART[c.key]}</svg></button>`).join('');clip(wordUrl(quiz.target),audioGeneration)}
+function startQuiz(){stopAudio();byId('quizDialog').showModal();nextQuestion(true)}
+for(const id of ['playQuiz','deskQuiz'])tap(byId(id),startQuiz);tap(byId('quizReplay'),()=>{stopAudio();clip(wordUrl(quiz.target),audioGeneration)});tap(byId('quizNext'),()=>nextQuestion());tap(byId('quizClose'),()=>byId('quizDialog').close());byId('quizDialog').addEventListener('close',stopAudio);
+delegateTap(byId('quizChoices'),'.quiz-choice',b=>{if(quiz.answered)return;if(b.dataset.key!==quiz.target.key){b.classList.add('wrong');byId('quizFeedback').textContent='再听一次，换一张试试。';stopAudio();clip(wordUrl(quiz.target),audioGeneration);return}quiz.answered=true;quiz.total++;quiz.correct++;b.classList.add('correct');byId('quizScore').textContent=`答对 ${quiz.correct} 题`;byId('quizFeedback').textContent=`答对了！${quiz.target.w} · ${quiz.target.cn}`;byId('quizNext').disabled=false;celebrate()});
+document.addEventListener('keydown',e=>{if(byId('quizDialog').open)return;if(e.key==='Escape'){closeSheet();return}if(e.target.closest('button,a,input,select,textarea'))return;if(e.key==='ArrowLeft'){e.preventDefault();go(-1)}if(e.key==='ArrowRight'){e.preventDefault();go(1)}if(e.key===' '){e.preventDefault();playWord()}if(e.key==='Enter'){e.preventDefault();playSpell()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAudio();clearTimeout(saveTimer)}else queueSave()});deskMQ.addEventListener('change',()=>{updateDeskMode();render()});
+byId('sheetGrid').innerHTML=GROUPS.map((g,gi)=>`<button class="chip" data-g="${gi}">${esc(g.name)}</button>`).join('');
+if(mode==='deck'&&qs.get('from')==='hub'){try{const saved=JSON.parse(localStorage.getItem('hz.deck.'+DECK_META.id)||'null');const i=saved?.key?deck.findIndex(d=>d.c.key===saved.key):saved?.i;if(i>=0&&i<deck.length)state.i=i}catch(e){}}
+const initial=Number(qs.get(mode==='static'?'n':'i'));if(initial>=1&&initial<=deck.length)state.i=initial-1;
+updateDeskMode();
+if(mode==='grid'){document.body.classList.add('grid');byId('stage').innerHTML=deck.map(d=>cardSVG(d.c)).join('')}else{if(mode==='static')document.body.classList.add('static');render()}
+</script>
+</body>
+</html>

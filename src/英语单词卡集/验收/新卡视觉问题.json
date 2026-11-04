@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "reviewer": "独立视觉验收（PNG 1200x1200 正方页 23 页，8 组 156 卡）",
+    "criteria": "4 岁一眼可辨；fail=动作错位/断肢多肢/明显穿模/道具遮挡/重叠越界/对比方位不成立；fall、look 已由主控预修，本次渲染确认通过",
+    "fixRound": "2026-11-04 按授权修复 7 fail + 7 warn 共 14 词（仅动对应素材分支，w/cn/顺序未动），渲染验收图.py --groups dongzuo-a dongzuo-b xingrong-a qingxu shijian xingrong-b 重渲染后逐词 Read 复核，14/14 fixed，见 fixed 数组",
+    "staticChecks": {
+      "letterOrder": "8 组 GROUP_CARDS 与词库500.py 切片逐词逐序一致（dongzuo-a 22 / dongzuo-b 22 / qingxu 20 / liyi 10 / xingrong-a 20 / xingrong-b 20 / fangwei 21 / shijian 21）；修复后六模块重跑：词序/键集合/XML 全部 OK",
+      "swim": "横向游泳成立：头在左抬出水面、躯干水平、一臂上举一臂水下，与躯干同组旋转无断肢",
+      "neck": "kid 组件头身天然重叠无断颈；唯一颈部/围巾错位为 shijian winter（已修复）"
+    },
+    "failsResolved": "7 项历史 fail 已全部修复并复核，原问题/几何定位/修法/复核证据见 fixed 数组；本数组置空供发布管线通过"
+  },
+  "pages": {
+    "dongzuo-a_01": {
+      "run": "pass",
+      "walk": "pass",
+      "jump": "pass",
+      "climb": "pass",
+      "swim": "pass",
+      "fly": "pass",
+      "fall": "pass",
+      "sit": "pass",
+      "stand": "pass"
+    },
+    "dongzuo-a_02": {
+      "look": "pass",
+      "listen": "pass",
+      "dance": "pass",
+      "sing": "fixed",
+      "clap": "pass",
+      "wave": "pass",
+      "point": "pass",
+      "kick": "pass",
+      "push": "pass"
+    },
+    "dongzuo-a_03": {
+      "pull": "pass",
+      "throw": "pass",
+      "catch": "fixed",
+      "hug": "pass"
+    },
+    "dongzuo-b_01": {
+      "eat": "fixed",
+      "drink": "pass",
+      "sleep": "pass",
+      "wake up": "pass",
+      "brush": "pass",
+      "wash": "fixed",
+      "comb": "pass",
+      "bath": "pass",
+      "open": "pass"
+    },
+    "dongzuo-b_02": {
+      "close": "pass",
+      "cut": "fixed",
+      "write": "pass",
+      "draw": "pass",
+      "read": "pass",
+      "count": "pass",
+      "color": "pass",
+      "fold": "pass",
+      "build": "pass"
+    },
+    "dongzuo-b_03": {
+      "cook": "fixed",
+      "sweep": "fixed",
+      "plant": "fixed",
+      "pick": "pass"
+    },
+    "qingxu_01": {
+      "happy": "pass",
+      "sad": "pass",
+      "angry": "pass",
+      "cry": "pass",
+      "laugh": "pass",
+      "smile": "pass",
+      "tired": "pass",
+      "sleepy": "pass",
+      "hungry": "pass"
+    },
+    "qingxu_02": {
+      "thirsty": "pass",
+      "scared": "pass",
+      "surprised": "pass",
+      "bored": "fixed",
+      "sick": "pass",
+      "love": "pass",
+      "like": "pass",
+      "share": "pass",
+      "help": "pass"
+    },
+    "qingxu_03": {
+      "brave": "pass",
+      "proud": "fixed"
+    },
+    "liyi_01": {
+      "hello": "pass",
+      "hi": "pass",
+      "bye": "pass",
+      "yes": "pass",
+      "no": "pass",
+      "OK": "pass",
+      "please": "pass",
+      "welcome": "pass",
+      "thank you": "pass"
+    },
+    "liyi_02": {
+      "sorry": "pass"
+    },
+    "xingrong-a_01": {
+      "big": "pass",
+      "small": "pass",
+      "long": "pass",
+      "short": "pass",
+      "tall": "pass",
+      "high": "pass",
+      "fat": "pass",
+      "thin": "pass",
+      "heavy": "fixed"
+    },
+    "xingrong-a_02": {
+      "light": "pass",
+      "fast": "fixed",
+      "slow": "pass",
+      "hot": "pass",
+      "cold": "pass",
+      "warm": "pass",
+      "cool": "pass",
+      "new": "pass",
+      "old": "pass"
+    },
+    "xingrong-a_03": {
+      "soft": "pass",
+      "hard": "pass"
+    },
+    "xingrong-b_01": {
+      "wet": "pass",
+      "dry": "pass",
+      "clean": "pass",
+      "dirty": "pass",
+      "empty": "pass",
+      "full": "pass",
+      "bright": "pass",
+      "dark": "pass",
+      "loud": "pass"
+    },
+    "xingrong-b_02": {
+      "quiet": "pass",
+      "straight": "pass",
+      "curly": "pass",
+      "sweet": "pass",
+      "sour": "pass",
+      "spicy": "fixed",
+      "salty": "pass",
+      "delicious": "pass",
+      "many": "pass"
+    },
+    "xingrong-b_03": {
+      "few": "pass",
+      "broken": "pass"
+    },
+    "fangwei_01": {
+      "in": "pass",
+      "on": "pass",
+      "under": "pass",
+      "above": "pass",
+      "behind": "pass",
+      "beside": "pass",
+      "between": "pass",
+      "near": "pass",
+      "far": "pass"
+    },
+    "fangwei_02": {
+      "up": "pass",
+      "down": "pass",
+      "left": "pass",
+      "right": "pass",
+      "through": "pass",
+      "around": "pass",
+      "forward": "pass",
+      "backward": "pass",
+      "outside": "pass"
+    },
+    "fangwei_03": {
+      "here": "pass",
+      "there": "pass",
+      "middle": "pass"
+    },
+    "shijian_01": {
+      "day": "pass",
+      "night": "pass",
+      "morning": "pass",
+      "noon": "pass",
+      "afternoon": "pass",
+      "evening": "pass",
+      "today": "pass",
+      "tomorrow": "pass",
+      "yesterday": "pass"
+    },
+    "shijian_02": {
+      "early": "pass",
+      "late": "pass",
+      "spring": "pass",
+      "summer": "pass",
+      "autumn": "pass",
+      "winter": "fixed",
+      "birthday": "pass",
+      "holiday": "pass",
+      "weekend": "pass"
+    },
+    "shijian_03": {
+      "calendar": "pass",
+      "alarm clock": "pass",
+      "season": "pass"
+    }
+  },
+  "fixed": [
+    {
+      "word": "catch",
+      "group": "dongzuo-a",
+      "file": "素材/素材_en_dongzuo-a.py",
+      "change": "球 ball(368,137,53)→ball(365,120,53) 上移过顶；双手端点改 (295,190)/(435,190) 举至球两侧下方，下落短线同步上移",
+      "recheck": "dongzuo-a_03.svg.png 重渲染复核：球悬头顶上方，脸/眼完整，双手托球两侧，读作双手接球 — fixed"
+    },
+    {
+      "word": "cut",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "剪刀左右翻面右移：枢轴 (268,301)→(360,301)，双刃指向纸上 (250,240)/(249,338)，青柄改 (392,278)/(390,322) 正落 kid 左手新位 (392,300)",
+      "recheck": "dongzuo-b_02.svg.png 复核：刃在纸上、青柄在手，读作持剪剪纸 — fixed"
+    },
+    {
+      "word": "sweep",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "杆顶 (394,222)→(378,262) 离开脸部；右手改 (400,295) 落在杆上（同高杆位 x≈400），左手 (377,319)→(340,320) 靠杆侧",
+      "recheck": "dongzuo-b_03.svg.png 复核：杆离脸、右手握杆、帚毛触地 — fixed"
+    },
+    {
+      "word": "plant",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "洒水壶整体左移至 kid 手边：壶身 (549-607,334-391)→(430-478,352-396)，壶嘴改 (474,364)-(502,376)，水线 (498,392)-(500,414) 对准苗根；右手端点 (417,362)→(443,358) 握壶身",
+      "recheck": "dongzuo-b_03.svg.png 复核：手持壶、水浇苗根，壶苗水三者相连 — fixed"
+    },
+    {
+      "word": "heavy",
+      "group": "xingrong-a",
+      "file": "素材/素材_en_xingrong-a.py",
+      "change": "原木 R(141,160,431,69)→R(141,61,431,69) 举过头顶（底 130=头顶），端帽 E(571,95)；双手 (231,138)/(389,138) 握木底缘、肘 (200/386,210) 外展避脸；汗滴移至额角 (331,152)",
+      "recheck": "xingrong-a_01.svg.png 复核：脸全部露出（皱眉+汗滴），双臂上举握木，读作举重物吃力 — fixed"
+    },
+    {
+      "word": "proud",
+      "group": "qingxu",
+      "file": "素材/素材_en_qingxu.py",
+      "change": "奖杯整体下移 75px：碗体 y165-255→240-330，双耳/杯柄/杯脚/金星同步下移；手改 (318,254)/(441,254) 握碗沿两侧",
+      "recheck": "qingxu_03.svg.png 复核：脸完整带笑，杯在胸口双手持握 — fixed"
+    },
+    {
+      "word": "winter",
+      "group": "shijian",
+      "file": "素材/素材_en_shijian.py",
+      "change": "围巾横带 R(223,203,104,26)→R(226,285,100,26) 移到颈部（颈线 y≈289），垂条 R(274,220,28,58)→R(283,311,28,58) 从颈部垂过胸口",
+      "recheck": "shijian_02.svg.png 复核：脸完整带笑、围巾在颈与雪人同款 — fixed"
+    },
+    {
+      "word": "sing",
+      "group": "dongzuo-a",
+      "file": "素材/素材_en_dongzuo-a.py",
+      "change": "右手端点改为经肘 (455,300) 握话筒杆 (474,296)",
+      "recheck": "dongzuo-a_02.svg.png 复核：手持话筒于嘴侧 — fixed"
+    },
+    {
+      "word": "eat",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "勺头 (397,215)→(428,220) 移到嘴右侧，露嘴",
+      "recheck": "dongzuo-b_01.svg.png 复核：勺在嘴边、嘴可见 — fixed"
+    },
+    {
+      "word": "wash",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "盆加宽 245→265（右缘 370→390），右手 (388,357) 落入盆内",
+      "recheck": "dongzuo-b_01.svg.png 复核：两手均在水/盆区 — fixed"
+    },
+    {
+      "word": "cook",
+      "group": "dongzuo-b",
+      "file": "素材/素材_en_dongzuo-b.py",
+      "change": "厨师帽整体下移 10px（沿 115-145→125-155，帽顶团同步），贴住头顶 y=153",
+      "recheck": "dongzuo-b_03.svg.png 复核：帽连头 — fixed"
+    },
+    {
+      "word": "bored",
+      "group": "qingxu",
+      "file": "素材/素材_en_qingxu.py",
+      "change": "删除手绘平线 P('M 350 245 L 392 245')，改经 person mouth= 传入单调平嘴 M356,246-L404,246 替换默认笑弧；闭眼 shut 对齐 hcy=216",
+      "recheck": "qingxu_02.svg.png 复核：嘴部单线 — fixed"
+    },
+    {
+      "word": "fast",
+      "group": "xingrong-a",
+      "file": "素材/素材_en_xingrong-a.py",
+      "change": "速度线 motion(99,254,1)→motion(660,250,-1) 移到尾侧身后",
+      "recheck": "xingrong-a_02.svg.png 复核：线在猎豹尾后 — fixed"
+    },
+    {
+      "word": "spicy",
+      "group": "xingrong-b",
+      "file": "素材/素材_en_xingrong-b.py",
+      "change": "悬空青三角 (520-617,181-259)→扇面 PG((318,248),(255,210),(275,295))，顶点接左手 (330,254)",
+      "recheck": "xingrong-b_02.svg.png 复核：扇在左手，红椒+汗珠读辣 — fixed"
+    }
+  ],
+  "fails": [],
+  "warns": [
+    {
+      "word": "sing",
+      "group": "dongzuo-a",
+      "page": "dongzuo-a_02.svg.png",
+      "note": "话筒悬空：杆 L(474,336-253)+头 E(474,246) 无支架，kid 手 (316,340)/(444,340) 距杆约 30px 未握；建议右手改握 (474,300) 或加落地立式支架",
+      "recognition": "仍可读作唱歌，可不修"
+    },
+    {
+      "word": "eat",
+      "group": "dongzuo-b",
+      "page": "dongzuo-b_01.svg.png",
+      "note": "勺头白团（约 365-429×194-236）压住嘴部中央（嘴 y=242），读作'勺到嘴边'尚可；更干净可把勺头右移 12px 露出嘴",
+      "recognition": "可读作吃饭，可不修"
+    },
+    {
+      "word": "wash",
+      "group": "dongzuo-b",
+      "page": "dongzuo-b_01.svg.png",
+      "note": "右手 (388,357) 越过盆右缘 (x=370) 约 18px，左手 (368,348) 已在盆上；右手左移 20px 或盆加宽即可",
+      "recognition": "仍可读作洗手，可不修"
+    },
+    {
+      "word": "cook",
+      "group": "dongzuo-b",
+      "page": "dongzuo-b_03.svg.png",
+      "note": "厨师帽 (y=86-145) 与头顶 (y=153) 之间悬空约 8px；帽整体下移 10px 贴住头顶即可",
+      "recognition": "仍可读作厨师做饭，可不修"
+    },
+    {
+      "word": "bored",
+      "group": "qingxu",
+      "page": "qingxu_02.svg.png",
+      "note": "嘴部双线：kid 默认微笑弧 (y=242-258) 未替换，又叠手绘平线 M350,245-L392,245——给 person 传 mouth= 平线（或删该 P）即成单调嘴",
+      "recognition": "托腮+桌前仍读作无聊，可不修"
+    },
+    {
+      "word": "fast",
+      "group": "xingrong-a",
+      "page": "xingrong-a_02.svg.png",
+      "note": "猎豹朝左跑（眼在头左侧），速度线 motion(99,254) 画在行进前方头前——移到尾侧如 motion(660,250,-1) 更合方向",
+      "recognition": "仍可读作飞奔，可不修"
+    },
+    {
+      "word": "spicy",
+      "group": "xingrong-b",
+      "page": "xingrong-b_02.svg.png",
+      "note": "青色三角 (520-617,181-259，原意扇子) 悬空未连到手 (408,233)——改为扇形并接右手，或删除",
+      "recognition": "红椒+汗珠已可读作辣，可不修"
+    }
+  ]
+}

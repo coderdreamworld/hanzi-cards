@@ -1,0 +1,11 @@
+{
+  "words": 500,
+  "groups": 25,
+  "artworks": 500,
+  "word_audio": 1000,
+  "letter_audio": 26,
+  "duplicate_artworks": [],
+  "numbers": "0-12 all exact",
+  "js_syntax": "pass",
+  "html_sha256": "155abda7ad9a079d50d31c70e81aab877a471761bda36a3e1cae7e5ab786d0d0"
+}

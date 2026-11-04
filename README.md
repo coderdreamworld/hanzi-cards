@@ -1,6 +1,8 @@
 # 亲子卡片在线版
 
-`index.html` 是首页。首页展示拼音字母卡、识字 422 字、识字 1000 字、会意字、部首家族、韵语与声音、情绪小怪兽。
+`index.html` 是首页。首页展示拼音字母卡、识字 422 字、识字 1000 字、英语单词卡、会意字、部首家族、韵语与声音、情绪小怪兽。
+
+`english-words.html` 是25主题500词条英语卡，逐词SVG、离线单词/字母读名、听音选图，音频在`audio/en_*.m4a`。本地权威工程为`孩子/英语单词卡集/`，源码备份在`src/英语单词卡集/`。英语页首次直连不写记录，主动换卡停留满1.5秒保存，首页进入恢复；构建和检查见备份README。
 
 **刻意不在首页展示：**`xiangxing.html`（象形字卡）保留直达页面；`拼音拼读卡.html` 只在本地 `孩子/拼音卡集/` 保留，不发布为 `pinyin-pindu.html`。这两项是内容选择，不是漏链。
 
@@ -10,7 +12,7 @@
 
 ## 英语单词卡 demo
 
-`english-word-cards/` 是独立的英语卡片目录：[直接打开在线 demo](https://coderdreamworld.github.io/hanzi-cards/english-word-cards/)；`index.html` 即可编辑源码与发布页面，`previews/` 仅供视觉审查。其本地权威副本在 `/Users/ping/C 行动_与人交流/孩子/英语单词卡/`，修改后同步整个目录。本 demo 暂不列入首页既有卡组，也不在现有中文卡片的进度及统计测试范围内。
+`english-word-cards/` 是早期57词交互demo：[直接打开](https://coderdreamworld.github.io/hanzi-cards/english-word-cards/)（浏览器TTS，无离线音频）。正式版为根目录 [`english-words.html`](https://coderdreamworld.github.io/hanzi-cards/english-words.html)：25主题500词条、逐词SVG、Samantha离线音频与听音选图，本地权威工程在`孩子/英语单词卡集/`，源码备份`src/英语单词卡集/`。两版独立，demo保留可直达，不在首页卡组内。
 
 ## 逻辑桌游 Demo
 

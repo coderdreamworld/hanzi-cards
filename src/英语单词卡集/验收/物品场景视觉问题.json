@@ -1,0 +1,64 @@
+{
+  "验收范围": ["jiaju", "canchu", "xuexiao", "wanju", "jiaotong", "ziran", "changsuo"],
+  "验收方式": "逐页 Read 全部 21 张 PNG（7 组 × 3 页 × 9 卡），按 4 岁词图对应 / 结构错误 / 遮挡漏画越界判定；可疑卡经 sips 裁剪放大复核",
+  "逐页结论": {
+    "jiaju_01": "pass",
+    "jiaju_02": "pass",
+    "jiaju_03": "pass",
+    "canchu_01": "pass",
+    "canchu_02": "pass（sink 已修复并复核，见 fixed 记录）",
+    "canchu_03": "pass",
+    "xuexiao_01": "pass",
+    "xuexiao_02": "pass",
+    "xuexiao_03": "pass",
+    "wanju_01": "pass",
+    "wanju_02": "pass（swing 已修复并复核，见 fixed 记录）",
+    "wanju_03": "pass",
+    "jiaotong_01": "pass",
+    "jiaotong_02": "pass",
+    "jiaotong_03": "pass",
+    "ziran_01": "pass（wind 已修复并复核，见 fixed 记录）",
+    "ziran_02": "pass",
+    "ziran_03": "pass",
+    "changsuo_01": "pass",
+    "changsuo_02": "pass",
+    "changsuo_03": "pass"
+  },
+  "fails": [],
+  "fixed": [
+    {
+      "group": "canchu",
+      "word": "sink",
+      "cn": "水槽",
+      "page": "canchu_02.svg.png",
+      "position": "第 3 行第 3 卡（词序 18）",
+      "原问题": "无水龙头，盆内倾斜红盘在整卡尺寸下读成『盘中的鱼』，盆水过浅，词图对应不明确。",
+      "修复内容": "编辑 素材_en_canchu_2.py art_sink：盆后缘加灰色拱形水龙头（STEEL_D 底座 + STEEL 弯管 + 出水口）并向盆内放 WBLUE 水柱；盆内水面加深为 #9fd0e8 并加 #bfe0f0 高光；删除易误读的倾斜大盘，改为盆中直立小杯（红杯身+杯沿+杯把）；刷子与泡泡保留。",
+      "复核证据": "重渲染后放大裁剪 canchu_02 sink 单元格：龙头剪影清晰高出柜体，水柱入盆，盆内为明显蓝色水面+红杯+绿刷+泡泡，整体明确读作『厨房水槽洗碗』，无鱼形误读。",
+      "状态": "fixed"
+    },
+    {
+      "group": "wanju",
+      "word": "swing",
+      "cn": "秋千",
+      "page": "wanju_02.svg.png",
+      "position": "第 1 行第 3 卡（词序 12）",
+      "原问题": "无可见绳索与座板：娃悬空浮在横梁下方两手空抓，右手旁露出一段深棕吊绳读作『不明小棍』（STRING #8a5a33），缺秋千定义部件。",
+      "修复内容": "编辑 素材_en_wanju_2.py art_swing：两根吊绳（STRING）从顶横梁 y176 全长直落 y332 座板两端（x344/x456），全程在娃身侧可见；坐板加宽为 R(330,330,140,17,BLUE)；娃改 kid(400,383,0.7,pose=sit,arms=up)（原 0.85 比例+rotate 前倾会盖住绳与座板），臀部正好落在坐板上、双手位于 x341/x459 正好抓住两侧吊绳；删除前倾旋转变换；摆动弧外移避让加宽坐板。",
+      "复核证据": "重渲染后放大裁剪 wanju_02 swing 单元格：两根棕绳从横梁连续直落蓝色坐板，娃确实坐在板上（臀接板、双腿下垂）、双手在绳上，无漂浮感、无不明棍，秋千结构完整。",
+      "状态": "fixed"
+    },
+    {
+      "group": "ziran",
+      "word": "wind",
+      "cn": "风",
+      "page": "ziran_01.svg.png",
+      "position": "第 3 行第 2 卡（词序 8）",
+      "原问题": "三根白色风线画在 kid 之后，横穿娃的额头、嘴部、胸口（似白绷带），一根压过树冠；树冠左上悬着脱离身体的黄色粗条（本意衣角）。",
+      "修复内容": "编辑 素材_en_ziran_1.py art_wind：三根白色风线移到 ground() 之后最先绘制（底层层），并改短改位到左上空白区（y160-188 一条完整可见，另两条在人物身后只在空白处露头），不再与五官/树冠相交；删除悬空黄色粗条，改为从衣摆左角 (197,334) 连出的小飘带 P M197 334 Q160 330 136 312（YEL w10），随风向左后飘。",
+      "复核证据": "重渲染后放大裁剪 ziran_01 wind 单元格：娃五官完全无遮挡（眉眼嘴清晰），顶部风线落在左上空白区，黄飘带连着衣摆，树冠无白线压盖，风吹弯树+落叶的语义保持。",
+      "状态": "fixed"
+    }
+  ],
+  "补充说明": "本次仅按授权编辑三个文件的三张卡函数（素材_en_canchu_2.py art_sink / 素材_en_wanju_2.py art_swing / 素材_en_ziran_1.py art_wind），未动其他卡、模板、词库、公共库。修复后三个模块逐卡 XML、键集合、词库切片、y 边界自检全过；用 渲染验收图.py --groups canchu wanju ziran 重渲染（仅内容变化的 canchu_02/wanju_02/ziran_01 三页实际重新出图），三张修复卡放大复核均通过。其余 143 卡维持首轮 pass 结论未复改。"
+}
